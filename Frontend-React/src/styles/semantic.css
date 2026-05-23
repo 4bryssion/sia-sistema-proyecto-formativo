@@ -1,0 +1,58 @@
+:root {
+    /* ============= LIGHT THEME ============= */
+
+    /* ========== BUTTONS BACKGROUND ========== */
+    --semantic-button-primary: var(--color-primary-950);
+    --semantic-button-primary-hover: var(--sia-color-secondary-950);
+    --semantic-button-secundary: var(--sia-color-secondary-950);
+    --semantic-button-secundary-hover: var(--color-secondary-600);
+
+    /* ========== BRAND =========== */
+    --semantic-brand: var(--color-primary-800);
+    --semantic-brand-hover: var(--color-primary-950);
+    --semantic-brand-soft: var(--color-primary-200);
+    --semantic-brand-soft-hover: var(--color-primary-350);
+
+    /* ========= BACKGROUND ========== */
+    --semantic-background: var(--color-gray-900); /* Fondo de toda la aplicación */
+    --semantic-surface: var(--color-white); /* Fondo de modales, cards, containers */
+    --semantic-surface-muted: var(--color-gray-800); /* Zonas secundarias, con menos importancia */
+    --semantic-background-inverse: var(--color-black);
+
+    /* ============= TEXT =============== */
+    --semantic-text-primary: var(--color-black); /* Color principal de lectura, títulos, texto base del documento */
+    --semantic-text-secondary: var(--color-gray-300); /* Textos con menos dominantes */
+    --semantic-text-muted: var(--color-gray-500); /* Texto deshabilitado por ejemplo */
+    --semantic-text-inverse: var(--color-gray-950); /* Texto invertido */
+
+    /* ============= BORDER ============ */
+    --semantic-border: var(--color-gray-600); /* Borde principal de todos los componentes */
+    --semantic-border-strong: var(--color-gray-300); /* Bordes más fuerte */
+
+    /* ============== FOCUS ================*/
+    --semantic-focus-ring: var(--color-primary-700);
+    --semantic-focus-border: var(--color-primary-500);
+
+    /* ============= STATE ================ */
+    --semantic-succes: var(--color-primary-950);
+    --semantic-warning: var(--color-tertiary-950);
+    --semantic-error: var(--color-secondary-950);
+
+    /* =========== TYPOGRAPHY ============== */
+    --semantic-font-size-display: var(--fs-xxl); /* Textode alto impacto, texto protagonista, hero, números grandes. */
+    --semantic-font-size-h1: var(--fs-lg);
+    --semantic-font-size-h2: var(--fs-md);
+    --semantic-font-size-h3: var(--fs-sm);
+    --semantic-font-size-body: var(--fs-xs);
+    --semantic-font-size-medium: var(--fs-xxs);
+    --semantic-font-size-small: var(--fs-xxxs);
+    --semantic-font-size-caption: var(--fs-xxxxs); /* Caption es texto auxiliar muy pequeño */
+
+    /* ============= FONT WEIGHT ============== */
+    --semantic-font-weight-heading: var(--font-weight-bold);
+    --semantic-font-weight-body: var(--font-weight-regular);
+    --semantic-font-weight-label: var(--font-weight-regular);
+
+    /* ============ DARK THEME ============== */
+    
+}

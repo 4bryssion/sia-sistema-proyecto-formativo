@@ -1,0 +1,110 @@
+:root {
+    /*Primary color*/
+    --color-primary-50: #F5FAF2;
+    --color-primary-100: #E1F2D8;
+    --color-primary-200: #CDE9BF;
+    --color-primary-300: #B9E0A5;
+    --color-primary-400: #A5D88C;
+    --color-primary-500: #92CF72;
+    --color-primary-600: #7EC759;
+    --color-primary-700: #6ABE3F;
+    --color-primary-800: #56B526;
+    --color-primary-900: #42AD0C;
+    --color-primary-950: #39A900;
+
+    /*Secundary color*/
+    --color-secondary-50: #ECF5F0;
+    --color-secondary-100: #D7EADF;
+    --color-secondary-200: #BDDCCA;
+    --color-secondary-300: #9FCCB2;
+    --color-secondary-400: #80BC99;
+    --color-secondary-500: #60AB7F;
+    --color-secondary-600: #429B67;
+    --color-secondary-700: #288D52;
+    --color-secondary-800: #138241;
+    --color-secondary-900: #057B36;
+    --sia-color-secondary-950: #007832;
+
+    /*Terciario color*/
+    --color-tertiary-50: #FFFEF9;
+    --color-tertiary-100: #FFFAE9;
+    --color-tertiary-200: #FFF4D0;
+    --color-tertiary-300: #FEEDB2;
+    --color-tertiary-400: #FEE591;
+    --color-tertiary-500: #FEDD6E;
+    --color-tertiary-600: #FED54D;
+    --color-tertiary-700: #FDCE2F;
+    --color-tertiary-800: #FDC816;
+    --color-tertiary-900: #FDC406;
+    --color-tertiary-950: #FDC300;
+
+    /*Cuaternary color*/
+    --color-cuaternario-50: #FBFEFF;
+    --color-cuaternario-100: #F0FDFE;
+    --color-cuaternario-200: #DFFAFE;
+    --color-cuaternario-300: #CAF7FD;
+    --color-cuaternario-400: #B3F4FC;
+    --color-cuaternario-500: #9CF0FC;
+    --color-cuaternario-600: #85EDFB;
+    --color-cuaternario-700: #70EAFA;
+    --color-cuaternario-800: #5FE7FA;
+    --color-cuaternario-900: #54E6F9;
+    --color-cuaternario-950: #50E5F9;
+
+    /*Quintinary color*/
+    --color-quintinary-50: #FCFAFC;
+    --color-quintinary-100: #F3ECF3;
+    --color-quintinary-200: #E5D8E7;
+    --color-quintinary-300: #C4BED7;
+    --color-quintinary-400: #C2A2C6;
+    --color-quintinary-500: #AE84B3;
+    --color-quintinary-600: #9C68A2;
+    --color-quintinary-700: #8B4E92;
+    --color-quintinary-800: #7D3A86;
+    --color-quintinary-900: #742C7D;
+    --color-quintinary-950: #71277A;
+
+    /* Base/Basic color */
+    --color-white: #fff;
+    --color-black: #000000;
+    --color-gray-50: #181818;
+    --color-gray-100: #242424;
+    --color-gray-200: #3D3D3D;
+    --color-gray-300: #565656;
+    --color-gray-400: #6E6E6E;
+    --color-gray-500: #878787;
+    --color-gray-600: #9F9F9F;
+    --color-gray-700: #B8B8B8;
+    --color-gray-800: #D1D1D1;
+    --color-gray-900: #E9E9E9;
+    --color-gray-950: #F6F6F6;
+
+
+    /* Typography */
+    --main-font: 'Work Sans', Helvetica, Arial;
+    --secundary-font: 'Calibri', Helvetica, Arial;
+
+    /* Font weights crudos */
+    --font-weight-light: 300;
+    --font-weight-regular: 400;
+    --font-weight-bold: 700;
+
+    /* Font variants */
+    --light-variant: light;
+    --medium-variant: medium;
+    --regular-variant: regular;
+    --bold-variant: bold;
+
+    /* Font-size */
+    --fs-xxxxl: 5rem; /* Ultra grande */
+    --fs-xxxl: 4rem; /* Súper grande */
+    --fs-xxl: 3rem; /* Extra grande */
+    --fs-xl: 2.5rem; /* Muy grande */
+    --fs-lg: 2rem; /* Grande */
+    --fs-md: 1.5rem; /* Mediano */
+    --fs-sm: 1.25rem; /* Pequeño */
+    --fs-xs: 1rem; /* Base */
+    --fs-xxs: 0.875rem; /* Muy pequeño 14px */
+    --fs-xxxs: 0.75rem; /* Extra extra pequeño 12px */
+    --fs-xxxxs: 0.5rem; /* Mínimo 8px */
+}

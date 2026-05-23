@@ -1,0 +1,33 @@
+{
+  "name": "backend-expressjs",
+  "version": "1.0.0",
+  "description": "Sistema de gestión de inventario-Proyecto Formativo",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "server": "nodemon index.js"
+  },
+  "keywords": [
+    "MVC",
+    "Node.js",
+    "Express",
+    "API REST",
+    "Microservicios",
+    "JavaScript",
+    "Backend",
+    "Programación",
+    "Desarrollo web"
+  ],
+  "author": "Grupo 7-Proyecto formativo / Santiago Acevedo Medina - Sofía Cardona Ramírez - Maicol Esteban Franco Román",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "mongoose": "^9.2.4",
+    "multer": "^2.1.0",
+    "mysql2": "^3.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
