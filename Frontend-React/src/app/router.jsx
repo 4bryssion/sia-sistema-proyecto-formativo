@@ -28,6 +28,7 @@ import { ListConsumableMaterialPage, CreateConsumablesMaterialPage } from "@/fea
 // Módulo groups:
 
 const router = createBrowserRouter([
+    // Módulo auth:
     // {
     //     path: "/",
     //     element: <Navigate to="auth" replace />
@@ -50,16 +51,24 @@ const router = createBrowserRouter([
                 path: "alert-history",
                 element: <h1>Historial de alertas del sistema en general</h1>
             },
+
+            // Módulo home:
             {
                 index: true,
                 element: <HomePage />,
             },
+
+            // Módulo users:
             {
                 path: "users",
                 element: <h1>Usuarios</h1>
             },
+            {
+                path: "users/create",
+                element: <h1>Crear Usuarios</h1>,
+            },
 
-            // Módulo de materiales consumibles:
+            // Módulo consumable-materials:
             {
                 path: "consumable-materials",
                 element: <ListConsumableMaterialPage />,
@@ -69,25 +78,83 @@ const router = createBrowserRouter([
                 element: <CreateConsumablesMaterialPage />,
             },
 
-            // Módulo de materiales devolutivos:
+            // Módulo returnable-materials:
             {
                 path: "returnable-materials",
                 element: <h1>Materiales devolutivos</h1>
             },
             {
+                path: "returnable-materials/create",
+                element: <h1>Crear Materiales devolutivos</h1>,
+            },
+
+            // Módulo loans:
+            {
                 path: "loans",
                 element: <h1>Prestamos</h1>
             },
             {
-                path: "configuration",
-                element: <h1>Configuración "Marcas y Grupos"</h1>
+                path: "loans/create",
+                element: <h1>Crear Préstamos</h1>,
+            },
+
+            // Módulo brands:
+            {
+                path: "brands",
+                element: <h1>Marcas</h1>
+            },
+            {
+                path: "brands/create",
+                element: <h1>Crear Marcas</h1>,
+            },
+
+            // Módulo groups:
+            {
+                path: "groups",
+                element: <h1>Grupos</h1>
+            },
+            {
+                path: "groups/create",
+                element: <h1>Crear Grupos</h1>,
             },
         ],
     },
     // Rutas de editar, como rompen el layout de dashboard por el navbar. Se manejaran fuera de la ruta de dashboard.
+
+    // Módulo users:
+    {
+        path: "users/edit/:id",
+        element: <h1>Editar Usuario</h1>,
+    },
+
+    // Módulo consumable-materials:
     {
         path: "consumable-materials/edit/:id",
         element: <h1>Editar material consumible</h1>,
+    },
+
+    // Módulo returnable-materials:
+    {
+        path: "returnable-materials/edit/:id",
+        element: <h1>Editar material devolutivo</h1>,
+    },
+
+    // Módulo loans:
+    {
+        path: "loans/edit/:id",
+        element: <h1>Editar Préstamos</h1>,
+    },
+
+    // Módulo brands:
+    {
+        path: "brands/edit/:id",
+        element: <h1>Editar Marcas</h1>,
+    },
+
+    // Módulo groups:
+    {
+        path: "groups/edit/:id",
+        element: <h1>Editar Grupos</h1>,
     },
 ]);
 
