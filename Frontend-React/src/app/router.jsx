@@ -22,6 +22,7 @@ import { ListConsumableMaterialPage, CreateConsumablesMaterialPage } from "@/fea
 // Módulo returnable-materials:
 
 // Módulo loans:
+import { ListLoanPage, CreateLoanPage } from "@/features/loans";
 
 // Módulo brands:
 
@@ -91,11 +92,11 @@ const router = createBrowserRouter([
             // Módulo loans:
             {
                 path: "loans",
-                element: <h1>Prestamos</h1>
+                element:  <ListLoanPage />,
             },
             {
                 path: "loans/create",
-                element: <h1>Crear Préstamos</h1>,
+                element:  <CreateLoanPage />,
             },
 
             // Módulo brands:

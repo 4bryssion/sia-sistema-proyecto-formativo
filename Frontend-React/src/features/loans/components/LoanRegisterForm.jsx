@@ -1,145 +1,207 @@
-import { Input, Button } from "@/shared";
+import { useState, useEffect } from "react";
+import { loanSchema } from "../schemas/loanSchema.js";
+
+import {
+    Input,
+    Button,
+    Select,
+} from "@/shared";
+
+import { getDocumentTypes } from "@/features/users/services/selectService.js";
 
 export default function LoanRegisterForm() {
+
+    // Estados:
+
+    const [documentTypes, setDocumentTypes] = useState([]);
+
+    const [formData, setFormData] = useState({
+        loanMaterial: "",
+        loanQuantity: "",
+        loanGroup: "",
+        loanDepartureDate: "",
+        loanJustification: "",
+        loanReturnDate: "",
+        loanRequestingUser: "",
+    });
+
+    const [errors, setErrors] = useState({});
+
+    // Efectos:
+
+    useEffect(() => {
+        getDocumentTypes().then(setDocumentTypes);
+    }, []);
+
+    // ===========================================
+    //                 Handles
+    // ===========================================
+
+    const handleChange = (e) => {
+
+        const { name, value } = e.target;
+
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        const result = loanSchema.safeParse(formData);
+
+        if (!result.success) {
+
+            const fieldErrors = {};
+
+            result.error.issues.forEach((issue) => {
+
+                const field = issue.path[0];
+
+                fieldErrors[field] = issue.message;
+            });
+
+            setErrors(fieldErrors);
+
+            return;
+        }
+
+        setErrors({});
+
+        console.log("Préstamo válido:", result.data);
+    };
+
     return (
-        <div>
-            <h1
-                className="
-                    text-text-primary
-                    text-2xl mb-6
-                "
-            >
-                Prestamos
-            </h1>
+        <div className="flex justify-center">
 
             <form
                 className="
                     grid
-                    grid-cols-4
-                    place-self-center
                     gap-6
-                    w-max
+
+                    mx-6
+                    md:mx-12
+
+                    md:grid-cols-2
+                    1400:grid-cols-2
+                    justify-items-center
+
                 "
+                onSubmit={handleSubmit}
             >
-                {/* Columna 1 - Identificación del elemento */}
+
+                {/* Columna 1 - Material y usuario */}
                 <div
                     className="
-                        flex 
+                        flex
                         flex-col
                         gap-6
                         my-0 mx-auto
                     "
                 >
-                    <Input
-                        label=""
-                        placeholder="ID"
+                    <Select
+                        label="Material"
+                        name="loanMaterial"
+                        options={documentTypes}
+                        value={formData.loanMaterial}
+                        onChange={handleChange}
+                        error={errors.loanMaterial}
                     />
 
-                    <Input
-                        label=""
-                        placeholder="Nombre del elemento"
-                    />
-
-                    <Input
-                        label=""
-                        placeholder="Serial"
-                    />
-
-                    <Input
-                        label=""
-                        placeholder="Placa SENA"
-                    />
-
-                    <Input
-                        label=""
-                        placeholder="Modelo"
-                    />
-
-                    <Input
-                        label=""
-                        placeholder="Marca"
+                    <Select
+                        label="Usuario solicitante"
+                        name="loanRequestingUser"
+                        options={documentTypes}
+                        value={formData.loanRequestingUser}
+                        onChange={handleChange}
+                        error={errors.loanRequestingUser}
                     />
                 </div>
 
-                {/* Columna 2 - Detalles del préstamo */}
+                {/* Columna 2 - Cantidad y grupo */}
                 <div
                     className="
-                        flex 
+                        flex
                         flex-col
                         gap-6
                         my-0 mx-auto
                     "
                 >
                     <Input
-                        label=""
-                        placeholder="Selección de categoría"
+                        label="Cantidad"
+                        name="loanQuantity"
+                        placeholder="Ingrese la cantidad"
+                        type="number"
+                        value={formData.loanQuantity}
+                        onChange={handleChange}
+                        error={errors.loanQuantity}
                     />
 
                     <Input
-                        label=""
-                        placeholder="Ubicación"
-                    />
-
-                    <Input
-                        label=""
-                        placeholder="Préstamo"
-                    />
-
-                    <Input
-                        label=""
-                        placeholder="Estado"
+                        label="Grupo de aprendices"
+                        name="loanGroup"
+                        placeholder="Ingrese el número del grupo"
+                        type="number"
+                        value={formData.loanGroup}
+                        onChange={handleChange}
+                        error={errors.loanGroup}
                     />
                 </div>
 
                 {/* Columna 3 - Fechas */}
                 <div
                     className="
-                        flex 
+                        flex
                         flex-col
                         gap-6
                         my-0 mx-auto
                     "
                 >
                     <Input
-                        label=""
-                        placeholder="Fecha y hora"
-                        type="datetime"
-                    />
-
-                    <Input
-                        label=""
-                        placeholder="Fecha entrega de material"
+                        label="Fecha de salida"
+                        name="loanDepartureDate"
                         type="date"
+                        value={formData.loanDepartureDate}
+                        onChange={handleChange}
+                        error={errors.loanDepartureDate}
                     />
 
                     <Input
-                        label=""
-                        placeholder="Grupo de aprendices"
+                        label="Fecha de entrega del material"
+                        name="loanReturnDate"
+                        type="date"
+                        value={formData.loanReturnDate}
+                        onChange={handleChange}
+                        error={errors.loanReturnDate}
                     />
                 </div>
 
-                {/* Columna 4 - Descripción y acción */}
+                {/* Columna 4 - Justificación y acción */}
                 <div
                     className="
-                        flex 
+                        flex
                         flex-col
                         gap-6
                         my-0 mx-auto
                     "
                 >
-                    {/* Descripción como textarea */}
-                  <Input
-                    labeñ=""
-                    placeholder="Descripcion"
-                  
-                  
-                  
-                  />
+                    <Input
+                        label="Justificación de uso"
+                        name="loanJustification"
+                        placeholder="Escriba aquí la justificación"
+                        value={formData.loanJustification}
+                        onChange={handleChange}
+                        error={errors.loanJustification}
+                    />
+
                     {/* Actions */}
                     <div
                         className="
-                            flex 
-                            items-center justify-center 
+                            flex
+                            items-center
+                            justify-center
                             gap-6
                         "
                     >
@@ -147,11 +209,14 @@ export default function LoanRegisterForm() {
                             variant="primary"
                             size="sm"
                         >
-                            Crear
+                            Crear Préstamo
                         </Button>
                     </div>
+
                 </div>
+
             </form>
+
         </div>
     );
 }
