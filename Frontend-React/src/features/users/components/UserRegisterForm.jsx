@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { userSchema } from "../schemas/userSchema.js";
 
-import { Input, Button, Select } from "@/shared";
+import { Input, Button, Select, FileInput } from "@/shared";
 
 import { getDocumentTypes } from "@/features/users/services/selectService.js";
 
@@ -101,36 +101,27 @@ export default function UserRegisterForm(){
 
 
     return(
-        <div>
-            <h1
-                className="
-                    text-text-primary
-                    text-2xl mb-6
-                "
-            >
-                Registro de Usuario
-            </h1>
+        <div className="flex justify-center" >
+        
 
             <form 
-                className="
-                    grid
-                    grid-cols-2
-                    place-self-center
-                    gap-6
-                    w-max
-                "
+            className="grid place-self-center gap-6 mx-6 md:grid-cols-2 md:mx-12 1400:grid-cols-2 1400:mx-0 justify-items-center max-w-max"
 
                 onSubmit={handleSubmit}
             >
-                {/* Columna derecha */}
-                <div
-                    className="
-                        flex 
-                        flex-col
-                        gap-6
-                        my-0 mx-auto
-                    "
+                 <div
+                    className="flex flex-col gap-6 my-0 mx-auto"
                 >
+                    <div className="flex flex-col">
+                        <FileInput
+                            className="flex-1 1400:min-h-[330px] md:min-h-[330px]"
+                            accept="image/*"
+                            multiple={false}
+                            value={formData.consumableImage}
+                            onChange={(files) => setFormData((prev) => ({ ...prev, consumableImage: files }))}
+                            children="Cargar imagen"
+                        />
+                    </div>
                     {/* Inputs */}
                     <Input 
                         label = "Nombre"
