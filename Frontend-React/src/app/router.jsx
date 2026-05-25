@@ -15,6 +15,8 @@ import { HomePage } from "@/features/home"
 // Módulo auth:
 
 // Módulo users:
+import { ListUserPage, CreateUserPage } from "@/features/users";
+
 
 // Módulo consumable-materials:
 import { ListConsumableMaterialPage, CreateConsumablesMaterialPage } from "@/features/consumable-material";
@@ -22,6 +24,7 @@ import { ListConsumableMaterialPage, CreateConsumablesMaterialPage } from "@/fea
 // Módulo returnable-materials:
 
 // Módulo loans:
+import { ListLoanPage, CreateLoanPage } from "@/features/loans";
 
 // Módulo brands:
 
@@ -61,11 +64,11 @@ const router = createBrowserRouter([
             // Módulo users:
             {
                 path: "users",
-                element: <h1>Usuarios</h1>
+                element: <ListUserPage />
             },
             {
                 path: "users/create",
-                element: <h1>Crear Usuarios</h1>,
+                element: <CreateUserPage />,
             },
 
             // Módulo consumable-materials:
@@ -91,11 +94,11 @@ const router = createBrowserRouter([
             // Módulo loans:
             {
                 path: "loans",
-                element: <h1>Prestamos</h1>
+                element:  <ListLoanPage />,
             },
             {
                 path: "loans/create",
-                element: <h1>Crear Préstamos</h1>,
+                element:  <CreateLoanPage />,
             },
 
             // Módulo brands:
