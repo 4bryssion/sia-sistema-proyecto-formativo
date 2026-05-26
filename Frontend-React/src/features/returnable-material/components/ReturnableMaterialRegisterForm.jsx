@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { returnableMaterialSchema } from "../schemas/returnableMaterialSchema.js";
 
-import { Input, Button, Select } from "@/shared";
+import { Input, Button, Select, FileInput } from "@/shared";
 
 import { getDocumentTypes } from "@/features/users/services/selectService.js";
 
@@ -12,7 +12,8 @@ export default function ReturnableMaterialRegisterForm(){
     const [documentTypes, setDocumentTypes] = useState([]);
 
     const [formData, setFormData] = useState({
-        returnableID: "Automático", 
+        returnableID: "Automático",
+        returnableFiles: [], 
 
         returnableCategory: "",
         returnableName: "",
@@ -21,8 +22,6 @@ export default function ReturnableMaterialRegisterForm(){
         returnableSerial: "",
         returnableSenaPlate: "",
 
-        // Ficha tecnica es un archivo
-        returnableTechnicalSpecifications: "",
         returnableDimensions: "",
         returnableAccountant: "",
         returnableLocation: "",
@@ -103,22 +102,10 @@ export default function ReturnableMaterialRegisterForm(){
     };
 
     return(
-        <div>
-            <h1
+        <div className="flex justify-center">
+            <form
                 className="
-                    text-text-primary
-                    text-2xl mb-6
-                "
-            >
-                Materiales Devolutivos
-            </h1>
-
-            <form 
-                className="
-                    grid
-                    grid-cols-4
-                    gap-6
-                    place-self-center
+                    grid gap-6 mx-6 md:grid-cols-2 md:mx-12 1400:grid-cols-4 1400:mx-0 justify-items-center max-w-max
                 "
 
                 onSubmit={handleSubmit}
@@ -132,6 +119,17 @@ export default function ReturnableMaterialRegisterForm(){
                         my-0 mx-auto
                     "
                 >
+                    <div className="flex-1 flex">
+                        <FileInput
+                            className="flex-1"
+                            accept="image/*,application/pdf"
+                            multiple={true}
+                            value={formData.returnableFiles}
+                            onChange={(files) => setFormData((prev) => ({ ...prev, returnableFiles: files }))}
+                            children="Cargar imagen/pdf"
+                        />
+                    </div>
+
                     <Input
                         label="ID del material"
                         name="returnableID"
@@ -192,15 +190,6 @@ export default function ReturnableMaterialRegisterForm(){
                         value={formData.returnableSerial}
                         onChange = {handleChange}
                         error={errors.returnableSerial}
-                    />
-
-                    <Input
-                        label="Placa SENA"
-                        name="returnableSenaPlate"
-                        placeholder="Ingrese la placa SENA"
-                        value={formData.returnableSenaPlate}
-                        onChange = {handleChange}
-                        error={errors.returnableSenaPlate}
                     /> 
                 </div>
 
@@ -213,19 +202,16 @@ export default function ReturnableMaterialRegisterForm(){
                         my-0 mx-auto
                     "
                 >
-                    {/* Inputs */}
-
-                    {/* Este luego se cambia a File input ya que es un archivo */}
                     <Input
-                        label="Ficha técnica"
-                        name="returnableTechnicalSpecifications"
-                        placeholder="Ingrese la ficha técnica"
-                        value={formData.returnableTechnicalSpecifications}
+                        label="Placa SENA"
+                        name="returnableSenaPlate"
+                        placeholder="Ingrese la placa SENA"
+                        value={formData.returnableSenaPlate}
                         onChange = {handleChange}
-                        error={errors.returnableTechnicalSpecifications}
-                    /> 
+                        error={errors.returnableSenaPlate}
+                    />
 
-                    <Input 
+                    <Input
                         label = "Dimensiones"
                         name="returnableDimensions"
                         placeholder = "Ingrese las dimensiones"
@@ -260,16 +246,6 @@ export default function ReturnableMaterialRegisterForm(){
                         onChange = {handleChange}
                         error={errors.returnableState}
                     />
-
-                    <Input
-                        label="Cantidad"
-                        placeholder="Ingrese la cantidad"
-                        name="returnableQuantity"
-                        type="number"
-                        value={formData.returnableQuantity}
-                        onChange = {handleChange}
-                        error={errors.returnableQuantity}
-                    />
                 </div>
 
                 {/* Columna 4 */}
@@ -281,6 +257,16 @@ export default function ReturnableMaterialRegisterForm(){
                         my-0 mx-auto
                     "
                 >
+                    <Input
+                        label="Cantidad"
+                        placeholder="Ingrese la cantidad"
+                        name="returnableQuantity"
+                        type="number"
+                        value={formData.returnableQuantity}
+                        onChange = {handleChange}
+                        error={errors.returnableQuantity}
+                    />
+                    
                     <Input
                         label="Valor unitario"
                         name="returnableUnitValue"

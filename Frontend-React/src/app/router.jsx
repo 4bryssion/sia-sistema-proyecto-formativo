@@ -33,6 +33,7 @@ import {
 // Módulo returnable-materials:
 import { 
     ListReturnableMaterialPage,
+    CreateReturnableMaterialPage
     
 } from "@/features/returnable-material";
 
@@ -108,7 +109,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "returnable-materials/create",
-                element: <h1>Crear Materiales devolutivos</h1>,
+                element: <CreateReturnableMaterialPage />,
             },
 
             // Módulo loans:
