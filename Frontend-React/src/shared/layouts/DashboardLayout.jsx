@@ -10,7 +10,7 @@ export default function DashboardLayout(){
     return(
         <div
             className="
-                relative min-h-screen text-text-primary pb-4
+                relative min-h-screen text-text-primary 
             "
         >
             {/* Fondo */}

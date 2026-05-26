@@ -19,7 +19,7 @@ export default function HomePage(){
 
     return(
         <div
-            className={`mt-10`}
+            className={`mt-10 pb-4`}
         >
             {/* Hero */}
             <div

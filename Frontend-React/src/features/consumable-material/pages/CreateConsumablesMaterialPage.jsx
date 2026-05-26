@@ -17,7 +17,7 @@ export default function CreateConsumablesMaterialPage(){
         <div
             className="
                 1400:min-h-[calc(100vh-4rem)]
-                1400:flex 1400:flex-col 1400:justify-center 1400:relative
+                1400:flex 1400:flex-col 1400:justify-center 1400:relative pb-4
             "
         >
             {/* Fondo con imagen */}
@@ -30,7 +30,7 @@ export default function CreateConsumablesMaterialPage(){
 
             <div
                 className="
-                    flex items-center gap-4 mt-2 mb-6 1400:absolute 1400:top-0
+                    flex items-center gap-4 mt-2 mb-6 1400:absolute 1400:top-0 
                 "
             >
                 <IconButton
