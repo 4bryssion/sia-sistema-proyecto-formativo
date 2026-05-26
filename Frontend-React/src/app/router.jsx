@@ -14,21 +14,41 @@ import { HomePage } from "@/features/home"
 
 // Módulo auth:
 
+
 // Módulo users:
-import { ListUserPage, CreateUserPage } from "@/features/users";
+import { 
+    ListUserPage, 
+    CreateUserPage 
+
+} from "@/features/users";
 
 
 // Módulo consumable-materials:
-import { ListConsumableMaterialPage, CreateConsumablesMaterialPage } from "@/features/consumable-material";
+import { 
+    ListConsumableMaterialPage, CreateConsumablesMaterialPage 
+    
+} from "@/features/consumable-material";
+
 
 // Módulo returnable-materials:
+import { 
+    ListReturnableMaterialPage,
+    
+} from "@/features/returnable-material";
 
 // Módulo loans:
-import { ListLoanPage, CreateLoanPage } from "@/features/loans";
+import { 
+    ListLoanPage,
+    CreateLoanPage 
+
+} from "@/features/loans";
+
 
 // Módulo brands:
 
+
 // Módulo groups:
+
 
 const router = createBrowserRouter([
     // Módulo auth:
@@ -84,7 +104,7 @@ const router = createBrowserRouter([
             // Módulo returnable-materials:
             {
                 path: "returnable-materials",
-                element: <h1>Materiales devolutivos</h1>
+                element: <ListReturnableMaterialPage />
             },
             {
                 path: "returnable-materials/create",
