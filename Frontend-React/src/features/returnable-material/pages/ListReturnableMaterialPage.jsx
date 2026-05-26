@@ -1,13 +1,13 @@
 import { DataTable, Button, IconButton } from "@/shared"
-import { consumableMaterialColumns } from "../table/consumableMaterialColumns"
-import { consumableMaterials } from "../data/consumableMaterial"
+import { returnableMaterialColumns } from "../table/returnableMaterialColumns"
+import { returnableMaterials } from "../data/returnableMaterial"
 import { Link, useNavigate } from "react-router-dom";
 import { Undo2 } from "lucide-react";
 // import { useState } from "react";
 
 // import ReportConfigModal from "../reports/components/ReportConfigModal.jsx"
 
-export default function ListConsumableMaterialPage() {
+export default function ListReturnableMaterialPage() {
 
     const navigate = useNavigate();
     // const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -34,7 +34,7 @@ export default function ListConsumableMaterialPage() {
                         text-xl font-semibold mb-0 text-h3 sm:text-h2
                     "
                 >
-                    Materiales Consumibles
+                    Materiales Retornables
                 </h1>
             </div>
 
@@ -48,7 +48,7 @@ export default function ListConsumableMaterialPage() {
                 </Button> */}
 
 
-                <Link to="/consumable-materials/create">
+                <Link to="/returnable-materials/create">
                     <Button
                         variant="primary"
                     >
@@ -62,8 +62,8 @@ export default function ListConsumableMaterialPage() {
 
 
       <DataTable
-        data={consumableMaterials}
-        columns={consumableMaterialColumns}
+        data={returnableMaterials}
+        columns={returnableMaterialColumns}
       />
 
       {/* <ReportConfigModal
