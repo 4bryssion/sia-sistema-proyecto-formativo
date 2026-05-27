@@ -18,7 +18,8 @@ import { HomePage } from "@/features/home"
 // Módulo users:
 import { 
     ListUserPage, 
-    CreateUserPage 
+    CreateUserPage,
+    ViewUserPage 
 
 } from "@/features/users";
 
@@ -90,6 +91,10 @@ const router = createBrowserRouter([
             {
                 path: "users/create",
                 element: <CreateUserPage />,
+            },
+            {
+                path: "users/view",
+                element: <ViewUserPage />,
             },
 
             // Módulo consumable-materials:
