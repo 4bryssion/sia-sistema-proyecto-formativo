@@ -3,14 +3,14 @@ import { UserColumns } from "../table/UserColumns"
 import { users } from "../data/users"
 import { Link, useNavigate } from "react-router-dom";
 import { Undo2 } from "lucide-react";
-// import { useState } from "react";
+import { useState } from "react";
 
-// import ReportConfigModal from "../reports/components/ReportConfigModal.jsx"
+import ReportConfigModal from "../report/components/ReportConfigModal.jsx"
 
 export default function ListUserPage() {
 
     const navigate = useNavigate();
-    // const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   return (
     <div className="p-6">
@@ -40,12 +40,12 @@ export default function ListUserPage() {
 
             <div className="grid sm:flex gap-12 items-center">
                 
-                {/* <Button
+                <Button
                     variant="secondary" 
                     onClick={() => setIsReportModalOpen(true)}
                 >
                     Generar Reporte
-                </Button> */}
+                </Button>
 
 
                 <Link to="/users/create">
@@ -66,10 +66,10 @@ export default function ListUserPage() {
         columns={UserColumns}
       />
 
-      {/* <ReportConfigModal
+      <ReportConfigModal
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
-      /> */}
+      />
 
 
     </div>
