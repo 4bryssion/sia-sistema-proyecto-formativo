@@ -20,9 +20,16 @@ export default function UserRowActions({ users }) {
 
     // Acción para editar los ususarios
     // Redirige a la página de edición usando el id los usuarios
-    const handleEdit = () => {
-        navigate(`users/edit/${users.id}`)
+    
+
+    const handleView = () => {
+        navigate(`/view/users/${users.id}`)
     };
+
+    const handleEdit = () => {
+        navigate(`/view/users/${users.id}/edit`)
+    };
+
 
     return (
         // Contenedor de los botones de acciones
@@ -46,7 +53,11 @@ export default function UserRowActions({ users }) {
             </DropdownTrigger>
 
             <DropdownContent className="right-0">
-                <DropdownItem>Visualizar Usuario</DropdownItem>
+                <DropdownItem>
+                    <button onClick={handleView}>
+                        Visualizar Usuario
+                    </button>
+                </DropdownItem>
                 {/* <DropdownItem>Opción 2</DropdownItem>
                 <DropdownItem>Opción 3</DropdownItem> */}
             </DropdownContent>

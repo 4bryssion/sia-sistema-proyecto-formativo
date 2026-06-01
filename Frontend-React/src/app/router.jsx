@@ -19,7 +19,8 @@ import { HomePage } from "@/features/home"
 // Módulo users:
 import { 
     ListUserPage, 
-    CreateUserPage 
+    CreateUserPage,
+    ViewUserPage 
 
 } from "@/features/users";
 
@@ -43,8 +44,7 @@ import {
 import { 
     ListLoanPage,
     CreateLoanPage,
-    ViewLoanPage
-
+    ViewLoanPage,
 } from "@/features/loans";
 
 
@@ -93,6 +93,10 @@ const router = createBrowserRouter([
             {
                 path: "users/create",
                 element: <CreateUserPage />,
+            },
+            {
+                path: "users/view",
+                element: <ViewUserPage />,
             },
 
             // Módulo consumable-materials:
@@ -161,7 +165,8 @@ const router = createBrowserRouter([
             // Módulo users:
             {
                 path: "users/:id",
-                element: <h1>Ver Usuario</h1>,
+                element: <ViewUserPage />,
+
             },
             {
                 path: "users/:id/edit",
