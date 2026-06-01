@@ -3,14 +3,14 @@ import { loanColumns } from "../table/loanColumns"
 import { loans } from "../data/loan"
 import { Link, useNavigate } from "react-router-dom";
 import { Undo2 } from "lucide-react";
-// import { useState } from "react";
+import { useState } from "react";
 
-// import ReportConfigModal from "../reports/components/ReportConfigModal.jsx"
+import ReportConfigModal from "../reports/components/ReportConfigModal.jsx"
 
 export default function ListLoanPage() {
 
     const navigate = useNavigate();
-    // const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
     return (
         <div className="p-6">
@@ -40,12 +40,12 @@ export default function ListLoanPage() {
 
                 <div className="grid sm:flex gap-12 items-center">
 
-                    {/* <Button
+                    <Button
                         variant="secondary"
                         onClick={() => setIsReportModalOpen(true)}
                     >
                         Generar Reporte
-                    </Button> */}
+                    </Button>
 
                     <Link to="/loans/create">
                         <Button
@@ -63,10 +63,10 @@ export default function ListLoanPage() {
                 columns={loanColumns}
             />
 
-            {/* <ReportConfigModal
+            <ReportConfigModal
                 isOpen={isReportModalOpen}
                 onClose={() => setIsReportModalOpen(false)}
-            /> */}
+            />
 
         </div>
     )
