@@ -58,6 +58,7 @@ export default function ReportConfigModal({ isOpen, onClose }) {
         onClose();
     };
     // Renderizado del modal con controles de configuración y acciones
+    //nos muestra todo lo que esta renderizado 
 
     return (
         // Overlay del modal
