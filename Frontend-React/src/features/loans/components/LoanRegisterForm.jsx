@@ -156,7 +156,7 @@ export default function LoanRegisterForm() {
                         flex
                         flex-col
                         gap-6
-                        my-0 mx-auto
+                        w-full
                     "
                 >
                     <Input

@@ -43,10 +43,8 @@ import {
 // Módulo loans:
 import { 
     ListLoanPage,
-    CreateLoanPage 
-    
-
-
+    CreateLoanPage,
+    ViewLoanPage,
 } from "@/features/loans";
 
 
@@ -198,7 +196,7 @@ const router = createBrowserRouter([
             // Módulo loans:
             {
                 path: "loans/:id",
-                element: <h1>Ver Préstamos</h1>,
+                element: <ViewLoanPage/>,
             },
             {
                 path: "loans/:id/edit",
