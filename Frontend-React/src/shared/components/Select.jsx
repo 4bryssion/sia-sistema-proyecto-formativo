@@ -11,7 +11,7 @@ export default function Select({
 
     return(
         <div
-            className={`w-80 ${className}`}
+            className={`w-full max-w-[320px] ${className}`}
         >
             {label && (
                 <label
@@ -57,7 +57,7 @@ export default function Select({
                     options.map((opt) => (
                         <option
                             key={opt.id}
-                            value={opt.id}
+                            value={opt.value}
                         >
                             {opt.label}
                         </option>

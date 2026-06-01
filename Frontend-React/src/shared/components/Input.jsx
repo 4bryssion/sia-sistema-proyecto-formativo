@@ -8,7 +8,7 @@ export default function Input({
     // Cuerpo de la función
     return(
         // Contenedor del input que se exporta con label, cuerpo y feedback meesage
-        <div className={`w-[320px] ${className}`}>
+        <div className={`w-full max-w-[320px] ${className}`}>
 
             {/* Label */}
             {label && (

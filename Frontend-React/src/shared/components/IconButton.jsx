@@ -41,7 +41,7 @@ export const IconButton = React.forwardRef(function IconButton (
         `,
 
         primary: `
-            text-white bg-blue-600 
+            text-white 
             hover:bg-blue-700 
             focus-visible:ring-blue-500
         `,
