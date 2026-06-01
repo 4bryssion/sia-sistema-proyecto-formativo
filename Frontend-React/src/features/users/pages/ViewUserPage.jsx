@@ -1,58 +1,30 @@
-
-import { useNavigate } from "react-router-dom";
-
-import { IconButton } from "@/shared";
-
-
-
-// import formBg from "@/assets/images/background-claro.jpg"
-
-import { Undo2 } from "lucide-react";
+import UserViewLeft from "../components/UserViewLeft";
 import UserViewRight from "../components/UserViewRight";
-
 
 export default function ViewUserPage(){
 
-    const navigate = useNavigate();
 
     return(
         <div
             className="
-                1400:min-h-[calc(100vh-4rem)]
-                1400:flex 1400:flex-col 1400:justify-center 1400:relative pb-4
+                p-6 grid 1400:grid-cols-[380px_1fr]
             "
         >
-            {/* Fondo con imagen */}
-            {/* <div
+            <div
                 className="
-                    absolute inset-0 -z-10 bg-cover bg-center
+                    bg-black p-16 1400:h-full
                 "
-                style={{ backgroundImage: `url(${formBg})` }}
-            /> */}
+            >
+                <UserViewLeft/>
+            </div>
 
             <div
                 className="
-                    flex items-center gap-4 mt-2 mb-6 1400:absolute 1400:top-0
+                    bg-white p-4
                 "
             >
-                <IconButton
-                    ariaLabel = "Devolverse"
-                    onClick={() => navigate(-1)}
-                >
-                    <Undo2 strokeWidth={2.8} />
-                </IconButton>
-
-                <h1 
-                    className="
-                        text-xl font-semibold text-h3 sm:text-h2
-                    "
-                >
-                    Visualizar Usuario
-                </h1>
+                <UserViewRight/>
             </div>
-
-            <UserViewRight/>
-
         </div>
-    )
+    );
 }

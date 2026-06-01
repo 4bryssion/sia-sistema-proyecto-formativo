@@ -165,7 +165,8 @@ const router = createBrowserRouter([
             // Módulo users:
             {
                 path: "users/:id",
-                element: <h1>Ver Usuario</h1>,
+                element: <ViewUserPage />,
+
             },
             {
                 path: "users/:id/edit",
