@@ -24,4 +24,6 @@ export { default as Switch } from "./components/Switch";
 export { default as Navbar } from "./layouts/Navbar" 
 export { default as DashboardLayout } from "./layouts/DashboardLayout"
 
+export { default as ViewLayout } from "./layouts/ViewLayout"
+
 // Shared - Schemas

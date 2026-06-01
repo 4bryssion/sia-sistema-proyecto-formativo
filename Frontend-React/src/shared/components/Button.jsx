@@ -9,6 +9,8 @@ export default function Button({
     children, // Contenido interno del botón(texto, icono)
     className,
     defaultActive = true, // Solo para variant="toggle": true arranca en primario, false en secundario
+    activeLabel,   // Solo para variant="toggle": texto cuando isActive=true
+    inactiveLabel, // Solo para variant="toggle": texto cuando isActive=false
     onClick,
     ...props // Propiedades adicionales (disabled, etc)
 }){
@@ -71,7 +73,10 @@ export default function Button({
             {...props}
 
         >
-            {children}
+            {variant === "toggle" && activeLabel && inactiveLabel
+                ? (isActive ? activeLabel : inactiveLabel)
+                : children
+            }
         </button>
 
     )
