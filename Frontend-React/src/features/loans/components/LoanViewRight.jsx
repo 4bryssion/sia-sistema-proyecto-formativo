@@ -1,222 +1,89 @@
-import { useState, useEffect } from "react";
-import { loanSchema } from "../schemas/loanSchema.js";
+import { Input, Button, Select } from "@/shared";
+import { Pencil } from "lucide-react";
+import logo from "@/assets/logos/logo-sena-negro.png";
 
-import {
-    Input,
-    Button,
-    Select,
-} from "@/shared";
+export default function LoanViewRight() {
+  return (
+    <div className="relative">
+      <div className="mb-6 1400:grid 1400:grid-cols-2 1400:gap-6">
+        <h2
+          className="
+            font-main text-h2 text-center font-bold 
+            1400:text-start 1400:justify-self-center 1400:w-[320px]
+          "
+        >
+          Préstamo
+        </h2>
+      </div>
 
-import { getDocumentTypes } from "@/features/users/services/selectService.js";
+      {/* Inputs */}
+      <div className="grid lg:grid-cols-2 gap-6 w-full">
+        <div className="grid gap-6 justify-items-center">
+          <Select
+            label="Material"
+            name="loanMaterial"
+            placeholder="Seleccione una opción"
+          />
 
-export default function LoanRegisterForm() {
+          <Input
+            label="Cantidad"
+            name="loanQuantity"
+            placeholder="Ingrese la cantidad"
+          />
 
-    // Estados:
+          <Select
+            label="Usuario solicitante"
+            name="loanUser"
+            placeholder="Seleccione una opción"
+          />
 
-    const [documentTypes, setDocumentTypes] = useState([]);
+          <Input
+            label="Grupo de aprendices"
+            name="loanGroup"
+            placeholder="Ingrese el número del grupo"
+          />
 
-    const [formData, setFormData] = useState({
-        loanMaterial: "",
-        loanQuantity: "",
-        loanGroup: "",
-        loanDepartureDate: "",
-        loanJustification: "",
-        loanReturnDate: "",
-        loanRequestingUser: "",
-    });
-
-    const [errors, setErrors] = useState({});
-
-    // Efectos:
-
-    useEffect(() => {
-        getDocumentTypes().then(setDocumentTypes);
-    }, []);
-
-    // ===========================================
-    //                 Handles
-    // ===========================================
-
-    const handleChange = (e) => {
-
-        const { name, value } = e.target;
-
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-
-        const result = loanSchema.safeParse(formData);
-
-        if (!result.success) {
-
-            const fieldErrors = {};
-
-            result.error.issues.forEach((issue) => {
-
-                const field = issue.path[0];
-
-                fieldErrors[field] = issue.message;
-            });
-
-            setErrors(fieldErrors);
-
-            return;
-        }
-
-        setErrors({});
-
-        console.log("Préstamo válido:", result.data);
-    };
-
-    return (
-        <div className="flex justify-center">
-
-            <form
-                className="
-                    grid
-                    gap-6
-
-                    mx-6
-                    md:mx-12
-
-                    md:grid-cols-2
-                    1400:grid-cols-2
-                    justify-items-center
-
-                "
-                onSubmit={handleSubmit}
-            >
-
-                {/* Columna 1 - Material y usuario */}
-                <div
-                    className="
-                        flex
-                        flex-col
-                        gap-6
-                        my-0 mx-auto
-                    "
-                >
-                    <Select
-                        label="Material"
-                        name="loanMaterial"
-                        options={documentTypes}
-                        value={formData.loanMaterial}
-                        onChange={handleChange}
-                        error={errors.loanMaterial}
-                    />
-
-                    <Select
-                        label="Usuario solicitante"
-                        name="loanRequestingUser"
-                        options={documentTypes}
-                        value={formData.loanRequestingUser}
-                        onChange={handleChange}
-                        error={errors.loanRequestingUser}
-                    />
-                </div>
-
-                {/* Columna 2 - Cantidad y grupo */}
-                <div
-                    className="
-                        flex
-                        flex-col
-                        gap-6
-                        my-0 mx-auto
-                    "
-                >
-                    <Input
-                        label="Cantidad"
-                        name="loanQuantity"
-                        placeholder="Ingrese la cantidad"
-                        type="number"
-                        value={formData.loanQuantity}
-                        onChange={handleChange}
-                        error={errors.loanQuantity}
-                    />
-
-                    <Input
-                        label="Grupo de aprendices"
-                        name="loanGroup"
-                        placeholder="Ingrese el número del grupo"
-                        type="number"
-                        value={formData.loanGroup}
-                        onChange={handleChange}
-                        error={errors.loanGroup}
-                    />
-                </div>
-
-                {/* Columna 3 - Fechas */}
-                <div
-                    className="
-                        flex
-                        flex-col
-                        gap-6
-                        my-0 mx-auto
-                    "
-                >
-                    <Input
-                        label="Fecha de salida"
-                        name="loanDepartureDate"
-                        type="date"
-                        value={formData.loanDepartureDate}
-                        onChange={handleChange}
-                        error={errors.loanDepartureDate}
-                    />
-
-                    <Input
-                        label="Fecha de entrega del material"
-                        name="loanReturnDate"
-                        type="date"
-                        value={formData.loanReturnDate}
-                        onChange={handleChange}
-                        error={errors.loanReturnDate}
-                    />
-                </div>
-
-                {/* Columna 4 - Justificación y acción */}
-                <div
-                    className="
-                        flex
-                        flex-col
-                        gap-6
-                        my-0 mx-auto
-                    "
-                >
-                    <Input
-                        label="Justificación de uso"
-                        name="loanJustification"
-                        placeholder="Escriba aquí la justificación"
-                        value={formData.loanJustification}
-                        onChange={handleChange}
-                        error={errors.loanJustification}
-                    />
-
-                    {/* Actions */}
-                    <div
-                        className="
-                            flex
-                            items-center
-                            justify-center
-                            gap-6
-                        "
-                    >
-                        <Button
-                            variant="primary"
-                            size="sm"
-                        >
-                            Crear Préstamo
-                        </Button>
-                    </div>
-
-                </div>
-
-            </form>
-
+          <Input
+            label="Fecha de salida"
+            name="loanDateStart"
+            placeholder="dd/mm/aaaa"
+          />
         </div>
-    );
+
+        <div className="grid gap-6 justify-items-center lg:h-max">
+          <Input
+            label="Fecha de entrega del material"
+            name="loanDateEnd"
+            placeholder="dd/mm/aaaa"
+          />
+
+          <Input
+            label="Justificación de uso"
+            name="loanJustification"
+            placeholder="Escriba aquí la justificación"
+          />
+        </div>
+      </div>
+
+      {/* Acciones */}
+      <div
+        className="
+          grid gap-6 mt-6 sm:flex sm:w-80 sm:mx-auto sm:justify-between 
+          lg:grid lg:grid-cols-2 lg:gap-6 lg:w-full
+        "
+      >
+        <div className="lg:w-[320px] lg:justify-self-center">
+          <Button variant="toggle" activeLabel="Activo" inactiveLabel="Desactivado" />
+        </div>
+
+        <Button variant="primary" className="gap-2 lg:justify-self-end lg:mr-24">
+          <Pencil size={16} />
+          Editar
+        </Button>
+      </div>
+
+      {/* Logo SENA */}
+      <img src={logo} alt="Logo SENA" className="absolute right-0 bottom-0 w-16" />
+    </div>
+  );
 }
