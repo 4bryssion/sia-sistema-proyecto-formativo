@@ -3,7 +3,8 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 // Import componentes:
 
 import {  
-    DashboardLayout
+    DashboardLayout,
+    ViewLayout
 
 } from "@/shared"
 
@@ -25,7 +26,8 @@ import {
 
 // Módulo consumable-materials:
 import { 
-    ListConsumableMaterialPage, CreateConsumablesMaterialPage 
+    ListConsumableMaterialPage, CreateConsumablesMaterialPage,
+    ViewConsumableMaterialPage 
     
 } from "@/features/consumable-material";
 
@@ -143,43 +145,79 @@ const router = createBrowserRouter([
             },
         ],
     },
-    // Rutas de editar, como rompen el layout de dashboard por el navbar. Se manejaran fuera de la ruta de dashboard.
 
-    // Módulo users:
-    {
-        path: "users/edit/:id",
-        element: <h1>Editar Usuario</h1>,
-    },
 
-    // Módulo consumable-materials:
-    {
-        path: "consumable-materials/edit/:id",
-        element: <h1>Editar material consumible</h1>,
-    },
+    // Rutas de ver y editar, como rompen el layout de dashboard por el navbar. Se manejaran fuera de la ruta de dashboard.
 
-    // Módulo returnable-materials:
+    // La forma anidada /view/users/123/edit es mejor porque:
+    // Es más semántica: primero identificas el recurso (/123) y luego la acción (/edit)
+    // Es la convención REST estándar
+    // Queda más limpio y legible
     {
-        path: "returnable-materials/edit/:id",
-        element: <h1>Editar material devolutivo</h1>,
-    },
+        path: "/view",
+        element: <ViewLayout />,
+        children: [
+            // Módulo users:
+            {
+                path: "users/:id",
+                element: <h1>Ver Usuario</h1>,
+            },
+            {
+                path: "users/:id/edit",
+                element: <h1>Editar Usuario</h1>,
+            },
 
-    // Módulo loans:
-    {
-        path: "loans/edit/:id",
-        element: <h1>Editar Préstamos</h1>,
-    },
+            // Módulo consumable-materials:
+            {
+                path: "consumable-materials/:id",
+                element: <ViewConsumableMaterialPage />,
+            },
+            {
+                path: "consumable-materials/:id/edit",
+                element: <h1>Editar material consumible</h1>,
+            },
 
-    // Módulo brands:
-    {
-        path: "brands/edit/:id",
-        element: <h1>Editar Marcas</h1>,
-    },
+            // Módulo returnable-materials:
+            {
+                path: "returnable-materials/:id",
+                element: <h1>Ver material devolutivo</h1>,
+            },
+            {
+                path: "returnable-materials/:id/edit",
+                element: <h1>Editar material devolutivo</h1>,
+            },
 
-    // Módulo groups:
-    {
-        path: "groups/edit/:id",
-        element: <h1>Editar Grupos</h1>,
-    },
+            // Módulo loans:
+            {
+                path: "loans/:id",
+                element: <h1>Ver Préstamos</h1>,
+            },
+            {
+                path: "loans/:id/edit",
+                element: <h1>Editar Préstamos</h1>,
+            },
+
+            // Módulo brands:
+            {
+                path: "brands/:id",
+                element: <h1>Ver Marcas</h1>,
+            },
+            {
+                path: "brands/:id/edit",
+                element: <h1>Editar Marcas</h1>,
+            },
+
+            // Módulo groups:
+            {
+                path: "groups/:id",
+                element: <h1>Ver Grupos</h1>,
+            },
+            {
+                path: "groups/:id/edit",
+                element: <h1>Editar Grupos</h1>,
+            },
+        ],
+    },    
 ]);
 
 export default router;
