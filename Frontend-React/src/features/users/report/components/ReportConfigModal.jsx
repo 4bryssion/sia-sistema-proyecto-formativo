@@ -63,7 +63,7 @@ export default function ReportConfigModal({ isOpen, onClose }) {
     // Overlay del modal
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       {/* Contenedor del modal */}
-      <div className="w-full max-w-lg rounded-xl bg-black p-6 shadow-lg">
+      <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-lg">
         {/* Título */}
         <h2 className="mb-6 text-xl font-semibold">
           Generar reporte de usuarios

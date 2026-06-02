@@ -166,7 +166,7 @@ export default function UserViewRight(){
                     />
                 </div>
 
-                <Button variant="primary" className="gap-2 lg:justify-self-end lg:mr-44">
+                <Button variant="primary" className="gap-2 lg:justify-self-end lg:mr-24">
                     <Pencil size={16} />
                     Editar
                 </Button>
