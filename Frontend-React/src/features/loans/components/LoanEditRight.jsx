@@ -4,20 +4,25 @@ import { Pencil } from "lucide-react";
 import logo from "@/assets/logos/logo-sena-negro.png";
 
 export default function LoanEditRight() {
+  //Estado del formulario con los campos del prestamo 
+  //Cada campo inicia vacio y se llena con los datos actuales del prestamo 
   const [form, setForm] = useState({
-    loanMaterial: "",
-    loanQuantity: "",
-    loanUser: "",
-    loanGroup: "",
-    loanDateStart: "",
-    loanDateEnd: "",
-    loanJustification: "",
+    loanMaterial: "",         //material a prestar
+    loanQuantity: "",         //Cantidad del material 
+    loanUser: "",             //Usuario que solicita pres
+    loanGroup: "",            //Grupo de prendices asociado
+    loanDateStart: "",        //Fecha de salida
+    loanDateEnd: "",          //fecha entrega
+    loanJustification: "",    //justificacion de uso
   });
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+
+  // Maneja el envío del formulario
+  // Por ahora imprime los datos en consola; aquí irá la llamada a la API
   const handleSubmit = () => {
     console.log("Datos editados:", form);
   };
