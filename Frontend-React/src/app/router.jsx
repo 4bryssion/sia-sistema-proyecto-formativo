@@ -38,7 +38,8 @@ import {
 import {
     ListReturnableMaterialPage,
     CreateReturnableMaterialPage,
-    ViewReturnableMaterialPage
+    ViewReturnableMaterialPage,
+    EditReturnableMaterialPage
 
 } from "@/features/returnable-material";
 
@@ -47,6 +48,8 @@ import {
     ListLoanPage,
     CreateLoanPage,
     ViewLoanPage,
+    EditLoanPage,
+
 } from "@/features/loans";
 
 
@@ -192,7 +195,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "returnable-materials/:id/edit",
-                element: <h1>Editar material devolutivo</h1>,
+                element: <EditReturnableMaterialPage/>,
             },
 
             // Módulo loans:
@@ -202,7 +205,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "loans/:id/edit",
-                element: <h1>Editar Préstamos</h1>,
+                element: <EditLoanPage/>,
             },
 
             // Módulo brands:

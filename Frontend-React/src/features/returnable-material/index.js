@@ -3,3 +3,5 @@ export { default as CreateReturnableMaterialPage } from "./pages/CreateReturnabl
 export { default as ListReturnableMaterialPage } from "./pages/ListReturnableMaterialPage";
 
 export { default as ViewReturnableMaterialPage } from "./pages/ViewReturnableMaterialPage";
+
+export { default as EditReturnableMaterialPage } from "./pages/EditReturnableMaterialPage";
