@@ -58,7 +58,14 @@ export const userService = {
 
     if (data.documentTypeId) data.documentTypeId = Number(data.documentTypeId);
     if (data.userEndDate) data.userEndDate = new Date(data.userEndDate);
-    if (data.userIsActive !== undefined) data.userIsActive = data.userIsActive === true || data.userIsActive === 'true';
+
+    // userStatus: campo de cuenta habilitada (gestionado vía PUT)
+    if (data.userStatus !== undefined) {
+      data.userStatus = data.userStatus === true || data.userStatus === 'true';
+    }
+
+    // userIsActive NO se actualiza por PUT — se gestiona exclusivamente vía PATCH /:id/toggle
+    delete data.userIsActive;
 
     try {
       const resultado = await userRepository.update(id, data);
@@ -70,8 +77,8 @@ export const userService = {
     }
   },
 
-  async delete(id) {
-    await userService.getById(id);
-    return userRepository.delete(id);
+  async toggle(id) {
+    const record = await userService.getById(id);
+    return userRepository.toggle(id, !record.userIsActive);
   },
 };

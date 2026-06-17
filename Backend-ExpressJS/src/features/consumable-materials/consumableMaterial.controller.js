@@ -21,10 +21,11 @@ export const consumableMaterialController = {
       res.json({ mensaje: 'Material de consumo actualizado.', data });
     } catch (err) { next(err); }
   },
-  async delete(req, res, next) {
+  async toggle(req, res, next) {
     try {
-      await consumableMaterialService.delete(Number(req.params.id));
-      res.json({ mensaje: 'Material de consumo eliminado.' });
+      const data = await consumableMaterialService.toggle(Number(req.params.id));
+      const mensaje = data.isActive ? 'Material activado.' : 'Material desactivado.';
+      res.json({ mensaje, data });
     } catch (err) { next(err); }
   },
 };

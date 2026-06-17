@@ -3,6 +3,7 @@ import prisma from '../../config/prisma.js';
 export const permissionRepository = {
   async findAll() {
     return prisma.permission.findMany({
+      where: { isActive: true },
       orderBy: { permissionName: 'asc' },
     });
   },
@@ -19,7 +20,7 @@ export const permissionRepository = {
     return prisma.permission.update({ where: { id }, data });
   },
 
-  async delete(id) {
-    return prisma.permission.delete({ where: { id } });
+  async toggle(id, isActive) {
+    return prisma.permission.update({ where: { id }, data: { isActive } });
   },
 };

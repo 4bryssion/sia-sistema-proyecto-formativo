@@ -99,8 +99,9 @@ export const returnableMaterialService = {
     }
   },
 
-  async delete(id) {
-    await returnableMaterialService.getById(id);
-    return returnableMaterialRepository.delete(id);
+  async toggle(id) {
+    const record = await returnableMaterialService.getById(id);
+    const currentIsActive = record.consumableMaterial.isActive;
+    return returnableMaterialRepository.toggle(id, !currentIsActive);
   },
 };

@@ -10,7 +10,7 @@ const baseSchema = {
   userPhone: Joi.string().max(15),
   userSecondPhone: Joi.string().max(15).allow('', null),
   userAddress: Joi.string().max(150),
-  userIsActive: Joi.boolean(),
+  userStatus: Joi.boolean(),
   userAccountType: Joi.string().valid('Solidario', 'Cuentadante'),
 };
 

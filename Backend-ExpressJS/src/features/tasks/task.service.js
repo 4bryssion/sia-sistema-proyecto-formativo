@@ -27,11 +27,13 @@ export const taskService = {
     await taskService.getById(id);
     const data = { ...bodyData };
     if (data.userId) data.userId = Number(data.userId);
+    // isActive NO se actualiza por PUT — se gestiona exclusivamente vía PATCH /:id/toggle
+    delete data.isActive;
     return taskRepository.update(id, data);
   },
 
-  async delete(id) {
-    await taskService.getById(id);
-    return taskRepository.delete(id);
+  async toggle(id) {
+    const record = await taskService.getById(id);
+    return taskRepository.toggle(id, !record.isActive);
   },
 };

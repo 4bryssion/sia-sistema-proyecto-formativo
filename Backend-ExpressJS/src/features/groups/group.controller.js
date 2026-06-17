@@ -27,10 +27,11 @@ export const groupController = {
     } catch (err) { next(err); }
   },
 
-  async delete(req, res, next) {
+  async toggle(req, res, next) {
     try {
-      await groupService.delete(Number(req.params.id));
-      res.json({ mensaje: 'Grupo eliminado.' });
+      const data = await groupService.toggle(Number(req.params.id));
+      const mensaje = data.isActive ? 'Grupo activado.' : 'Grupo desactivado.';
+      res.json({ mensaje, data });
     } catch (err) { next(err); }
   },
 

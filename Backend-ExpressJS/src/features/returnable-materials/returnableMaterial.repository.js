@@ -13,6 +13,7 @@ const includeComplete = {
 export const returnableMaterialRepository = {
   async findAll() {
     return prisma.returnableMaterial.findMany({
+      where: { consumableMaterial: { isActive: true } },
       include: includeComplete,
       orderBy: { consumableMaterial: { materialName: 'asc' } },
     });
@@ -56,7 +57,14 @@ export const returnableMaterialRepository = {
     });
   },
 
-  async delete(id) {
-    return prisma.consumableMaterial.delete({ where: { id } });
+  async toggle(id, isActive) {
+    await prisma.consumableMaterial.update({
+      where: { id },
+      data: { isActive },
+    });
+    return prisma.returnableMaterial.findUnique({
+      where: { id },
+      include: includeComplete,
+    });
   },
 };

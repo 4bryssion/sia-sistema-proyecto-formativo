@@ -7,8 +7,8 @@ const router = Router();
 router.get('/',       groupController.getAll);
 router.get('/:id',    groupController.getById);
 router.post('/',      validate(createGroupSchema), groupController.create);
-router.put('/:id',    validate(updateGroupSchema),  groupController.update);
-router.delete('/:id', groupController.delete);
+router.put('/:id',          validate(updateGroupSchema),  groupController.update);
+router.patch('/:id/toggle', groupController.toggle);
 
 router.post('/:id/permissions',                 validate(assignPermissionSchema), groupController.assignPermission);
 router.delete('/:id/permissions/:permissionId', groupController.removePermission);
