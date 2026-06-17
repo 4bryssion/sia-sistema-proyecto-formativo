@@ -8,7 +8,7 @@ import { Pencil } from "lucide-react";
 
 import logo from "@/assets/logos/logo-sena-negro.png";
 
-export default function ConsumableMaterialViewRight(){
+export default function ConsumableMaterialEditRight(){
 
 
 
@@ -110,24 +110,11 @@ export default function ConsumableMaterialViewRight(){
             </div>
 
             {/* Acciones */}
-            <div
-                className="
-                    grid gap-6 mt-6 sm:flex sm:w-80 sm:mx-auto sm:justify-between lg:grid lg:grid-cols-2 lg:gap-6 lg:w-full
-                "
-            >
-                <div className="lg:w-[320px] lg:justify-self-center">
-                    <Button
-                        variant="toggle"
-                        activeLabel="Activo"
-                        inactiveLabel="Inactivo"
-                    />
-                </div>
-
-                <Button variant="primary" className="gap-2 lg:justify-self-end lg:mr-24">
+            <Button variant="primary" className=" mt-6 sm:flex
+                 gap-2 lg:justify-self-end lg:mr-24">
                     <Pencil size={16} />
                     Editar
                 </Button>
-            </div>
 
             {/* Logo SENA */}
             <img

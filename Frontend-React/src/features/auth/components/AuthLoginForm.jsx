@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { CircleUser } from "lucide-react"
 
 import { 
     Input, 
@@ -94,9 +95,14 @@ export default function AuthRegisterForm(){
     return(
         <div className="flex min-h-screen items-center justify-center">
             <form
-                className="grid gap-6 mx-6 p-8 sm:p-12 justify-items-center max-w-max bg-white border rounded-md"
+                className="grid gap-6 mx-6 p-8 sm:p-12 justify-items-center max-w-max  bg-white border rounded-md"
                 onSubmit={handleSubmit}
             >
+                <CircleUser className="w-24 h-24"
+                strokeWidth={1.8}/>
+                <h1 className="text-h3 font-main">
+                    Inicio de Sesión
+                </h1>
                 <div className="flex flex-col gap-6 w-[320px]">
                     <Input
                         label="Correo"
@@ -120,14 +126,16 @@ export default function AuthRegisterForm(){
                 </div>
 
                 <div className="flex items-center justify-center gap-6">
-                    <Button variant="secondary" size="md">
-                        Cancelar
-                    </Button>
 
                     <Button variant="primary" size="md" type="submit">
-                        Ingresar
+                        Iniciar Sesión
                     </Button>
                 </div>
+                    <Link className="font-secondary text-body"
+                     to="/logout">
+                    ¿Olvidó su Contraseña?
+                    </Link>
+                
             </form>
         </div>
     )

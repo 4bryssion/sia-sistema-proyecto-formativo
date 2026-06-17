@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { brandSchema } from "../schemas/brandSchema.js";
 
+import logo from "@/assets/logos/logo-sena-verde.png";
+
 import { Input, Button } from "@/shared";
 
 export default function BrandRegisterForm() {
@@ -76,11 +78,12 @@ export default function BrandRegisterForm() {
     };
 
     return (
-        <div>
+        <div className="mt-12">
             <h1
                 className="
-                    text-text-primary
+                    text-text-inverse
                     text-2xl mb-6
+                    text-center
                 "
             >
                 Agregar marca
@@ -91,8 +94,10 @@ export default function BrandRegisterForm() {
                     flex
                     flex-col
                     place-self-center
+                    items-center
                     gap-6
                     w-max
+                    text-text-inverse
                 "
 
                 onSubmit={handleSubmit}
@@ -100,7 +105,7 @@ export default function BrandRegisterForm() {
                 <Input
                     label="Nombre de la marca"
                     name="brandName"
-                    placeholder="Ingrese el nombre de la marca"
+                    placeholder="Nombre de la marca"
                     value={formData.brandName}
                     onChange = {handleChange}
                     error={errors.brandName}
@@ -120,7 +125,14 @@ export default function BrandRegisterForm() {
                         Agregar marca
                     </Button>
                 </div>
+                {/* Logo SENA */}
+            <img
+                src={logo}
+                alt="Logo SENA"
+                className=" w-16"
+            />
             </form>
+            
         </div>
     );
 }

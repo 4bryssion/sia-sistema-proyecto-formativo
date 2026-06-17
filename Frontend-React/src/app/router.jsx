@@ -21,7 +21,8 @@ import { HomePage } from "@/features/home"
 import { 
     ListUserPage, 
     CreateUserPage,
-    ViewUserPage 
+    ViewUserPage,
+    EditUserPage 
 
 } from "@/features/users";
 
@@ -29,7 +30,7 @@ import {
 // Módulo consumable-materials:
 import { 
     ListConsumableMaterialPage, CreateConsumablesMaterialPage,
-    ViewConsumableMaterialPage 
+    ViewConsumableMaterialPage , EditConsumibleMaterialPage
     
 } from "@/features/consumable-material";
 
@@ -54,6 +55,14 @@ import {
 
 
 // Módulo brands:
+import { 
+   
+    CreateBrandPage,
+    
+    ListBrandPage
+     
+
+} from "@/features/brands";
 
 
 // Módulo groups:
@@ -103,6 +112,10 @@ const router = createBrowserRouter([
                 path: "users/view",
                 element: <ViewUserPage />,
             },
+            {
+                path: "users/edit",
+                element: <EditUserPage />,
+            },
 
             // Módulo consumable-materials:
             {
@@ -112,6 +125,10 @@ const router = createBrowserRouter([
             {
                 path: "consumable-materials/create",
                 element: <CreateConsumablesMaterialPage />,
+            },
+            {
+                path: "consumable-materials/edit",
+                element: <EditConsumibleMaterialPage />,
             },
 
             // Módulo returnable-materials:
@@ -123,6 +140,7 @@ const router = createBrowserRouter([
                 path: "returnable-materials/create",
                 element: <CreateReturnableMaterialPage />,
             },
+            
 
             // Módulo loans:
             {
@@ -137,11 +155,15 @@ const router = createBrowserRouter([
             // Módulo brands:
             {
                 path: "brands",
-                element: <h1>Marcas</h1>
+                element:<ListBrandPage />,
             },
             {
                 path: "brands/create",
-                element: <h1>Crear Marcas</h1>,
+                element: <h1>Crear marcas</h1>,
+            },
+            {
+                path: "brands/view",
+                element: <ListUserPage />,
             },
 
             // Módulo groups:
@@ -175,7 +197,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "users/:id/edit",
-                element: <h1>Editar Usuario</h1>,
+                element: <EditUserPage />,
             },
 
             // Módulo consumable-materials:
@@ -185,7 +207,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "consumable-materials/:id/edit",
-                element: <h1>Editar material consumible</h1>,
+                element:<EditConsumibleMaterialPage />,
             },
 
             // Módulo returnable-materials:
@@ -211,7 +233,7 @@ const router = createBrowserRouter([
             // Módulo brands:
             {
                 path: "brands/:id",
-                element: <h1>Ver Marcas</h1>,
+                element: <h1>Visualizar marca</h1>,
             },
             {
                 path: "brands/:id/edit",
