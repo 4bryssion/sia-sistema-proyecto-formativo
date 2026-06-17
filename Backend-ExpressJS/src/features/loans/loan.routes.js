@@ -7,8 +7,8 @@ const router = Router();
 router.get('/',       loanController.getAll);
 router.get('/:id',    loanController.getById);
 router.post('/',      validate(createLoanSchema), loanController.create);
-router.put('/:id',    validate(updateLoanSchema), loanController.update);
-router.delete('/:id', loanController.delete);
+router.put('/:id',          validate(updateLoanSchema), loanController.update);
+router.patch('/:id/toggle', loanController.toggle);
 
 router.use((err, req, res, next) => {
   if (err.message && !err.code) {

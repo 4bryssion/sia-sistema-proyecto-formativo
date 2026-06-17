@@ -4,11 +4,11 @@ import { validate, createPermissionSchema, updatePermissionSchema } from './perm
 
 const router = Router();
 
-router.get('/',       permissionController.getAll);
-router.get('/:id',    permissionController.getById);
-router.post('/',      validate(createPermissionSchema), permissionController.create);
-router.put('/:id',    validate(updatePermissionSchema),  permissionController.update);
-router.delete('/:id', permissionController.delete);
+router.get('/',             permissionController.getAll);
+router.get('/:id',          permissionController.getById);
+router.post('/',            validate(createPermissionSchema), permissionController.create);
+router.put('/:id',          validate(updatePermissionSchema),  permissionController.update);
+router.patch('/:id/toggle', permissionController.toggle);
 
 router.use((err, req, res, next) => {
   if (err.message && !err.code) {

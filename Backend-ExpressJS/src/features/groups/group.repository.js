@@ -3,6 +3,7 @@ import prisma from '../../config/prisma.js';
 export const groupRepository = {
   async findAll() {
     return prisma.group.findMany({
+      where: { isActive: true },
       orderBy: { groupName: 'asc' },
       include: {
         permissions: {
@@ -31,8 +32,8 @@ export const groupRepository = {
     return prisma.group.update({ where: { id }, data });
   },
 
-  async delete(id) {
-    return prisma.group.delete({ where: { id } });
+  async toggle(id, isActive) {
+    return prisma.group.update({ where: { id }, data: { isActive } });
   },
 
   async assignPermission(groupId, permissionId) {

@@ -7,9 +7,9 @@ const router = Router();
 router.get('/',             taskController.getAll);
 router.get('/user/:userId', taskController.getByUser);
 router.get('/:id',          taskController.getById);
-router.post('/',            validate(createTaskSchema), taskController.create);
+router.post('/',            validate(createTaskSchema),  taskController.create);
 router.put('/:id',          validate(updateTaskSchema),  taskController.update);
-router.delete('/:id',       taskController.delete);
+router.patch('/:id/toggle', taskController.toggle);
 
 router.use((err, req, res, next) => {
   if (err.message && !err.code) {

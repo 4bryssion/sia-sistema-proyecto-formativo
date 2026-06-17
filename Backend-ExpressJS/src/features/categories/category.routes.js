@@ -4,11 +4,11 @@ import { validate, createCategorySchema, updateCategorySchema } from './category
 
 const router = Router();
 
-router.get('/',       categoryController.getAll);
-router.get('/:id',    categoryController.getById);
-router.post('/',      validate(createCategorySchema), categoryController.create);
-router.put('/:id',    validate(updateCategorySchema), categoryController.update);
-router.delete('/:id', categoryController.delete);
+router.get('/',             categoryController.getAll);
+router.get('/:id',          categoryController.getById);
+router.post('/',            validate(createCategorySchema), categoryController.create);
+router.put('/:id',          validate(updateCategorySchema), categoryController.update);
+router.patch('/:id/toggle', categoryController.toggle);
 
 router.use((err, req, res, next) => {
   if (err.message && !err.code) {

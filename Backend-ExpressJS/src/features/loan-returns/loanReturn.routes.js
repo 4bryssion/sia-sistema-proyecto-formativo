@@ -4,10 +4,10 @@ import { validate, createLoanReturnSchema } from './loanReturn.validator.js';
 
 const router = Router();
 
-router.get('/',       loanReturnController.getAll);
-router.get('/:id',    loanReturnController.getById);
-router.post('/',      validate(createLoanReturnSchema), loanReturnController.create);
-router.delete('/:id', loanReturnController.delete);
+router.get('/',             loanReturnController.getAll);
+router.get('/:id',          loanReturnController.getById);
+router.post('/',            validate(createLoanReturnSchema), loanReturnController.create);
+router.patch('/:id/toggle', loanReturnController.toggle);
 
 router.use((err, req, res, next) => {
   if (err.message && !err.code) {

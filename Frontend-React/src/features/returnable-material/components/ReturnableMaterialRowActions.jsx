@@ -21,10 +21,11 @@ export default function ReturnableMaterialRowActions({ returnableMaterial }) {
         navigate(`/view/returnable-materials/${returnableMaterial.id}`)
     };
 
-    // Acción para editar el material consumible
-    // Redirige a la página de edición usando el id del material consumible
+    // Acción para editar el material retornable
+    // Error anterior: la ruta no tenía el prefijo /view/ y tenía /edit duplicado
+    // Corrección: ruta completa y correcta según el router
     const handleEdit = () => {
-        navigate(`returnable-materials/edit/${returnableMaterial.id}`)
+        navigate(`/view/returnable-materials/${returnableMaterial.id}/edit`)
     };
 
     return (
@@ -33,10 +34,10 @@ export default function ReturnableMaterialRowActions({ returnableMaterial }) {
 
             {/* Botón editar */}
             <button
-                onClick={handleEdit} // Ejecuta la navegación a la página de edición
+                onClick={handleEdit}
                 className="p-1 rounded hover:bg-gray-900"
             >
-                <Pencil size={16} /> {/* Icono de editar */}
+                <Pencil size={16} />
             </button>
 
             {/* Botón option */}
@@ -44,7 +45,7 @@ export default function ReturnableMaterialRowActions({ returnableMaterial }) {
 
             <DropdownTrigger>
                 <button className="p-1 rounded hover:bg-gray-900">
-                    <EllipsisVertical size={16} /> {/* Icono de opciones */}
+                    <EllipsisVertical size={16} />
                 </button>
             </DropdownTrigger>
 
@@ -54,8 +55,6 @@ export default function ReturnableMaterialRowActions({ returnableMaterial }) {
                         Visualizar Material
                     </button>
                 </DropdownItem>
-                {/* <DropdownItem>Opción 2</DropdownItem>
-                <DropdownItem>Opción 3</DropdownItem> */}
             </DropdownContent>
 
             </Dropdown>
@@ -63,4 +62,3 @@ export default function ReturnableMaterialRowActions({ returnableMaterial }) {
         </div>
     );
 }
-
