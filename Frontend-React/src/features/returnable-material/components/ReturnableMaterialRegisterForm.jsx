@@ -112,12 +112,7 @@ export default function ReturnableMaterialRegisterForm(){
             >
                 {/* Columna 1 */}
                 <div
-                    className="
-                        flex 
-                        flex-col
-                        gap-6
-                        my-0 mx-auto
-                    "
+                    className="flex flex-col gap-6 my-0 w-[320px]"
                 >
                     <div className="flex-1 flex">
                         <FileInput
@@ -140,12 +135,7 @@ export default function ReturnableMaterialRegisterForm(){
 
                 {/* Columna 2 */}
                 <div
-                    className="
-                        flex 
-                        flex-col
-                        gap-6
-                        my-0 mx-auto
-                    "
+                    className="flex flex-col gap-6 my-0 w-[320px]"
                 >
                     <Select 
                         label="Categoría"
@@ -195,12 +185,7 @@ export default function ReturnableMaterialRegisterForm(){
 
                 {/* Columna 3 */}
                 <div
-                    className="
-                        flex 
-                        flex-col
-                        gap-6
-                        my-0 mx-auto
-                    "
+                    className="flex flex-col gap-6 my-0 w-[320px]"
                 >
                     <Input
                         label="Placa SENA"
@@ -250,12 +235,7 @@ export default function ReturnableMaterialRegisterForm(){
 
                 {/* Columna 4 */}
                 <div
-                    className="
-                        flex 
-                        flex-col
-                        gap-6
-                        my-0 mx-auto
-                    "
+                    className="flex flex-col gap-6 my-0 w-[320px]"
                 >
                     <Input
                         label="Cantidad"

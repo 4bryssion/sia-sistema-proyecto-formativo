@@ -94,12 +94,7 @@ export default function LoanRegisterForm() {
 
                 {/* Columna 1 - Material y usuario */}
                 <div
-                    className="
-                        flex
-                        flex-col
-                        gap-6
-                        my-0 mx-auto
-                    "
+                    className="flex flex-col gap-6 my-0 w-[320px]"
                 >
                     <Select
                         label="Material"
@@ -122,12 +117,7 @@ export default function LoanRegisterForm() {
 
                 {/* Columna 2 - Cantidad y grupo */}
                 <div
-                    className="
-                        flex
-                        flex-col
-                        gap-6
-                        my-0 mx-auto
-                    "
+                    className="flex flex-col gap-6 my-0 w-[320px]"
                 >
                     <Input
                         label="Cantidad"
@@ -152,12 +142,7 @@ export default function LoanRegisterForm() {
 
                 {/* Columna 3 - Fechas */}
                 <div
-                    className="
-                        flex
-                        flex-col
-                        gap-6
-                        w-full
-                    "
+                    className="flex flex-col gap-6 w-[320px]"
                 >
                     <Input
                         label="Fecha de salida"
@@ -180,12 +165,7 @@ export default function LoanRegisterForm() {
 
                 {/* Columna 4 - Justificación y acción */}
                 <div
-                    className="
-                        flex
-                        flex-col
-                        gap-6
-                        my-0 mx-auto
-                    "
+                    className="flex flex-col gap-6 my-0 w-[320px]"
                 >
                     <Input
                         label="Justificación de uso"

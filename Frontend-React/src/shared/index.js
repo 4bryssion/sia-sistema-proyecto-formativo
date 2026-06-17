@@ -23,7 +23,12 @@ export { default as Switch } from "./components/Switch";
 
 export { default as Navbar } from "./layouts/Navbar" 
 export { default as DashboardLayout } from "./layouts/DashboardLayout"
-
 export { default as ViewLayout } from "./layouts/ViewLayout"
+export { default as AuthLayout } from "./layouts/AuthLayout"
 
 // Shared - Schemas
+
+
+// Shared - Auth
+
+export { default as ProtectedRoute } from "./components/auth/ProtectedRoute";

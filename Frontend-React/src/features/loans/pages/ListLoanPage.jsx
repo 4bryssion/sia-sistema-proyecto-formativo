@@ -47,7 +47,7 @@ export default function ListLoanPage() {
                         Generar Reporte
                     </Button>
 
-                    <Link to="/loans/create">
+                    <Link to="/dashboard/loans/create">
                         <Button
                             variant="primary"
                         >

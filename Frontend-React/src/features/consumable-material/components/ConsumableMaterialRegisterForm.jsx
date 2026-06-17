@@ -115,7 +115,7 @@ export default function ConsumableMaterialRegisterForm() {
             >
                 {/* Columna 1 */}
                 <div
-                    className="flex flex-col gap-6 my-0 mx-auto"
+                    className="flex flex-col gap-6 my-0 w-[320px]"
                 >
                     <div className="flex-1 flex">
                         <FileInput
@@ -138,12 +138,7 @@ export default function ConsumableMaterialRegisterForm() {
 
                 {/* Columna 2 */}
                 <div
-                    className="
-                        flex 
-                        flex-col
-                        gap-6
-                        my-0 mx-auto
-                    "
+                    className="flex flex-col gap-6 my-0 w-[320px]"
                 >
                     <Input
                         label="Nombre del consumible"
@@ -184,12 +179,7 @@ export default function ConsumableMaterialRegisterForm() {
 
                 {/* Columna 3 - Información económica */}
                 <div
-                    className="
-                        flex 
-                        flex-col
-                        gap-6
-                        my-0 mx-auto
-                    "
+                    className="flex flex-col gap-6 my-0 w-[320px]"
                 >
                     <Input
                         label="Cantidad"
@@ -233,12 +223,7 @@ export default function ConsumableMaterialRegisterForm() {
 
                 {/* Columna 4 */}
                 <div
-                    className="
-                        flex 
-                        flex-col
-                        gap-6
-                        my-0 mx-auto
-                    "
+                    className="flex flex-col gap-6 my-0 w-[320px]"
                 >
                     <Input
                         label="Fecha de compra"

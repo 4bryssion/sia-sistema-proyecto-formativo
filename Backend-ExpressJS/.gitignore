@@ -21,3 +21,13 @@ Thumbs.db
 # Cachés
 .dist/
 .cache/
+/generated/prisma
+
+# Archivos subidos
+uploads/
+
+# Migraciones Prisma (omitir en desarrollo local; commitear en equipo para sincronizar DB)
+# prisma/migrations/
+
+# Claude / IAs
+CLAUDE.md

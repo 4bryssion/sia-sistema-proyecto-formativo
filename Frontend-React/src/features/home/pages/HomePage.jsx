@@ -59,7 +59,7 @@ export default function HomePage(){
                     description = "Crear Ver Listar Modificar Activar/Desactivar"
 
                     children = {
-                        <Link to="/users">
+                        <Link to="/dashboard/users">
                             <Button children="Seleccionar"/>
                         </Link>
                     }
@@ -73,7 +73,7 @@ export default function HomePage(){
                     description = "Crear Ver Listar Modificar Activar/Desactivar"
 
                     children = {
-                        <Link to="/consumable-materials">
+                        <Link to="/dashboard/consumable-materials">
                             <Button children="Seleccionar"/>
                         </Link>
                     }
@@ -87,7 +87,7 @@ export default function HomePage(){
                     description = "Crear Ver Listar Modificar Activar/Desactivar"
 
                     children = {
-                        <Link to="/returnable-materials">
+                        <Link to="/dashboard/returnable-materials">
                             <Button children="Seleccionar"/>
                         </Link>
                     }
@@ -101,7 +101,7 @@ export default function HomePage(){
                     description = "Crear Ver Listar Modificar Activar/Desactivar"
 
                     children = {
-                        <Link to="/loans">
+                        <Link to="/dashboard/loans">
                             <Button children="Seleccionar"/>
                         </Link>
                     }

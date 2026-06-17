@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 // Import componentes:
 
 import {  
+    AuthLayout,
     DashboardLayout,
     ViewLayout
 
@@ -34,10 +35,11 @@ import {
 
 
 // Módulo returnable-materials:
-import { 
+import {
     ListReturnableMaterialPage,
-    CreateReturnableMaterialPage
-    
+    CreateReturnableMaterialPage,
+    ViewReturnableMaterialPage
+
 } from "@/features/returnable-material";
 
 // Módulo loans:
@@ -56,21 +58,21 @@ import {
 
 const router = createBrowserRouter([
     // Módulo auth:
-    // {
-    //     path: "/",
-    //     element: <Navigate to="auth" replace />
-    // },
-    // {
-    //     path: "/auth",
-    //     element: <AuthLayout />,
-    //     children: [
-    //         {
-    //             index: true
-    //         }
-    //     ],
-    // },
     {
         path: "/",
+        element: <Navigate to="auth" replace />
+    },
+    {
+        path: "/auth",
+        element: <AuthLayout />,
+        children: [
+            {
+                index: true
+            }
+        ],
+    },
+    {
+        path: "/dashboard",
         element: <DashboardLayout />,
         children: [
             // Este modulo de alert-history aún estamos en duda de si realizarlo o no.
@@ -186,7 +188,7 @@ const router = createBrowserRouter([
             // Módulo returnable-materials:
             {
                 path: "returnable-materials/:id",
-                element: <h1>Ver material devolutivo</h1>,
+                element: <ViewReturnableMaterialPage />,
             },
             {
                 path: "returnable-materials/:id/edit",

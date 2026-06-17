@@ -27,6 +27,7 @@ export function Dropdown({
             onOpenChange?.(value)
         }else{
             setUncontrolledOpen(value)
+            onOpenChange?.(value)
         }
     }
 
@@ -107,12 +108,14 @@ export function DropdownContent({ children, className = "" }) {
 export function DropdownItem({
     children,
     onClick,
+    keepOpen,
     className = ""
 }) {
     const { setOpen } = useContext(DropdownContext)
 
     const handleClick = (e) => {
         onClick?.(e)
+        if(keepOpen) return
         setOpen(false)
     }
 

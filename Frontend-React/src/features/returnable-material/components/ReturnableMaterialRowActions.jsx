@@ -17,6 +17,9 @@ export default function ReturnableMaterialRowActions({ returnableMaterial }) {
     // Hook que permite redirigir a otra ruta desde código
     const navigate = useNavigate();
 
+    const handleView = () => {
+        navigate(`/view/returnable-materials/${returnableMaterial.id}`)
+    };
 
     // Acción para editar el material consumible
     // Redirige a la página de edición usando el id del material consumible
@@ -46,7 +49,11 @@ export default function ReturnableMaterialRowActions({ returnableMaterial }) {
             </DropdownTrigger>
 
             <DropdownContent className="right-0">
-                <DropdownItem>Visualizar Material</DropdownItem>
+                <DropdownItem>
+                    <button onClick={handleView}>
+                        Visualizar Material
+                    </button>
+                </DropdownItem>
                 {/* <DropdownItem>Opción 2</DropdownItem>
                 <DropdownItem>Opción 3</DropdownItem> */}
             </DropdownContent>
