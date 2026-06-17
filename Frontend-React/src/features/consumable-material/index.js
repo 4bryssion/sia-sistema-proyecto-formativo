@@ -4,3 +4,6 @@ export { default as ListConsumableMaterialPage } from "./pages/ListConsumableMat
 
 export { default as ViewConsumableMaterialPage } from "./pages/ViewConsumableMaterialPage";
 
+export { default as EditConsumibleMaterialPage } from "./pages/EditConsumibleMaterialPage";
+
+
