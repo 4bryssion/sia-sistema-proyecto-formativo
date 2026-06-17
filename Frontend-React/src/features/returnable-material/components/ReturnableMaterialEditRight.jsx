@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Input, Button } from "@/shared";
-import { Pencil } from "lucide-react";
+import { Save } from "lucide-react";
 import logo from "@/assets/logos/logo-sena-negro.png";
 
 export default function ReturnableMaterialEditRight() {
@@ -141,7 +141,7 @@ export default function ReturnableMaterialEditRight() {
                     className="gap-2 lg:justify-self-end lg:mr-24"
                     onClick={handleSubmit}
                 >
-                    <Pencil size={16} />
+                    <Save size={16} />
                     Guardar
                 </Button>
             </div>
