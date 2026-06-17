@@ -101,7 +101,7 @@ export default function UserRegisterForm(){
 
 
     return(
-        <div className="flex justify-center" >
+        <div className="flex justify-center pt-6" >
         
 
             <form 
@@ -110,11 +110,11 @@ export default function UserRegisterForm(){
                 onSubmit={handleSubmit}
             >
                  <div
-                    className="flex flex-col gap-6 my-0 mx-auto"
+                    className="flex flex-col gap-6 my-0 w-[320px]"
                 >
                     <div className="flex flex-col">
                         <FileInput
-                            className="flex-1 1400:min-h-[330px] md:min-h-[330px]"
+                            className="flex-1 1400:min-h-82.5 md:min-h-82.5"
                             accept="image/*"
                             multiple={false}
                             value={formData.consumableImage}
@@ -164,12 +164,7 @@ export default function UserRegisterForm(){
 
                 {/* Columna izquierda */}
                 <div
-                    className="
-                        flex 
-                        flex-col
-                        gap-6
-                        my-0 mx-auto
-                    "
+                    className="flex flex-col gap-6 my-0 w-[320px]"
                 >
                     {/* Inputs */}
                     <Input 

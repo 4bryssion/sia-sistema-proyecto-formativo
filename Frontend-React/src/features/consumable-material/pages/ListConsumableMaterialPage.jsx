@@ -48,7 +48,7 @@ export default function ListConsumableMaterialPage() {
                 </Button>
 
 
-                <Link to="/consumable-materials/create">
+                <Link to="/dashboard/consumable-materials/create">
                     <Button
                         variant="primary"
                     >

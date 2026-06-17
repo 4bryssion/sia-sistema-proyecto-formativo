@@ -1,9 +1,13 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
+
 import { 
     Bell, 
-    Menu 
+    Menu,
+    Undo2 
 
 } from "lucide-react";
-import { Link } from "react-router-dom";
+
 import { 
     IconButton,
     Dropdown, 
@@ -16,6 +20,12 @@ import {
 import logo from "@/assets/logos/logo-sena-negro.png";
 
 export default function Navbar(){
+
+    const [view, setView] = useState("main");
+
+    const handleClick = (value) => { 
+        setView(value)
+    }
 
     return(
         <nav
@@ -36,7 +46,7 @@ export default function Navbar(){
                 >
                     {/* Logo de marca */}
                     <Link 
-                        to={"/"}
+                        to={"/dashboard"}
                         className={`
                             text-h1
                             font-heading
@@ -63,7 +73,7 @@ export default function Navbar(){
                         `}
                     >
                         {/* Icono de notificaciones de historial general */}
-                        <Link to="/alert-history">
+                        <Link to="/dashboard/alert-history">
                             <IconButton
                                 ariaLabel = "Notificaciones de historial general"
                             >
@@ -75,7 +85,13 @@ export default function Navbar(){
                         <div
                             className="z-10"
                         >
-                            <Dropdown>
+                            <Dropdown
+                                onOpenChange={(value) => {
+                                    if(!value) {
+                                        setView("main")
+                                    }
+                                }}
+                            >
                                 <DropdownTrigger>
                                     <IconButton
                                         ariaLabel = "Menu"
@@ -86,44 +102,83 @@ export default function Navbar(){
 
                                 <DropdownContent className="right-0 w-48">
 
-                                    <DropdownItem>
-                                        <Link to="/" className="block w-full">
-                                            Mi perfil
-                                        </Link>
-                                    </DropdownItem>
+                                    {view === "main" ? (
 
-                                    <DropdownItem>
-                                        <Link to="/users" className="block w-full">
-                                            Usuarios
-                                        </Link>
-                                    </DropdownItem>
+                                        <>
+                                            <DropdownItem>
+                                                <Link to="/dashboard" className="block w-full">
+                                                    Mi perfil
+                                                </Link>
+                                            </DropdownItem>
 
-                                    <DropdownItem>
-                                        <Link to="/consumable-materials" className="block w-full">
-                                            Materiales consumibles
-                                        </Link>
-                                    </DropdownItem>
+                                            <DropdownItem>
+                                                <Link to="/dashboard/users" className="block w-full">
+                                                    Usuarios
+                                                </Link>
+                                            </DropdownItem>
 
-                                    <DropdownItem>
-                                        <Link to="/returnable-materials" className="block w-full">
-                                            Materiales devolutivos
-                                        </Link>
-                                    </DropdownItem>
-                                    <DropdownItem>
-                                        <Link to="/loans" className="block w-full">
-                                            Prestamos
-                                        </Link>
-                                    </DropdownItem>
-                                    <DropdownItem>
-                                        <Link to="/" className="block w-full">
-                                            Configuración
-                                        </Link>
-                                    </DropdownItem>
-                                    <DropdownItem>
-                                        <Link to="/" className="block w-full">
-                                            Cerrar sesión
-                                        </Link>
-                                    </DropdownItem>
+                                            <DropdownItem>
+                                                <Link to="/dashboard/consumable-materials" className="block w-full">
+                                                    Materiales consumibles
+                                                </Link>
+                                            </DropdownItem>
+
+                                            <DropdownItem>
+                                                <Link to="/dashboard/returnable-materials" className="block w-full">
+                                                    Materiales devolutivos
+                                                </Link>
+                                            </DropdownItem>
+
+                                            <DropdownItem>
+                                                <Link to="/dashboard/loans" className="block w-full">
+                                                    Prestamos
+                                                </Link>
+                                            </DropdownItem>
+
+                                            <DropdownItem
+                                                className="block w-full"
+                                                keepOpen={true}
+                                                onClick={() => handleClick("configuration")}
+                                            >
+                                                Configuración                                  
+                                            </DropdownItem>
+
+                                            <DropdownItem>
+                                                <Link to="/dashboard" className="block w-full">
+                                                    Cerrar sesión
+                                                </Link>
+                                            </DropdownItem>
+                                        </>
+
+                                    ) : (
+
+                                        <>
+                                            <DropdownItem
+                                                keepOpen={true}
+                                            >
+                                                <IconButton
+                                                    className={"text-white hover:bg-neutral-400"}
+                                                    ariaLabel = "Regresar"
+                                                    onClick={() => handleClick("main")}
+                                                >
+                                                    <Undo2 strokeWidth={2.8} />
+                                                </IconButton>
+                                            </DropdownItem>
+
+                                            <DropdownItem>
+                                                <Link to="/dashboard/brands" className="block w-full">
+                                                    Marcas
+                                                </Link>
+                                            </DropdownItem>
+                                            
+                                            <DropdownItem>
+                                                <Link to="/dashboard/groups" className="block w-full">
+                                                    Grupos
+                                                </Link>
+                                            </DropdownItem>
+                                        </>
+
+                                    )}
                                     
                                 </DropdownContent>
                             </Dropdown>

@@ -3,14 +3,14 @@ import { returnableMaterialColumns } from "../table/returnableMaterialColumns"
 import { returnableMaterials } from "../data/returnableMaterial"
 import { Link, useNavigate } from "react-router-dom";
 import { Undo2 } from "lucide-react";
-// import { useState } from "react";
+import { useState } from "react";
 
-// import ReportConfigModal from "../reports/components/ReportConfigModal.jsx"
+import ReportConfigModal from "../reports/components/ReportConfigModal.jsx"
 
 export default function ListReturnableMaterialPage() {
 
     const navigate = useNavigate();
-    // const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   return (
     <div className="p-6">
@@ -40,15 +40,15 @@ export default function ListReturnableMaterialPage() {
 
             <div className="grid sm:flex gap-12 items-center">
                 
-                {/* <Button
+                <Button
                     variant="secondary" 
                     onClick={() => setIsReportModalOpen(true)}
                 >
                     Generar Reporte
-                </Button> */}
+                </Button>
 
 
-                <Link to="/returnable-materials/create">
+                <Link to="/dashboard/returnable-materials/create">
                     <Button
                         variant="primary"
                     >
@@ -66,10 +66,10 @@ export default function ListReturnableMaterialPage() {
         columns={returnableMaterialColumns}
       />
 
-      {/* <ReportConfigModal
+      <ReportConfigModal
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
-      /> */}
+      />
 
 
     </div>

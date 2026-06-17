@@ -48,7 +48,7 @@ export default function ListUserPage() {
                 </Button>
 
 
-                <Link to="/users/create">
+                <Link to="/dashboard/users/create">
                     <Button
                         variant="primary"
                     >
