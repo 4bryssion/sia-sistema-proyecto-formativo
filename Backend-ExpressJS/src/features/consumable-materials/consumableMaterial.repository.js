@@ -8,7 +8,7 @@ const includeRelations = {
 export const consumableMaterialRepository = {
   async findAll() {
     return prisma.consumableMaterial.findMany({
-      where: { returnable: null },
+      where: { returnable: null, isActive: true },
       include: includeRelations,
       orderBy: { materialName: 'asc' },
     });
@@ -36,7 +36,11 @@ export const consumableMaterialRepository = {
     });
   },
 
-  async delete(id) {
-    return prisma.consumableMaterial.delete({ where: { id } });
+  async toggle(id, isActive) {
+    return prisma.consumableMaterial.update({
+      where: { id },
+      data: { isActive },
+      include: includeRelations,
+    });
   },
 };

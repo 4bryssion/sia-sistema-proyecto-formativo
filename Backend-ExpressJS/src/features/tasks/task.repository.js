@@ -3,6 +3,7 @@ import prisma from '../../config/prisma.js';
 export const taskRepository = {
   async findAll() {
     return prisma.task.findMany({
+      where: { isActive: true },
       include: {
         user: { select: { id: true, userFirstName: true, userLastName: true } },
       },
@@ -12,7 +13,7 @@ export const taskRepository = {
 
   async findByUser(userId) {
     return prisma.task.findMany({
-      where: { userId },
+      where: { userId, isActive: true },
       orderBy: { created_at: 'desc' },
     });
   },
@@ -45,7 +46,13 @@ export const taskRepository = {
     });
   },
 
-  async delete(id) {
-    return prisma.task.delete({ where: { id } });
+  async toggle(id, isActive) {
+    return prisma.task.update({
+      where: { id },
+      data: { isActive },
+      include: {
+        user: { select: { id: true, userFirstName: true, userLastName: true } },
+      },
+    });
   },
 };

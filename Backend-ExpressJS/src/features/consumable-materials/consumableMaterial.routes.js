@@ -9,8 +9,8 @@ const router = Router();
 router.get('/',       consumableMaterialController.getAll);
 router.get('/:id',    consumableMaterialController.getById);
 router.post('/',      uploadImage.single('image'), validate(createConsumableMaterialSchema), consumableMaterialController.create);
-router.put('/:id',    uploadImage.single('image'), validate(updateConsumableMaterialSchema),  consumableMaterialController.update);
-router.delete('/:id', consumableMaterialController.delete);
+router.put('/:id',          uploadImage.single('image'), validate(updateConsumableMaterialSchema),  consumableMaterialController.update);
+router.patch('/:id/toggle', consumableMaterialController.toggle);
 
 router.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {

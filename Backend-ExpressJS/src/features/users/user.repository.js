@@ -1,26 +1,28 @@
 import prisma from '../../config/prisma.js';
 
 const selectPublic = {
-  id: true,
-  userFirstName: true,
-  userLastName: true,
+  id:                true,
+  userFirstName:     true,
+  userLastName:      true,
   userDocumentNumber: true,
-  userEndDate: true,
-  userEmail: true,
-  userPhone: true,
-  userSecondPhone: true,
-  userAddress: true,
-  userIsActive: true,
-  userPhoto: true,
-  userAccountType: true,
-  createdAt: true,
-  updatedAt: true,
+  userEndDate:       true,
+  userEmail:         true,
+  userPhone:         true,
+  userSecondPhone:   true,
+  userAddress:       true,
+  userStatus:        true, // cuenta habilitada (antes userIsActive)
+  userIsActive:      true, // soft-delete (nuevo)
+  userPhoto:         true,
+  userAccountType:   true,
+  createdAt:         true,
+  updatedAt:         true,
   documentType: { select: { id: true, documentName: true } },
 };
 
 export const userRepository = {
   async findAll() {
     return prisma.user.findMany({
+      where: { userIsActive: true },
       select: selectPublic,
       orderBy: { userFirstName: 'asc' },
     });
@@ -52,7 +54,11 @@ export const userRepository = {
     });
   },
 
-  async delete(id) {
-    return prisma.user.delete({ where: { id } });
+  async toggle(id, isActive) {
+    return prisma.user.update({
+      where: { id },
+      data: { userIsActive: isActive },
+      select: selectPublic,
+    });
   },
 };

@@ -27,10 +27,11 @@ export const userController = {
     } catch (err) { next(err); }
   },
 
-  async delete(req, res, next) {
+  async toggle(req, res, next) {
     try {
-      await userService.delete(Number(req.params.id));
-      res.json({ mensaje: 'Usuario eliminado.' });
+      const data = await userService.toggle(Number(req.params.id));
+      const mensaje = data.userIsActive ? 'Usuario activado.' : 'Usuario desactivado.';
+      res.json({ mensaje, data });
     } catch (err) { next(err); }
   },
 };

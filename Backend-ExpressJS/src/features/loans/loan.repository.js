@@ -1,13 +1,14 @@
 import prisma from '../../config/prisma.js';
 
 const includeRelations = {
-  user: { select: { id: true, userFirstName: true, userLastName: true, userPhone: true, userEmail: true, userAddress: true } },
+  user:              { select: { id: true, userFirstName: true, userLastName: true, userPhone: true, userEmail: true, userAddress: true } },
   consumableMaterial: { select: { id: true, materialName: true, status: true } },
 };
 
 export const loanRepository = {
   async findAll() {
     return prisma.loan.findMany({
+      where: { isActive: true },
       include: includeRelations,
       orderBy: { loanDate: 'desc' },
     });
@@ -38,13 +39,15 @@ export const loanRepository = {
     });
   },
 
-  async deleteWithStatusRestore(id, materialId) {
-    return prisma.$transaction([
-      prisma.loan.delete({ where: { id } }),
+  async toggleWithMaterialStatus(id, isActive, materialId) {
+    const materialStatus = isActive ? 'En_prestamo' : 'Disponible';
+    const [loan] = await prisma.$transaction([
+      prisma.loan.update({ where: { id }, data: { isActive }, include: includeRelations }),
       prisma.consumableMaterial.update({
         where: { id: materialId },
-        data: { status: 'Disponible' },
+        data: { status: materialStatus },
       }),
     ]);
+    return loan;
   },
 };

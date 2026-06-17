@@ -63,8 +63,8 @@ export const consumableMaterialService = {
     }
   },
 
-  async delete(id) {
-    await consumableMaterialService.getById(id);
-    return consumableMaterialRepository.delete(id);
+  async toggle(id) {
+    const record = await consumableMaterialService.getById(id);
+    return consumableMaterialRepository.toggle(id, !record.isActive);
   },
 };

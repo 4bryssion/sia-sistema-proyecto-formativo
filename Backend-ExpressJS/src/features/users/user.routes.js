@@ -6,11 +6,11 @@ import { uploadImage } from '../../middleware/multerConfig.js';
 
 const router = Router();
 
-router.get('/',       userController.getAll);
-router.get('/:id',    userController.getById);
-router.post('/',      uploadImage.single('image'), validate(createUserSchema), userController.create);
-router.put('/:id',    uploadImage.single('image'), validateUpdate(updateUserSchema), userController.update);
-router.delete('/:id', userController.delete);
+router.get('/',             userController.getAll);
+router.get('/:id',          userController.getById);
+router.post('/',            uploadImage.single('image'), validate(createUserSchema), userController.create);
+router.put('/:id',          uploadImage.single('image'), validateUpdate(updateUserSchema), userController.update);
+router.patch('/:id/toggle', userController.toggle);
 
 router.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {

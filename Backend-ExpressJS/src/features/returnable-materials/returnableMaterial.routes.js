@@ -14,8 +14,8 @@ const uploadFields = uploadFiles.fields([
 router.get('/',       returnableMaterialController.getAll);
 router.get('/:id',    returnableMaterialController.getById);
 router.post('/',      uploadFields, validate(createReturnableMaterialSchema), returnableMaterialController.create);
-router.put('/:id',    uploadFields, validate(updateReturnableMaterialSchema),  returnableMaterialController.update);
-router.delete('/:id', returnableMaterialController.delete);
+router.put('/:id',          uploadFields, validate(updateReturnableMaterialSchema),  returnableMaterialController.update);
+router.patch('/:id/toggle', returnableMaterialController.toggle);
 
 router.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {

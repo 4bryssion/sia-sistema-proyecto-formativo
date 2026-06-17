@@ -30,10 +30,11 @@ export const taskController = {
     } catch (err) { next(err); }
   },
 
-  async delete(req, res, next) {
+  async toggle(req, res, next) {
     try {
-      await taskService.delete(Number(req.params.id));
-      res.json({ mensaje: 'Tarea eliminada.' });
+      const data = await taskService.toggle(Number(req.params.id));
+      const mensaje = data.isActive ? 'Tarea activada.' : 'Tarea desactivada.';
+      res.json({ mensaje, data });
     } catch (err) { next(err); }
   },
 };

@@ -8,7 +8,7 @@ export const loanReturnService = {
 
   async getById(id) {
     const loanReturn = await loanReturnRepository.findById(id);
-    if (!loanReturn) throw new Error('Retorno de préstamo no encontrado.');
+    if (!loanReturn) throw new Error('Retorno no encontrado.');
     return loanReturn;
   },
 
@@ -40,8 +40,8 @@ export const loanReturnService = {
     return loanReturn;
   },
 
-  async delete(id) {
-    await loanReturnService.getById(id);
-    return loanReturnRepository.delete(id);
+  async toggle(id) {
+    const record = await loanReturnService.getById(id);
+    return loanReturnRepository.toggle(id, !record.isActive);
   },
 };
