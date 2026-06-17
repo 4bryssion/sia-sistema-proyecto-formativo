@@ -55,7 +55,7 @@ import {
 import { 
    
     CreateBrandPage,
-    ViewBrandPage,
+    
     ListBrandPage
      
 
@@ -156,7 +156,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "brands/create",
-                element: <CreateBrandPage />,
+                element: <h1>Crear marcas</h1>,
             },
             {
                 path: "brands/view",
@@ -230,7 +230,7 @@ const router = createBrowserRouter([
             // Módulo brands:
             {
                 path: "brands/:id",
-                element: <ViewBrandPage />,
+                element: <h1>Visualizar marca</h1>,
             },
             {
                 path: "brands/:id/edit",
