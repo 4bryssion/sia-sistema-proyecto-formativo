@@ -21,10 +21,11 @@ export const returnableMaterialController = {
       res.json({ mensaje: 'Material devolutivo actualizado.', data });
     } catch (err) { next(err); }
   },
-  async delete(req, res, next) {
+  async toggle(req, res, next) {
     try {
-      await returnableMaterialService.delete(Number(req.params.id));
-      res.json({ mensaje: 'Material devolutivo eliminado.' });
+      const data = await returnableMaterialService.toggle(Number(req.params.id));
+      const mensaje = data.consumableMaterial.isActive ? 'Material activado.' : 'Material desactivado.';
+      res.json({ mensaje, data });
     } catch (err) { next(err); }
   },
 };

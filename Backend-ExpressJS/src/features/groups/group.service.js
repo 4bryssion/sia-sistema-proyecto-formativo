@@ -21,9 +21,9 @@ export const groupService = {
     return groupRepository.update(id, data);
   },
 
-  async delete(id) {
-    await groupService.getById(id);
-    return groupRepository.delete(id);
+  async toggle(id) {
+    const record = await groupService.getById(id);
+    return groupRepository.toggle(id, !record.isActive);
   },
 
   async assignPermission(groupId, permissionId) {

@@ -20,8 +20,8 @@ export const permissionService = {
     return permissionRepository.update(id, data);
   },
 
-  async delete(id) {
-    await permissionService.getById(id);
-    return permissionRepository.delete(id);
+  async toggle(id) {
+    const record = await permissionService.getById(id);
+    return permissionRepository.toggle(id, !record.isActive);
   },
 };

@@ -26,9 +26,10 @@ enum MaterialStatus {
 // --- Models ---
 
 model DocumentType {
-  id           Int    @id @default(autoincrement())
-  documentName String @unique @db.VarChar(50)  @map("document_name")
+  id           Int     @id @default(autoincrement())
+  documentName String  @unique @db.VarChar(50) @map("document_name")
   description  String? @db.VarChar(150)
+  isActive     Boolean @default(true) @map("is_active")
   users        User[]
 
   @@map("document_types")
@@ -37,6 +38,7 @@ model DocumentType {
 model Group {
   id          Int               @id @default(autoincrement())
   groupName   String            @unique @db.VarChar(100) @map("group_name")
+  isActive    Boolean           @default(true) @map("is_active")
   created_at  DateTime          @default(now())
   updated_at  DateTime          @updatedAt
   permissions GroupPermission[]
@@ -49,6 +51,7 @@ model Permission {
   id             Int               @id @default(autoincrement())
   permissionName String            @unique @db.VarChar(100) @map("permission_name")
   description    String?           @db.VarChar(255)
+  isActive       Boolean           @default(true) @map("is_active")
   created_at     DateTime          @default(now())
   updated_at     DateTime          @updatedAt
   groups         GroupPermission[]
@@ -68,28 +71,29 @@ model GroupPermission {
 }
 
 model User {
-  id                 Int              @id @default(autoincrement())
-  documentTypeId     Int              @map("document_type_id")
-  documentType       DocumentType     @relation(fields: [documentTypeId], references: [id])
-  userFirstName      String           @db.VarChar(100) @map("user_first_name")
-  userLastName       String           @db.VarChar(100) @map("user_last_name")
-  userDocumentNumber String           @unique @db.VarChar(20) @map("user_document_number")
-  userEndDate        DateTime         @db.Date @map("user_end_date")
-  userEmail          String           @unique @db.VarChar(150) @map("user_email")
-  userPhone          String           @db.VarChar(15) @map("user_phone")
-  userSecondPhone    String?          @db.VarChar(15) @map("user_second_phone")
-  userAddress        String           @db.VarChar(150) @map("user_address")
-  userIsActive       Boolean          @default(true) @map("user_is_active")
-  userPhoto          String           @unique @map("user_photo")
-  userPassword       String           @db.VarChar(255) @map("user_password")
-  userAccountType    AccountType      @default(Solidario) @map("user_account_type")
-  createdAt          DateTime         @default(now()) @map("created_at")
-  updatedAt          DateTime         @updatedAt @map("updated_at")
-  groups             UserGroup[]
-  directPermissions  UserPermission[]
+  id                  Int              @id @default(autoincrement())
+  documentTypeId      Int              @map("document_type_id")
+  documentType        DocumentType     @relation(fields: [documentTypeId], references: [id])
+  userFirstName       String           @db.VarChar(100) @map("user_first_name")
+  userLastName        String           @db.VarChar(100) @map("user_last_name")
+  userDocumentNumber  String           @unique @db.VarChar(20) @map("user_document_number")
+  userEndDate         DateTime         @db.Date @map("user_end_date")
+  userEmail           String           @unique @db.VarChar(150) @map("user_email")
+  userPhone           String           @db.VarChar(15) @map("user_phone")
+  userSecondPhone     String?          @db.VarChar(15) @map("user_second_phone")
+  userAddress         String           @db.VarChar(150) @map("user_address")
+  userStatus          Boolean          @default(true) @map("user_status")    // Cuenta habilitada para auth
+  userIsActive        Boolean          @default(true) @map("user_is_active") // Soft delete
+  userPhoto           String           @unique @map("user_photo")
+  userPassword        String           @db.VarChar(255) @map("user_password")
+  userAccountType     AccountType      @default(Solidario) @map("user_account_type")
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+  groups              UserGroup[]
+  directPermissions   UserPermission[]
   consumableMaterials ConsumableMaterial[]
-  loans              Loan[]
-  tasks              Task[]
+  loans               Loan[]
+  tasks               Task[]
 
   @@map("users")
 }
@@ -119,6 +123,7 @@ model UserPermission {
 model Brand {
   id                  Int                  @id @default(autoincrement())
   brandName           String               @unique @db.VarChar(100) @map("brand_name")
+  isActive            Boolean              @default(true) @map("is_active")
   consumableMaterials ConsumableMaterial[]
 
   @@map("brands")
@@ -127,6 +132,7 @@ model Brand {
 model Category {
   id                  Int                  @id @default(autoincrement())
   categoryName        String               @unique @db.VarChar(100) @map("category_name")
+  isActive            Boolean              @default(true) @map("is_active")
   returnableMaterials ReturnableMaterial[]
 
   @@map("categories")
@@ -145,6 +151,7 @@ model ConsumableMaterial {
   unitPrice     Decimal             @db.Decimal(15, 2) @map("unit_price")
   totalPrice    Decimal             @db.Decimal(15, 2) @map("total_price")
   status        MaterialStatus
+  isActive      Boolean             @default(true) @map("is_active")
   description   String              @db.VarChar(255)
   purchaseDate  DateTime            @db.Date @map("purchase_date")
   location      String              @db.VarChar(100)
@@ -171,17 +178,18 @@ model ReturnableMaterial {
 }
 
 model Loan {
-  id                Int                @id @default(autoincrement())
-  userId            Int                @map("user_id")
-  materialId        Int                @map("material_id")
-  user              User               @relation(fields: [userId], references: [id])
+  id                 Int                @id @default(autoincrement())
+  userId             Int                @map("user_id")
+  materialId         Int                @map("material_id")
+  user               User               @relation(fields: [userId], references: [id])
   consumableMaterial ConsumableMaterial @relation(fields: [materialId], references: [id])
-  borrowedQuantity  Int                @map("borrowed_quantity")
-  apprenticeGroup   Int                @map("apprentice_group")
-  useJustification  String             @db.VarChar(255) @map("use_justification")
-  returnDate        DateTime           @db.Date @map("return_date")
-  loanDate          DateTime           @default(now()) @map("loan_date")
-  loanReturns       LoanReturn[]
+  borrowedQuantity   Int                @map("borrowed_quantity")
+  apprenticeGroup    Int                @map("apprentice_group")
+  useJustification   String             @db.VarChar(255) @map("use_justification")
+  returnDate         DateTime           @db.Date @map("return_date")
+  loanDate           DateTime           @default(now()) @map("loan_date")
+  isActive           Boolean            @default(true) @map("is_active")
+  loanReturns        LoanReturn[]
 
   @@map("loans")
 }
@@ -195,6 +203,7 @@ model LoanReturn {
   remainingQuantity  Int?               @map("remaining_quantity")
   observations       String             @db.VarChar(255)
   returnDate         DateTime           @default(now()) @map("return_date")
+  isActive           Boolean            @default(true) @map("is_active")
 
   @@map("loan_returns")
 }
@@ -205,7 +214,8 @@ model Task {
   user        User     @relation(fields: [userId], references: [id])
   taskName    String   @db.VarChar(100) @map("task_name")
   description String   @db.VarChar(255)
-  isActive    Boolean  @default(true) @map("is_active")
+  status      Boolean  @default(true) @map("task_status") // Estado interno de la tarea (antes isActive)
+  isActive    Boolean  @default(true) @map("is_active")   // Soft delete
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 

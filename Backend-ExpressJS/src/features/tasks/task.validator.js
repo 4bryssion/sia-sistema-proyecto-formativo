@@ -4,14 +4,14 @@ export const createTaskSchema = Joi.object({
   userId: Joi.number().integer().positive().required(),
   taskName: Joi.string().max(100).required(),
   description: Joi.string().max(255).required(),
-  isActive: Joi.boolean().default(true),
+  status: Joi.boolean().default(true),
 });
 
 export const updateTaskSchema = Joi.object({
   userId: Joi.number().integer().positive(),
   taskName: Joi.string().max(100),
   description: Joi.string().max(255),
-  isActive: Joi.boolean(),
+  status: Joi.boolean(),
 }).min(1);
 
 export const validate = (schema) => (req, res, next) => {

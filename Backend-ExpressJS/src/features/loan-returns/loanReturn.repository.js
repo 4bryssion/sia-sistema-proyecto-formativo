@@ -18,6 +18,7 @@ const includeRelations = {
 export const loanReturnRepository = {
   async findAll() {
     return prisma.loanReturn.findMany({
+      where: { isActive: true },
       include: includeRelations,
       orderBy: { returnDate: 'desc' },
     });
@@ -40,7 +41,11 @@ export const loanReturnRepository = {
     ]);
   },
 
-  async delete(id) {
-    return prisma.loanReturn.delete({ where: { id } });
+  async toggle(id, isActive) {
+    return prisma.loanReturn.update({
+      where: { id },
+      data: { isActive },
+      include: includeRelations,
+    });
   },
 };

@@ -4,11 +4,11 @@ import { validate, createDocumentTypeSchema, updateDocumentTypeSchema } from './
 
 const router = Router();
 
-router.get('/',       documentTypeController.getAll);
-router.get('/:id',    documentTypeController.getById);
-router.post('/',      validate(createDocumentTypeSchema), documentTypeController.create);
-router.put('/:id',    validate(updateDocumentTypeSchema), documentTypeController.update);
-router.delete('/:id', documentTypeController.delete);
+router.get('/',             documentTypeController.getAll);
+router.get('/:id',          documentTypeController.getById);
+router.post('/',            validate(createDocumentTypeSchema), documentTypeController.create);
+router.put('/:id',          validate(updateDocumentTypeSchema), documentTypeController.update);
+router.patch('/:id/toggle', documentTypeController.toggle);
 
 router.use((err, req, res, next) => {
   if (err.message && !err.code) {

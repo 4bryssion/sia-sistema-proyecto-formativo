@@ -15,10 +15,10 @@ export const loanService = {
   async create(bodyData) {
     const data = {
       ...bodyData,
-      userId: Number(bodyData.userId),
-      materialId: Number(bodyData.materialId),
+      userId:           Number(bodyData.userId),
+      materialId:       Number(bodyData.materialId),
       borrowedQuantity: Number(bodyData.borrowedQuantity),
-      apprenticeGroup: Number(bodyData.apprenticeGroup),
+      apprenticeGroup:  Number(bodyData.apprenticeGroup),
       returnDate: bodyData.returnDate
         ? new Date(bodyData.returnDate).toISOString()
         : undefined,
@@ -41,17 +41,18 @@ export const loanService = {
     await loanService.getById(id);
 
     const data = { ...bodyData };
-    if (data.userId) data.userId = Number(data.userId);
-    if (data.materialId) data.materialId = Number(data.materialId);
+    if (data.userId)           data.userId           = Number(data.userId);
+    if (data.materialId)       data.materialId       = Number(data.materialId);
     if (data.borrowedQuantity) data.borrowedQuantity = Number(data.borrowedQuantity);
-    if (data.apprenticeGroup) data.apprenticeGroup = Number(data.apprenticeGroup);
-    if (data.returnDate) data.returnDate = new Date(data.returnDate).toISOString();
+    if (data.apprenticeGroup)  data.apprenticeGroup  = Number(data.apprenticeGroup);
+    if (data.returnDate)       data.returnDate       = new Date(data.returnDate).toISOString();
 
     return loanRepository.update(id, data);
   },
 
-  async delete(id) {
+  async toggle(id) {
     const loan = await loanService.getById(id);
-    return loanRepository.deleteWithStatusRestore(id, loan.materialId);
+    const newIsActive = !loan.isActive;
+    return loanRepository.toggleWithMaterialStatus(id, newIsActive, loan.materialId);
   },
 };
