@@ -59,13 +59,22 @@ import {
    
     CreateBrandPage,
     
-    ListBrandPage
+    ListBrandPage,
+    EditBrandPage
      
 
 } from "@/features/brands";
 
 
 // Módulo groups:
+
+//Módulo permissions:
+import { 
+   
+    ViewPermissionPage
+     
+
+} from "@/features/permissions";
 
 
 const router = createBrowserRouter([
@@ -175,6 +184,13 @@ const router = createBrowserRouter([
                 path: "groups/create",
                 element: <h1>Crear Grupos</h1>,
             },
+
+         // Módulo permissions:
+            {
+                path: "permissions",
+                element: < ViewPermissionPage/>,
+            },
+            
         ],
     },
 
@@ -237,7 +253,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "brands/:id/edit",
-                element: <h1>Editar Marcas</h1>,
+                element: <EditBrandPage/>,
             },
 
             // Módulo groups:
@@ -249,6 +265,12 @@ const router = createBrowserRouter([
                 path: "groups/:id/edit",
                 element: <h1>Editar Grupos</h1>,
             },
+
+            // Módulo permissions:
+            {
+                path: "permissions/:id",
+                element:< ViewPermissionPage/>,
+            }
         ],
     },    
 ]);
