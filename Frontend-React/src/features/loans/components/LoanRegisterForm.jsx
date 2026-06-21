@@ -7,13 +7,15 @@ import {
     Select,
 } from "@/shared";
 
-import { getDocumentTypes } from "@/features/users/services/selectService.js";
+import { getMaterials, getUsers, createLoan } from "../services/selectService.js";
 
 export default function LoanRegisterForm() {
 
     // Estados:
-
-    const [documentTypes, setDocumentTypes] = useState([]);
+    const [materials, setMaterials] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [serverError, setServerError] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState({
         loanMaterial: "",
@@ -27,50 +29,63 @@ export default function LoanRegisterForm() {
 
     const [errors, setErrors] = useState({});
 
-    // Efectos:
+    // // Carga materiales y usuarios del backend al montar el componente
+    // //estos mensajes luego seran modificados o eliminados ya que aparecen de una forma que rompe el diseño 
+    // useEffect(() => {
+    //     getMaterials().then(setMaterials).catch(() => setServerError("Error al cargar materiales"));
+    //     getUsers().then(setUsers).catch(() => setServerError("Error al cargar usuarios"));
+    // }, []);
 
-    useEffect(() => {
-        getDocumentTypes().then(setDocumentTypes);
-    }, []);
 
     // ===========================================
     //                 Handles
     // ===========================================
 
     const handleChange = (e) => {
-
         const { name, value } = e.target;
-
         setFormData((prev) => ({
             ...prev,
             [name]: value
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         const result = loanSchema.safeParse(formData);
 
         if (!result.success) {
-
             const fieldErrors = {};
-
             result.error.issues.forEach((issue) => {
-
                 const field = issue.path[0];
-
                 fieldErrors[field] = issue.message;
             });
-
             setErrors(fieldErrors);
-
             return;
         }
 
         setErrors({});
+        setServerError(null);
+        setLoading(true);
 
-        console.log("Préstamo válido:", result.data);
+        try {
+            // Envía los datos al backend con los nombres que espera el backend
+            await createLoan({
+                userId:           Number(formData.loanRequestingUser),
+                materialId:       Number(formData.loanMaterial),
+                borrowedQuantity: Number(formData.loanQuantity),
+                apprenticeGroup:  Number(formData.loanGroup),
+                useJustification: formData.loanJustification,
+                returnDate:       formData.loanReturnDate,
+            });
+
+            alert("Préstamo creado exitosamente.");
+
+        } catch (error) {
+            setServerError(error.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -80,35 +95,33 @@ export default function LoanRegisterForm() {
                 className="
                     grid
                     gap-6
-
                     mx-6
                     md:mx-12
-
                     md:grid-cols-2
                     1400:grid-cols-2
                     justify-items-center
-
                 "
                 onSubmit={handleSubmit}
             >
 
                 {/* Columna 1 - Material y usuario */}
-                <div
-                    className="flex flex-col gap-6 my-0 w-[320px]"
-                >
+                <div className="flex flex-col gap-6 my-0 w-[320px]">
+
+                    {/* Select de materiales traídos del backend */}
                     <Select
                         label="Material"
                         name="loanMaterial"
-                        options={documentTypes}
+                        options={materials}
                         value={formData.loanMaterial}
                         onChange={handleChange}
                         error={errors.loanMaterial}
                     />
 
+                    {/* Select de usuarios traídos del backend */}
                     <Select
                         label="Usuario solicitante"
                         name="loanRequestingUser"
-                        options={documentTypes}
+                        options={users}
                         value={formData.loanRequestingUser}
                         onChange={handleChange}
                         error={errors.loanRequestingUser}
@@ -116,9 +129,7 @@ export default function LoanRegisterForm() {
                 </div>
 
                 {/* Columna 2 - Cantidad y grupo */}
-                <div
-                    className="flex flex-col gap-6 my-0 w-[320px]"
-                >
+                <div className="flex flex-col gap-6 my-0 w-[320px]">
                     <Input
                         label="Cantidad"
                         name="loanQuantity"
@@ -141,9 +152,7 @@ export default function LoanRegisterForm() {
                 </div>
 
                 {/* Columna 3 - Fechas */}
-                <div
-                    className="flex flex-col gap-6 w-[320px]"
-                >
+                <div className="flex flex-col gap-6 w-[320px]">
                     <Input
                         label="Fecha de salida"
                         name="loanDepartureDate"
@@ -164,9 +173,7 @@ export default function LoanRegisterForm() {
                 </div>
 
                 {/* Columna 4 - Justificación y acción */}
-                <div
-                    className="flex flex-col gap-6 my-0 w-[320px]"
-                >
+                <div className="flex flex-col gap-6 my-0 w-[320px]">
                     <Input
                         label="Justificación de uso"
                         name="loanJustification"
@@ -176,20 +183,19 @@ export default function LoanRegisterForm() {
                         error={errors.loanJustification}
                     />
 
-                    {/* Actions */}
-                    <div
-                        className="
-                            flex
-                            items-center
-                            justify-center
-                            gap-6
-                        "
-                    >
+                    {/* Mensaje de error del servidor */}
+                    {serverError && (
+                        <p className="text-red-500 text-sm">{serverError}</p>
+                    )}
+
+                    {/* Botón crear préstamo */}
+                    <div className="flex items-center justify-center gap-6">
                         <Button
                             variant="primary"
                             size="sm"
+                            disabled={loading}
                         >
-                            Crear Préstamo
+                            {loading ? "Creando..." : "Crear Préstamo"}
                         </Button>
                     </div>
 

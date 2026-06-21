@@ -1,1 +1,1 @@
-export { default as CreateGroupPage } from "./pages/CreateGroupPage";
+export { default as ListGroupPage } from "./pages/ListGroupPage";

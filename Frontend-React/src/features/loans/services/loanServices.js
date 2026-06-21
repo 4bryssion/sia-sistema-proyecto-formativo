@@ -1,7 +1,7 @@
 // URL base del endpoint de usuarios en el backend
 // En desarrollo apunta al servidor Express local
 // En producción debería provenir de variables de entorno
-const API_URL = "http://localhost:4000/api/users";
+const API_URL = "http://localhost:5000/api/users";
 
 
 // Función para crear un usuario en el backend

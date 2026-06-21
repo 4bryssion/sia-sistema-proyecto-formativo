@@ -52,6 +52,11 @@ import {
     EditLoanPage,
 
 } from "@/features/loans";
+//Modulo loan-returns:
+import { 
+    CreateLoanReturnPage
+
+} from "@/features/loan-returns";
 
 
 // Módulo brands:
@@ -66,6 +71,10 @@ import {
 
 
 // Módulo groups:
+import{
+    ListGroupPage,
+
+} from "@/features/groups";
 
 
 const router = createBrowserRouter([
@@ -169,7 +178,7 @@ const router = createBrowserRouter([
             // Módulo groups:
             {
                 path: "groups",
-                element: <h1>Grupos</h1>
+                element: <ListGroupPage />
             },
             {
                 path: "groups/create",
@@ -228,6 +237,11 @@ const router = createBrowserRouter([
             {
                 path: "loans/:id/edit",
                 element: <EditLoanPage/>,
+            },
+            // Módulo loan-returns:
+{
+                path: "loans/:id/return",
+                element: <CreateLoanReturnPage />,
             },
 
             // Módulo brands:
