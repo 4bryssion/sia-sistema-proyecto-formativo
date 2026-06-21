@@ -18,17 +18,3 @@ export async function getUsers() {
     // Transforma los datos al formato que espera el Select
     return data.map((u) => ({ value: u.id, label: `${u.userFirstName} ${u.userLastName}` }));
 }
-//en loann service =============================00
-// Crea un nuevo préstamo en el backend
-export async function createLoan(loanData) {
-    const response = await fetch(`${API_URL}/loans`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(loanData),
-    });
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Error al crear préstamo");
-    }
-    return response.json();
-}

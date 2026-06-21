@@ -1,4 +1,4 @@
-import { Pencil, EllipsisVertical, Undo2 } from "lucide-react";
+import { Pencil, EllipsisVertical, Undo2, ArrowLeft, ArrowLeftRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -42,7 +42,7 @@ export default function LoanRowActions({ loan }) {
                 onClick={handleReturn}
                 className="p-1 rounded hover:bg-gray-900"
             >
-                <Undo2 size={16} />
+                < ArrowLeftRight  size={16} />
             </button>
 
             {/* Botón opciones */}
