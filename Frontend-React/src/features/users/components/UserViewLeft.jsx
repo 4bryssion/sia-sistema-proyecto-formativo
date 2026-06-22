@@ -1,3 +1,7 @@
+import {  Button } from "@/shared";
+import { Link } from "react-router-dom";
+
+
 export default function UserViewLeft(){
 
     return(
@@ -61,6 +65,12 @@ export default function UserViewLeft(){
 
                 <p>(DD/MM/AAAA)</p>
             </div>
+            
+                <Link to="/dashboard/tasks/create">
+                    <Button variant="primary" className=" lg:justify-self-center">
+                        Asignar Tarea
+                    </Button>
+                </Link>
         </div>
     );
 }

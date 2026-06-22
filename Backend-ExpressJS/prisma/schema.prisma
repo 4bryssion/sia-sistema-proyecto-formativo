@@ -7,7 +7,192 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- Enums ---
+model DocumentType {
+  id           Int     @id(map: "tipos_documento_pkey") @default(autoincrement())
+  documentName String  @unique @map("document_name") @db.VarChar(50)
+  description  String? @db.VarChar(150)
+  users        User[]
+
+  @@map("document_types")
+}
+
+model Group {
+  id          Int               @id(map: "grupos_pkey") @default(autoincrement())
+  groupName   String            @unique @map("group_name") @db.VarChar(100)
+  created_at  DateTime          @default(now())
+  updated_at  DateTime          @updatedAt
+  permissions GroupPermission[]
+  users       UserGroup[]
+
+  @@map("groups")
+}
+
+model Permission {
+  id             Int               @id(map: "permisos_pkey") @default(autoincrement())
+  permissionName String            @unique @map("permission_name") @db.VarChar(100)
+  description    String?           @db.VarChar(255)
+  created_at     DateTime          @default(now())
+  updated_at     DateTime          @updatedAt
+  groups         GroupPermission[]
+  users          UserPermission[]
+
+  @@map("permissions")
+}
+
+model GroupPermission {
+  groupId      Int        @map("group_id")
+  permissionId Int        @map("permission_id")
+  group        Group      @relation(fields: [groupId], references: [id], onDelete: Cascade, map: "grupo_permisos_grupo_id_fkey")
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade, map: "grupo_permisos_permiso_id_fkey")
+
+  @@id([groupId, permissionId], map: "grupo_permisos_pkey")
+  @@map("group_permissions")
+}
+
+model User {
+  id                  Int                  @id(map: "usuarios_pkey") @default(autoincrement())
+  documentTypeId      Int                  @map("document_type_id")
+  userFirstName       String               @map("user_first_name") @db.VarChar(100)
+  userLastName        String               @map("user_last_name") @db.VarChar(100)
+  userDocumentNumber  String               @unique @map("user_document_number") @db.VarChar(20)
+  userEndDate         DateTime             @map("user_end_date") @db.Date
+  userEmail           String               @unique @map("user_email") @db.VarChar(150)
+  userPhone           String               @map("user_phone") @db.VarChar(15)
+  userSecondPhone     String?              @map("user_second_phone") @db.VarChar(15)
+  userAddress         String               @map("user_address") @db.VarChar(150)
+  userIsActive        Boolean              @default(true) @map("user_is_active")
+  userPhoto           String               @unique @map("user_photo")
+  userPassword        String               @map("user_password") @db.VarChar(255)
+  userAccountType     AccountType          @default(Solidario) @map("user_account_type")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  consumableMaterials ConsumableMaterial[]
+  loans               Loan[]
+  tasks               Task[]
+  groups              UserGroup[]
+  directPermissions   UserPermission[]
+  documentType        DocumentType         @relation(fields: [documentTypeId], references: [id], map: "usuarios_id_tipo_documento_fkey")
+
+  @@map("users")
+}
+
+model UserGroup {
+  userId     Int      @map("user_id")
+  groupId    Int      @map("group_id")
+  created_at DateTime @default(now())
+  group      Group    @relation(fields: [groupId], references: [id], onDelete: Cascade, map: "usuario_grupos_grupo_id_fkey")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "usuario_grupos_usuario_id_fkey")
+
+  @@id([userId, groupId], map: "usuario_grupos_pkey")
+  @@map("user_groups")
+}
+
+model UserPermission {
+  userId       Int        @map("user_id")
+  permissionId Int        @map("permission_id")
+  created_at   DateTime   @default(now())
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade, map: "usuario_permisos_permiso_id_fkey")
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade, map: "usuario_permisos_usuario_id_fkey")
+
+  @@id([userId, permissionId], map: "usuario_permisos_pkey")
+  @@map("user_permissions")
+}
+
+model Brand {
+  id                  Int                  @id(map: "marcas_pkey") @default(autoincrement())
+  brandName           String               @unique @map("brand_name") @db.VarChar(100)
+  consumableMaterials ConsumableMaterial[]
+
+  @@map("brands")
+}
+
+model Category {
+  id                  Int                  @id(map: "categorias_pkey") @default(autoincrement())
+  categoryName        String               @unique @map("category_name") @db.VarChar(100)
+  returnableMaterials ReturnableMaterial[]
+
+  @@map("categories")
+}
+
+model ConsumableMaterial {
+  id           Int                 @id(map: "materiales_consumo_pkey") @default(autoincrement())
+  userId       Int                 @map("user_id")
+  brandId      Int                 @map("brand_id")
+  senaPlate    String?             @unique @map("sena_plate") @db.VarChar(20)
+  materialName String              @map("material_name") @db.VarChar(100)
+  image        String
+  quantity     Int?
+  unitPrice    Decimal             @map("unit_price") @db.Decimal(15, 2)
+  totalPrice   Decimal             @map("total_price") @db.Decimal(15, 2)
+  status       MaterialStatus
+  description  String              @db.VarChar(255)
+  purchaseDate DateTime            @map("purchase_date") @db.Date
+  location     String              @db.VarChar(100)
+  created_at   DateTime            @default(now())
+  updated_at   DateTime            @updatedAt
+  brand        Brand               @relation(fields: [brandId], references: [id], map: "materiales_consumo_id_marca_fkey")
+  user         User                @relation(fields: [userId], references: [id], map: "materiales_consumo_id_usuario_fkey")
+  loanReturns  LoanReturn[]
+  loans        Loan[]
+  returnable   ReturnableMaterial?
+
+  @@map("consumable_materials")
+}
+
+model ReturnableMaterial {
+  id                 Int                @id(map: "materiales_devolutivo_pkey")
+  categoryId         Int                @map("category_id")
+  model              String             @db.VarChar(100)
+  serial             String             @unique @db.VarChar(20)
+  technicalSheet     String             @map("technical_sheet")
+  dimensions         String?            @db.VarChar(100)
+  category           Category           @relation(fields: [categoryId], references: [id], map: "materiales_devolutivo_id_categoria_fkey")
+  consumableMaterial ConsumableMaterial @relation(fields: [id], references: [id], onDelete: Cascade, map: "materiales_devolutivo_id_fkey")
+
+  @@map("returnable_materials")
+}
+
+model Loan {
+  id                 Int                @id(map: "prestamos_pkey") @default(autoincrement())
+  userId             Int                @map("user_id")
+  materialId         Int                @map("material_id")
+  borrowedQuantity   Int                @map("borrowed_quantity")
+  apprenticeGroup    Int                @map("apprentice_group")
+  useJustification   String             @map("use_justification") @db.VarChar(255)
+  returnDate         DateTime           @map("return_date") @db.Date
+  loanDate           DateTime           @default(now()) @map("loan_date")
+  loanReturns        LoanReturn[]
+  consumableMaterial ConsumableMaterial @relation(fields: [materialId], references: [id], map: "prestamos_id_material_fkey")
+  user               User               @relation(fields: [userId], references: [id], map: "prestamos_id_usuario_fkey")
+
+  @@map("loans")
+}
+
+model LoanReturn {
+  id                 Int                @id(map: "retornos_prestamo_pkey") @default(autoincrement())
+  loanId             Int                @map("loan_id")
+  materialId         Int                @map("material_id")
+  remainingQuantity  Int?               @map("remaining_quantity")
+  observations       String             @db.VarChar(255)
+  returnDate         DateTime           @default(now()) @map("return_date")
+  consumableMaterial ConsumableMaterial @relation(fields: [materialId], references: [id], map: "retornos_prestamo_id_material_fkey")
+  loan               Loan               @relation(fields: [loanId], references: [id], map: "retornos_prestamo_id_prestamo_fkey")
+
+  @@map("loan_returns")
+}
+
+model Task {
+  id          Int      @id(map: "tareas_pkey") @default(autoincrement())
+  userId      Int      @map("user_id")
+  taskName    String   @map("task_name") @db.VarChar(100)
+  description String   @db.VarChar(255)
+  isActive    Boolean  @default(true) @map("is_active")
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], map: "tareas_id_usuario_fkey")
+
+  @@map("tasks")
+}
 
 enum AccountType {
   Solidario
@@ -21,203 +206,4 @@ enum MaterialStatus {
   En_prestamo
   Traslado
   Baja
-}
-
-// --- Models ---
-
-model DocumentType {
-  id           Int     @id @default(autoincrement())
-  documentName String  @unique @db.VarChar(50) @map("document_name")
-  description  String? @db.VarChar(150)
-  isActive     Boolean @default(true) @map("is_active")
-  users        User[]
-
-  @@map("document_types")
-}
-
-model Group {
-  id          Int               @id @default(autoincrement())
-  groupName   String            @unique @db.VarChar(100) @map("group_name")
-  isActive    Boolean           @default(true) @map("is_active")
-  created_at  DateTime          @default(now())
-  updated_at  DateTime          @updatedAt
-  permissions GroupPermission[]
-  users       UserGroup[]
-
-  @@map("groups")
-}
-
-model Permission {
-  id             Int               @id @default(autoincrement())
-  permissionName String            @unique @db.VarChar(100) @map("permission_name")
-  description    String?           @db.VarChar(255)
-  isActive       Boolean           @default(true) @map("is_active")
-  created_at     DateTime          @default(now())
-  updated_at     DateTime          @updatedAt
-  groups         GroupPermission[]
-  users          UserPermission[]
-
-  @@map("permissions")
-}
-
-model GroupPermission {
-  groupId      Int        @map("group_id")
-  permissionId Int        @map("permission_id")
-  group        Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  @@id([groupId, permissionId])
-  @@map("group_permissions")
-}
-
-model User {
-  id                  Int              @id @default(autoincrement())
-  documentTypeId      Int              @map("document_type_id")
-  documentType        DocumentType     @relation(fields: [documentTypeId], references: [id])
-  userFirstName       String           @db.VarChar(100) @map("user_first_name")
-  userLastName        String           @db.VarChar(100) @map("user_last_name")
-  userDocumentNumber  String           @unique @db.VarChar(20) @map("user_document_number")
-  userEndDate         DateTime         @db.Date @map("user_end_date")
-  userEmail           String           @unique @db.VarChar(150) @map("user_email")
-  userPhone           String           @db.VarChar(15) @map("user_phone")
-  userSecondPhone     String?          @db.VarChar(15) @map("user_second_phone")
-  userAddress         String           @db.VarChar(150) @map("user_address")
-  userStatus          Boolean          @default(true) @map("user_status")    // Cuenta habilitada para auth
-  userIsActive        Boolean          @default(true) @map("user_is_active") // Soft delete
-  userPhoto           String           @unique @map("user_photo")
-  userPassword        String           @db.VarChar(255) @map("user_password")
-  userAccountType     AccountType      @default(Solidario) @map("user_account_type")
-  createdAt           DateTime         @default(now()) @map("created_at")
-  updatedAt           DateTime         @updatedAt @map("updated_at")
-  groups              UserGroup[]
-  directPermissions   UserPermission[]
-  consumableMaterials ConsumableMaterial[]
-  loans               Loan[]
-  tasks               Task[]
-
-  @@map("users")
-}
-
-model UserGroup {
-  userId     Int      @map("user_id")
-  groupId    Int      @map("group_id")
-  created_at DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  group      Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-
-  @@id([userId, groupId])
-  @@map("user_groups")
-}
-
-model UserPermission {
-  userId       Int        @map("user_id")
-  permissionId Int        @map("permission_id")
-  created_at   DateTime   @default(now())
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  @@id([userId, permissionId])
-  @@map("user_permissions")
-}
-
-model Brand {
-  id                  Int                  @id @default(autoincrement())
-  brandName           String               @unique @db.VarChar(100) @map("brand_name")
-  isActive            Boolean              @default(true) @map("is_active")
-  consumableMaterials ConsumableMaterial[]
-
-  @@map("brands")
-}
-
-model Category {
-  id                  Int                  @id @default(autoincrement())
-  categoryName        String               @unique @db.VarChar(100) @map("category_name")
-  isActive            Boolean              @default(true) @map("is_active")
-  returnableMaterials ReturnableMaterial[]
-
-  @@map("categories")
-}
-
-model ConsumableMaterial {
-  id            Int                 @id @default(autoincrement())
-  userId        Int                 @map("user_id")
-  brandId       Int                 @map("brand_id")
-  user          User                @relation(fields: [userId], references: [id])
-  brand         Brand               @relation(fields: [brandId], references: [id])
-  senaPlate     String?             @unique @db.VarChar(20) @map("sena_plate")
-  materialName  String              @db.VarChar(100) @map("material_name")
-  image         String
-  quantity      Int?
-  unitPrice     Decimal             @db.Decimal(15, 2) @map("unit_price")
-  totalPrice    Decimal             @db.Decimal(15, 2) @map("total_price")
-  status        MaterialStatus
-  isActive      Boolean             @default(true) @map("is_active")
-  description   String              @db.VarChar(255)
-  purchaseDate  DateTime            @db.Date @map("purchase_date")
-  location      String              @db.VarChar(100)
-  created_at    DateTime            @default(now())
-  updated_at    DateTime            @updatedAt
-  returnable    ReturnableMaterial?
-  loans         Loan[]
-  loanReturns   LoanReturn[]
-
-  @@map("consumable_materials")
-}
-
-model ReturnableMaterial {
-  id                 Int                @id
-  categoryId         Int                @map("category_id")
-  consumableMaterial ConsumableMaterial @relation(fields: [id], references: [id], onDelete: Cascade)
-  category           Category           @relation(fields: [categoryId], references: [id])
-  model              String             @db.VarChar(100)
-  serial             String             @unique @db.VarChar(20)
-  technicalSheet     String             @map("technical_sheet")
-  dimensions         String?            @db.VarChar(100)
-
-  @@map("returnable_materials")
-}
-
-model Loan {
-  id                 Int                @id @default(autoincrement())
-  userId             Int                @map("user_id")
-  materialId         Int                @map("material_id")
-  user               User               @relation(fields: [userId], references: [id])
-  consumableMaterial ConsumableMaterial @relation(fields: [materialId], references: [id])
-  borrowedQuantity   Int                @map("borrowed_quantity")
-  apprenticeGroup    Int                @map("apprentice_group")
-  useJustification   String             @db.VarChar(255) @map("use_justification")
-  returnDate         DateTime           @db.Date @map("return_date")
-  loanDate           DateTime           @default(now()) @map("loan_date")
-  isActive           Boolean            @default(true) @map("is_active")
-  loanReturns        LoanReturn[]
-
-  @@map("loans")
-}
-
-model LoanReturn {
-  id                 Int                @id @default(autoincrement())
-  loanId             Int                @map("loan_id")
-  materialId         Int                @map("material_id")
-  loan               Loan               @relation(fields: [loanId], references: [id])
-  consumableMaterial ConsumableMaterial @relation(fields: [materialId], references: [id])
-  remainingQuantity  Int?               @map("remaining_quantity")
-  observations       String             @db.VarChar(255)
-  returnDate         DateTime           @default(now()) @map("return_date")
-  isActive           Boolean            @default(true) @map("is_active")
-
-  @@map("loan_returns")
-}
-
-model Task {
-  id          Int      @id @default(autoincrement())
-  userId      Int      @map("user_id")
-  user        User     @relation(fields: [userId], references: [id])
-  taskName    String   @db.VarChar(100) @map("task_name")
-  description String   @db.VarChar(255)
-  status      Boolean  @default(true) @map("task_status") // Estado interno de la tarea (antes isActive)
-  isActive    Boolean  @default(true) @map("is_active")   // Soft delete
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-
-  @@map("tasks")
 }

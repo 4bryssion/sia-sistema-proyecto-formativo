@@ -1,11 +1,15 @@
+import { useState } from "react";
 import { Pencil, EllipsisVertical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Dropdown, DropdownTrigger, DropdownItem, DropdownContent } from "@/shared";
+import EditBrandPage from "../pages/EditBrandPage";
 
 // Componente de acciones por fila de marca
 export default function BrandRowActions({ brand }) {
 
     const navigate = useNavigate();
+
+    const [isEditOpen, setIsEditOpen] = useState(false);
 
     // Navega a la página de visualizar marca
     const handleView = () => {
@@ -14,7 +18,13 @@ export default function BrandRowActions({ brand }) {
 
     // Navega a la página de editar marca
     const handleEdit = () => {
-        navigate(`/view/brands/${brand.id}/edit`);
+        setIsEditOpen(true);
+    };
+
+    const handleSave = async (updatedBrand) => {
+        if (onBrandUpdated) {
+            onBrandUpdated(updatedBrand);
+        }
     };
 
     return (
@@ -25,19 +35,14 @@ export default function BrandRowActions({ brand }) {
                 <Pencil size={16} />
             </button>
 
-            {/* Botón opciones */}
-            <Dropdown>
-                <DropdownTrigger>
-                    <button className="p-1 rounded hover:bg-gray-900">
-                        <EllipsisVertical size={16} />
-                    </button>
-                </DropdownTrigger>
-                <DropdownContent className="right-0">
-                    <DropdownItem>
-                        <button onClick={handleView}>Visualizar Marca</button>
-                    </DropdownItem>
-                </DropdownContent>
-            </Dropdown>
+
+            {/* Modal de edición de marca */}
+            <EditBrandPage
+                brand={brand}
+                isOpen={isEditOpen}
+                onClose={() => setIsEditOpen(false)}
+                onSave={handleSave}
+            />
 
         </div>
     );

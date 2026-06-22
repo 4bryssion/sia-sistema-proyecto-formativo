@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { CircleUser } from "lucide-react"
+// import { CircleUser } from "lucide-react"
+import logo from "@/assets/logos/logo-sena-verde.png";
+
+
 
 import { 
     Input, 
@@ -99,8 +102,7 @@ export default function AuthRegisterForm(){
                 className="grid gap-6 mx-6 p-8 sm:p-12 justify-items-center max-w-max  bg-white border rounded-md"
                 onSubmit={handleSubmit}
             >
-                <CircleUser className="w-24 h-24"
-                strokeWidth={1.8}/>
+                <img src={logo} alt="logo" className="h-24"/>
                 <h1 className="text-h3 font-main">
                     Inicio de Sesión
                 </h1>
