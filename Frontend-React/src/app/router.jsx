@@ -26,6 +26,14 @@ import {
 
 } from "@/features/users";
 
+// Módulo tasks:
+import {
+    ListTaskPage,
+    CreateTaskPage,
+    ViewTaskPage,
+    EditTaskPage
+} from "@/features/tasks";
+
 
 // Módulo consumable-materials:
 import { 
@@ -63,8 +71,8 @@ import {
 import { 
    
     CreateBrandPage,
-    
-    ListBrandPage
+    ListBrandPage,
+    EditBrandPage
      
 
 } from "@/features/brands";
@@ -75,6 +83,18 @@ import{
     ListGroupPage,
 
 } from "@/features/groups";
+// Módulo access:
+import {
+     AccessPage
+} from "@/features/access";
+
+//Módulo permissions:
+import { 
+   
+    ViewPermissionPage
+     
+
+} from "@/features/permissions";
 
 
 const router = createBrowserRouter([
@@ -124,6 +144,15 @@ const router = createBrowserRouter([
             {
                 path: "users/edit",
                 element: <EditUserPage />,
+            },
+            // Módulo tasks:
+            {
+                path: "tasks",
+                element: <ListTaskPage />,
+            },
+            {
+                path: "tasks/create",
+                element: <CreateTaskPage />,
             },
 
             // Módulo consumable-materials:
@@ -184,6 +213,18 @@ const router = createBrowserRouter([
                 path: "groups/create",
                 element: <h1>Crear Grupos</h1>,
             },
+
+         // Módulo permissions:
+            {
+                path: "permissions",
+                element: < ViewPermissionPage/>,
+            },
+         // Módulo access:
+            {
+                path: "admin",
+                element: <AccessPage />,
+            },
+            
         ],
     },
 
@@ -207,6 +248,15 @@ const router = createBrowserRouter([
             {
                 path: "users/:id/edit",
                 element: <EditUserPage />,
+            },
+            // Módulo tasks:
+            {
+                path: "tasks/:id",
+                element: <ViewTaskPage />,
+            },
+            {
+                path: "tasks/:id/edit",
+                element: <EditTaskPage />,
             },
 
             // Módulo consumable-materials:
@@ -251,7 +301,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "brands/:id/edit",
-                element: <h1>Editar Marcas</h1>,
+                element: <EditBrandPage/>,
             },
 
             // Módulo groups:
@@ -263,6 +313,12 @@ const router = createBrowserRouter([
                 path: "groups/:id/edit",
                 element: <h1>Editar Grupos</h1>,
             },
+
+            // Módulo permissions:
+            {
+                path: "permissions/:id",
+                element:< ViewPermissionPage/>,
+            }
         ],
     },    
 ]);

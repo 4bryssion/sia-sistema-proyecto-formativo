@@ -135,6 +135,12 @@ export default function Navbar(){
                                                 </Link>
                                             </DropdownItem>
 
+                                            <DropdownItem>
+                                                <Link to="/dashboard/tasks" className="block w-full">
+                                                    Tareas
+                                                </Link>
+                                            </DropdownItem>
+
                                             <DropdownItem
                                                 className="block w-full"
                                                 keepOpen={true}

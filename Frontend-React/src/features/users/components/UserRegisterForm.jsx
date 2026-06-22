@@ -105,7 +105,7 @@ export default function UserRegisterForm(){
         
 
             <form 
-            className="grid place-self-center gap-6 mx-6 md:grid-cols-2 md:mx-12 1400:grid-cols-2 1400:mx-0 justify-items-center max-w-max"
+            className="grid place-self-center gap-6 mx-6 md:grid-cols-2 lg:grid-cols-3 md:mx-12 1400:grid-cols-3 1400:mx-0 justify-items-center max-w-max"
 
                 onSubmit={handleSubmit}
             >
@@ -114,7 +114,7 @@ export default function UserRegisterForm(){
                 >
                     <div className="flex flex-col">
                         <FileInput
-                            className="flex-1 1400:min-h-82.5 md:min-h-82.5"
+                            className=" h-[240px]"
                             accept="image/*"
                             multiple={false}
                             value={formData.consumableImage}
@@ -141,7 +141,14 @@ export default function UserRegisterForm(){
                         error={errors.userDocumentType}
                     />
 
-                    <Input 
+                </div>
+
+                {/* Columna del medio */}
+                <div
+                    className="flex flex-col gap-6 my-0 w-[320px]"
+                >
+                    {/* Inputs */}
+                     <Input 
                         label = "Número de documento"
                         name = "userDocumentNumber"
                         placeholder = "Ingrese su número de documento"
@@ -149,9 +156,6 @@ export default function UserRegisterForm(){
                         onChange = {handleChange}
                         error={errors.userDocumentNumber}
                     />
-
-                    {/* Por default es activo */}
-                    {/* Esto ira bloqueado para el admin o usuario */}
                     <Input 
                         label = "Estado"
                         name="userState"
@@ -160,13 +164,6 @@ export default function UserRegisterForm(){
                         value={formData.userState}
                         readOnly
                     />
-                </div>
-
-                {/* Columna izquierda */}
-                <div
-                    className="flex flex-col gap-6 my-0 w-[320px]"
-                >
-                    {/* Inputs */}
                     <Input 
                         label = "Teléfono"
                         name = "userPhone"
@@ -186,8 +183,6 @@ export default function UserRegisterForm(){
                         error={errors.userDocumentType}
                     />
 
-                    {/* Por default es por parte del sistema */}
-                    {/* Esto ira bloqueado para el admin o usuario */}
                     <Input 
                         label = "Fecha de inicio"
                         name="userStartDate"
@@ -196,7 +191,12 @@ export default function UserRegisterForm(){
                         readOnly
                     />
 
-                    {/* Esta si la ingresa el usuario */}
+                </div>
+
+                {/* Columna izquierda */}
+                <div
+                    className="flex flex-col gap-6 my-0 w-[320px]"
+                >
                     <Input 
                         label = "Fecha de finalización"
                         name="userEndDate"
@@ -205,7 +205,6 @@ export default function UserRegisterForm(){
                         onChange = {handleChange}
                         error={errors.userEndDate}
                     />
-
                     <Input 
                         label = "Correo personal"
                         name="userEmail"
