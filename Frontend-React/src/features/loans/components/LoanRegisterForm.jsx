@@ -1,8 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { loanSchema } from "../schemas/loanSchema.js";
 import { Input, Button, Select } from "@/shared";
-import { getMaterials, getUsers } from "../services/selectService.js";
-import { createLoan } from "../services/loanServices.js";
 import { useNavigate } from "react-router-dom";
 
 export default function LoanRegisterForm() {
@@ -10,8 +8,6 @@ export default function LoanRegisterForm() {
     const navigate = useNavigate();
 
     // Estados
-    const [materials, setMaterials] = useState([]);
-    const [users, setUsers] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -26,12 +22,6 @@ export default function LoanRegisterForm() {
 
     const [errors, setErrors] = useState({});
 
-    // Carga materiales y usuarios del backend al montar el componente
-    useEffect(() => {
-        getMaterials().then(setMaterials).catch(console.error);
-        getUsers().then(setUsers).catch(console.error);
-    }, []);
-
     // Handle genérico para inputs y selects
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -41,11 +31,10 @@ export default function LoanRegisterForm() {
         }));
     };
 
-    // Handle submit con validación y llamada al backend
+    // Handle submit con validación
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Validación con Zod
         const result = loanSchema.safeParse(formData);
 
         if (!result.success) {
@@ -61,17 +50,7 @@ export default function LoanRegisterForm() {
         setIsSubmitting(true);
 
         try {
-            // Envía los datos al backend con los nombres que espera el backend
-            const response = await createLoan({
-                userId:           Number(formData.loanRequestingUser),
-                materialId:       Number(formData.loanMaterial),
-                borrowedQuantity: Number(formData.loanQuantity),
-                apprenticeGroup:  Number(formData.loanGroup),
-                useJustification: formData.loanJustification,
-                returnDate:       formData.loanReturnDate,
-            });
-
-            console.log("Préstamo creado:", response);
+            console.log("Préstamo válido:", result.data);
             alert("Préstamo creado exitosamente.");
             navigate(-1);
 
@@ -97,22 +76,18 @@ export default function LoanRegisterForm() {
 
                 {/* Columna 1 - Material y usuario */}
                 <div className="flex flex-col gap-6 my-0 w-[320px]">
-
-                    {/* Select de materiales traídos del backend */}
                     <Select
                         label="Material"
                         name="loanMaterial"
-                        options={materials}
+                        options={[]}
                         value={formData.loanMaterial}
                         onChange={handleChange}
                         error={errors.loanMaterial}
                     />
-
-                    {/* Select de usuarios traídos del backend */}
                     <Select
                         label="Usuario solicitante"
                         name="loanRequestingUser"
-                        options={users}
+                        options={[]}
                         value={formData.loanRequestingUser}
                         onChange={handleChange}
                         error={errors.loanRequestingUser}
@@ -172,7 +147,6 @@ export default function LoanRegisterForm() {
                         error={errors.loanJustification}
                     />
 
-                    {/* Botón crear préstamo */}
                     <div className="flex items-center justify-center gap-6">
                         <Button variant="secondary" size="sm" onClick={() => navigate(-1)}>
                             Cancelar
@@ -181,7 +155,6 @@ export default function LoanRegisterForm() {
                             {isSubmitting ? "Creando..." : "Crear Préstamo"}
                         </Button>
                     </div>
-
                 </div>
 
             </form>

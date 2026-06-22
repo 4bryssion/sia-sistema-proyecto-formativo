@@ -1,40 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Input, Button } from "@/shared";
 import { CornerDownLeft } from "lucide-react";
 import logo from "@/assets/logos/logo-sena-negro.png";
-import { createLoanReturn } from "../services/loanReturnService";
 import { useNavigate } from "react-router-dom";
 
-export default function LoanReturnRight({ loanId }) {
+export default function LoanReturnRight() {
 
   const navigate = useNavigate();
 
-  // Estado del formulario con los campos requeridos por el backend
+  // Estado del formulario con los campos requeridos
   const [form, setForm] = useState({
     remainingQuantity: "",  // Cantidad sobrante (solo consumibles)
     observations: "",       // Observaciones del retorno
   });
-
-  // Estado para almacenar los datos del préstamo traídos del backend
-  const [loan, setLoan] = useState(null);
-
-  // Estado para manejar carga
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Trae los datos del préstamo al montar el componente
-  useEffect(() => {
-    async function fetchLoan() {
-      try {
-        const response = await fetch(`http://localhost:5000/api/loans/${loanId}`);
-        const data = await response.json();
-        setLoan(data);
-      } catch {
-        console.error("Error al cargar los datos del préstamo.");
-      }
-    }
-
-    if (loanId) fetchLoan();
-  }, [loanId]);
 
   // Actualiza el campo correspondiente en el estado
   const handleChange = (e) => {
@@ -42,29 +20,10 @@ export default function LoanReturnRight({ loanId }) {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Envía el retorno al backend
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-
-    try {
-      await createLoanReturn({
-        loanId:            Number(loanId),
-        materialId:        Number(loan.materialId),
-        remainingQuantity: form.remainingQuantity ? Number(form.remainingQuantity) : null,
-        observations:      form.observations,
-      });
-
-      console.log("Retorno registrado exitosamente.");
-      alert("Retorno registrado exitosamente.");
-      navigate(-1);
-
-    } catch (err) {
-      console.error("Error:", err.message);
-      alert(err.message);
-
-    } finally {
-      setIsSubmitting(false);
-    }
+  // Maneja el envío del formulario
+  // Por ahora imprime los datos en consola; aquí irá la llamada a la API
+  const handleSubmit = () => {
+    console.log("Datos retorno:", form);
   };
 
   return (
@@ -77,9 +36,9 @@ export default function LoanReturnRight({ loanId }) {
         </h2>
       </div>
 
-      {/* Campos del formulario */}
-      <div className="grid lg:grid-cols-2 gap-6 w-full">
-        <div className="grid gap-6 justify-items-center">
+      {/* gap reducido de gap-6 a gap-3 para inputs más juntos */}
+      <div className="grid lg:grid-cols-2 gap-3 w-full">
+        <div className="grid gap-3 justify-items-center">
 
           {/* Cantidad sobrante - solo para materiales de consumo */}
           <Input
@@ -117,10 +76,9 @@ export default function LoanReturnRight({ loanId }) {
           variant="primary"
           className="gap-2 lg:justify-self-end lg:mr-24"
           onClick={handleSubmit}
-          disabled={isSubmitting || !loan}
         >
           <CornerDownLeft size={16} />
-          {isSubmitting ? "Registrando..." : "Registrar retorno"}
+          Registrar retorno
         </Button>
       </div>
 

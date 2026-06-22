@@ -1,13 +1,18 @@
 import { DataTable, Button, IconButton } from "@/shared";
 import { groupColumns } from "../table/groupColumns";
 import { groups } from "../data/group";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Undo2 } from "lucide-react";
+import { useState } from "react";
+import EditGroupModal from "./EditGroupModal";
 
 // Página principal de listado de grupos
 export default function ListGroupPage() {
 
     const navigate = useNavigate();
+
+    // Estado que controla la apertura y cierre del modal de creación
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
 
     return (
         <div className="p-6">
@@ -28,15 +33,22 @@ export default function ListGroupPage() {
 
                 <div className="grid sm:flex gap-12 items-center">
 
-                    {/* Botón crear grupo - pendiente definir con el LT */}
-                    <Link to="/dashboard/groups/create">
-                        <Button variant="primary">
-                            Crear Grupo
-                        </Button>
-                    </Link>
+                    {/* Abre el modal para crear un grupo */}
+                    <Button
+                        variant="primary"
+                        onClick={() => setIsCreateOpen(true)}
+                    >
+                        Crear Grupo
+                    </Button>
 
                 </div>
             </div>
+
+            {/* Modal para creación de grupos */}
+            <EditGroupModal
+                isOpen={isCreateOpen}
+                onClose={() => setIsCreateOpen(false)}
+            />
 
             {/* Tabla de grupos */}
             <DataTable
