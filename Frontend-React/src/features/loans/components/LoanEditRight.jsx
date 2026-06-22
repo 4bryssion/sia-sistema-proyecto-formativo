@@ -1,25 +1,25 @@
 import { useState } from "react";
 import { Input, Button, Select } from "@/shared";
-import { Save } from "lucide-react";
+import { Pencil, Search } from "lucide-react";
 import logo from "@/assets/logos/logo-sena-negro.png";
 
 export default function LoanEditRight() {
-  //Estado del formulario con los campos del prestamo 
-  //Cada campo inicia vacio y se llena con los datos actuales del prestamo 
+  // Estado del formulario con los campos del préstamo
+  // Cada campo inicia vacío y se llena con los datos actuales del préstamo
   const [form, setForm] = useState({
-    loanMaterial: "",         //material a prestar
-    loanQuantity: "",         //Cantidad del material 
-    loanUser: "",             //Usuario que solicita pres
-    loanGroup: "",            //Grupo de prendices asociado
-    loanDateStart: "",        //Fecha de salida
-    loanDateEnd: "",          //fecha entrega
-    loanJustification: "",    //justificacion de uso
+    loanMaterial: "",         // Material a prestar
+    loanQuantity: "",         // Cantidad del material
+    loanUser: "",             // Usuario que solicita préstamo
+    loanGroup: "",            // Grupo de aprendices asociado
+    loanDateStart: "",        // Fecha de salida
+    loanDateEnd: "",          // Fecha de entrega
+    loanJustification: "",    // Justificación de uso
   });
 
+  // Actualiza el campo correspondiente en el estado cuando el usuario escribe
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
-
 
   // Maneja el envío del formulario
   // Por ahora imprime los datos en consola; aquí irá la llamada a la API
@@ -35,8 +35,13 @@ export default function LoanEditRight() {
         </h2>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6 w-full">
-        <div className="grid gap-6 justify-items-center">
+      {/* gap reducido de gap-6 a gap-3 para que los inputs queden más juntos
+          y sea más rápido navegar entre ellos con Tab
+          reorganizado para balancear columnas: 4 izquierda, 3 derecha */}
+      <div className="grid lg:grid-cols-2 gap-1 w-full">
+
+        {/* Columna izquierda: Material, Cantidad, Usuario, Grupo */}
+        <div className="grid gap-1 justify-items-center">
           <Select
             label="Material"
             name="loanMaterial"
@@ -65,6 +70,10 @@ export default function LoanEditRight() {
             value={form.loanGroup}
             onChange={handleChange}
           />
+        </div>
+
+        {/* Columna derecha: Fecha salida, Fecha entrega, Justificación */}
+        <div className="grid gap-3 justify-items-center lg:h-max">
           <Input
             label="Fecha de salida"
             name="loanDateStart"
@@ -72,9 +81,6 @@ export default function LoanEditRight() {
             value={form.loanDateStart}
             onChange={handleChange}
           />
-        </div>
-
-        <div className="grid gap-6 justify-items-center lg:h-max">
           <Input
             label="Fecha de entrega del material"
             name="loanDateEnd"
@@ -98,7 +104,7 @@ export default function LoanEditRight() {
           className="gap-2 lg:justify-self-end lg:mr-24"
           onClick={handleSubmit}
         >
-          <Save size={16} />
+          <Pencil size={16} />
           Guardar
         </Button>
       </div>

@@ -1,6 +1,6 @@
-import { Pencil, EllipsisVertical, Undo2, ArrowLeft, ArrowLeftRight } from "lucide-react";
+import { useState } from "react";
+import { Pencil, EllipsisVertical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
 import {
     Dropdown,
     DropdownTrigger,
@@ -8,22 +8,22 @@ import {
     DropdownContent
 } from "@/shared";
 
-export default function LoanRowActions({ loan }) {
+import EditGroupModal from "../pages/EditGroupModal";
+
+export default function GroupRowActions({ group }) {
+
     const navigate = useNavigate();
 
-    // Navega a la página de visualizar préstamo
+    const [isEditOpen, setIsEditOpen] = useState(false);
+
+    // Navega a la página de visualizar grupo
     const handleView = () => {
-        navigate(`/view/loans/${loan.id}`);
+        navigate(`/view/groups/${group.id}`);
     };
 
-    // Navega a la página de editar préstamo
+    // Abre el modal
     const handleEdit = () => {
-        navigate(`/view/loans/${loan.id}/edit`);
-    };
-
-    // Navega a la página de retorno del préstamo
-    const handleReturn = () => {
-        navigate(`/view/loans/${loan.id}/return`);
+        setIsEditOpen(true);
     };
 
     return (
@@ -37,13 +37,11 @@ export default function LoanRowActions({ loan }) {
                 <Pencil size={16} />
             </button>
 
-            {/* Botón retornar préstamo */}
-            <button
-                onClick={handleReturn}
-                className="p-1 rounded hover:bg-gray-900"
-            >
-                < ArrowLeftRight  size={16} />
-            </button>
+            {/* Modal */}
+            <EditGroupModal
+                isOpen={isEditOpen}
+                onClose={() => setIsEditOpen(false)}
+            />
 
             {/* Botón opciones */}
             <Dropdown>
@@ -56,11 +54,12 @@ export default function LoanRowActions({ loan }) {
                 <DropdownContent className="right-0">
                     <DropdownItem>
                         <button onClick={handleView}>
-                            Visualizar préstamo
+                            Visualizar Grupo
                         </button>
                     </DropdownItem>
                 </DropdownContent>
             </Dropdown>
+
         </div>
     );
 }
