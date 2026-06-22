@@ -10,7 +10,7 @@ export default function ListBrandPage() {
     const navigate = useNavigate();
 
     return (
-        <div className="p-6">
+        <div className="p-2">
 
             {/* Botón de regreso */}
             <div className="mb-6">
@@ -32,7 +32,7 @@ export default function ListBrandPage() {
                 </div>
 
                 {/* Panel derecho blanco con tabla de marcas */}
-                <div className="bg-white p-6">
+                <div className="bg-white p-2">
                     <h1 className="text-h2 font-bold mb-6">Marcas</h1>
 
                     <DataTable

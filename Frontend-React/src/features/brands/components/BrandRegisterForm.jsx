@@ -97,13 +97,13 @@ export default function BrandRegisterForm() {
                     items-center
                     gap-6
                     w-max
-                    text-text-inverse
+                   
                 "
 
                 onSubmit={handleSubmit}
             >
                 <Input
-                    label="Nombre de la marca"
+                className="bg-white"
                     name="brandName"
                     placeholder="Nombre de la marca"
                     value={formData.brandName}
