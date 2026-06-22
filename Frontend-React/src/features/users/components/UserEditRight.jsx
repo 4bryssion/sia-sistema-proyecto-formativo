@@ -36,7 +36,7 @@ export default function UserEditRight(){
             >
                 <div
                     className="
-                        grid gap-6 justify-items-center
+                        grid gap-3 justify-items-center
                     "
                 >
                      {/* Inputs */}
@@ -90,7 +90,7 @@ export default function UserEditRight(){
                 {/* Columna izquierda */}
                 <div
                     className="
-                        grid gap-6 justify-items-center lg:h-max
+                        grid gap-3 justify-items-center lg:h-max
                     "
                 >
                     {/* Inputs */}

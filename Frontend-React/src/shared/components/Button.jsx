@@ -19,12 +19,12 @@ export default function Button({
     const variants = {
         primary: "bg-button-primary text-text-inverse  border border-border rounded hover:bg-button-primary-hover",
 
-        secondary: "bg-button-secondary text-text border border-border hover:bg-button-secondary-hover",
+        secondary: "bg-button-secondary text-text-inverse border border-border hover:bg-button-secondary-hover",
 
         toggle: isActive
             ? "bg-button-primary text-text-inverse border-border rounded hover:bg-button-primary-hover"
 
-            : "bg-button-secondary text-text border border-border hover:bg-button-secondary-hover",
+            : "bg-button-secondary text-text-inverse border border-border hover:bg-button-secondary-hover",
     }
 
     const sizes = {
@@ -36,7 +36,7 @@ export default function Button({
         md: `
             h-10 px-4
             before:absolute before:content-['']
-            before:-inset-y-[7px] before:-inset-x-[0px]
+            before:-inset-y-[5px] before:-inset-x-[0px]
         `
     }
 

@@ -2,10 +2,12 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 
 // Import componentes:
 
-import {  
+import {
     AuthLayout,
     DashboardLayout,
-    ViewLayout
+    ViewLayout,
+    ProtectedRoute,
+    GuestRoute
 
 } from "@/shared"
 
@@ -76,7 +78,7 @@ const router = createBrowserRouter([
     },
     {
         path: "/auth",
-        element: <AuthLayout />,
+        element: <GuestRoute><AuthLayout /></GuestRoute>,
         children: [
             {
                 index: true
@@ -85,7 +87,7 @@ const router = createBrowserRouter([
     },
     {
         path: "/dashboard",
-        element: <DashboardLayout />,
+        element: <ProtectedRoute><DashboardLayout /></ProtectedRoute>,
         children: [
             // Este modulo de alert-history aún estamos en duda de si realizarlo o no.
             {
@@ -187,7 +189,7 @@ const router = createBrowserRouter([
     // Queda más limpio y legible
     {
         path: "/view",
-        element: <ViewLayout />,
+        element: <ProtectedRoute><ViewLayout /></ProtectedRoute>,
         children: [
             // Módulo users:
             {

@@ -31,3 +31,6 @@ uploads/
 
 # Claude / IAs
 CLAUDE.md
+
+# Scripts temporales de desarrollo
+prisma/inject-test-user.js

@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-import { 
-    Bell, 
+import { logout } from "@/features/auth/services/logoutService";
+
+import {
+    Bell,
     Menu,
-    Undo2 
+    Undo2
 
 } from "lucide-react";
 
@@ -22,6 +24,12 @@ import logo from "@/assets/logos/logo-sena-negro.png";
 export default function Navbar(){
 
     const [view, setView] = useState("main");
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate("/auth", { replace: true });
+    };
 
     const handleClick = (value) => { 
         setView(value)
@@ -106,8 +114,14 @@ export default function Navbar(){
 
                                         <>
                                             <DropdownItem>
-                                                <Link to="/dashboard" className="block w-full">
+                                                <Link to="/dashboard/profile" className="block w-full">
                                                     Mi perfil
+                                                </Link>
+                                            </DropdownItem>
+
+                                            <DropdownItem>
+                                                <Link to="/dashboard/admin" className="block w-full">
+                                                    Admin
                                                 </Link>
                                             </DropdownItem>
 
@@ -143,10 +157,8 @@ export default function Navbar(){
                                                 Configuración                                  
                                             </DropdownItem>
 
-                                            <DropdownItem>
-                                                <Link to="/dashboard" className="block w-full">
-                                                    Cerrar sesión
-                                                </Link>
+                                            <DropdownItem onClick={handleLogout}>
+                                                Cerrar sesión
                                             </DropdownItem>
                                         </>
 

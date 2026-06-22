@@ -43,6 +43,7 @@ export default function AuthRegisterForm(){
             // Se actualiza únicamente lo que cambió
             [name]: type === "chechbox" ? checked : value,
         }));
+        if (errors.form) setErrors((prev) => ({ ...prev, form: undefined }));
     }
 
     // Handles personalizados:
@@ -87,7 +88,7 @@ export default function AuthRegisterForm(){
 
             navigate("/dashboard");
         } catch (error) {
-            alert(error.message);
+            setErrors({ form: error.message });
         }
     };
 
@@ -111,7 +112,7 @@ export default function AuthRegisterForm(){
                         type="email"
                         value={formData.userEmail}
                         onChange={handleChange}
-                        error={errors.userEmail}
+                        error={errors.userEmail || errors.form}
                     />
 
                     <Input
@@ -121,7 +122,7 @@ export default function AuthRegisterForm(){
                         type="password"
                         value={formData.userPassword}
                         onChange={handleChange}
-                        error={errors.userPassword}
+                        error={errors.userPassword || errors.form}
                     />
                 </div>
 
@@ -130,11 +131,12 @@ export default function AuthRegisterForm(){
                     <Button variant="primary" size="md" type="submit">
                         Iniciar Sesión
                     </Button>
+
                 </div>
-                    <Link className="font-secondary text-body"
-                     to="/logout">
+
+                <Link className="font-secondary text-body" to="/logout">
                     ¿Olvidó su Contraseña?
-                    </Link>
+                </Link>
                 
             </form>
         </div>

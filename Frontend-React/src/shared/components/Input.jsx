@@ -32,7 +32,7 @@ export default function Input({
             <div
                 className="
                     relative
-                    h-12
+                    h-11
                     flex
                     items-center
                 ">

@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Undo2 } from "lucide-react";
 import { useState } from "react";
 
-import ReportConfigModal from "../report/components/ReportConfigModal.jsx"
+import ReportConfigModal from "../reports/components/ReportConfigModal.jsx"
 
 export default function ListUserPage() {
 
