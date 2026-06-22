@@ -35,19 +35,6 @@ export default function BrandRowActions({ brand }) {
                 <Pencil size={16} />
             </button>
 
-            {/* Botón opciones */}
-            <Dropdown>
-                <DropdownTrigger>
-                    <button className="p-1 rounded hover:bg-gray-900">
-                        <EllipsisVertical size={16} />
-                    </button>
-                </DropdownTrigger>
-                <DropdownContent className="right-0">
-                    <DropdownItem>
-                        <button onClick={handleView}>Visualizar Marca</button>
-                    </DropdownItem>
-                </DropdownContent>
-            </Dropdown>
 
             {/* Modal de edición de marca */}
             <EditBrandPage

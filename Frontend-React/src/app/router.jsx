@@ -26,6 +26,14 @@ import {
 
 } from "@/features/users";
 
+// Módulo tasks:
+import {
+    ListTaskPage,
+    CreateTaskPage,
+    ViewTaskPage,
+    EditTaskPage
+} from "@/features/tasks";
+
 
 // Módulo consumable-materials:
 import { 
@@ -58,7 +66,6 @@ import {
 import { 
    
     CreateBrandPage,
-    
     ListBrandPage,
     EditBrandPage
      
@@ -66,7 +73,10 @@ import {
 } from "@/features/brands";
 
 
-// Módulo groups:
+// Módulo access:
+import {
+     AccessPage
+} from "@/features/access";
 
 //Módulo permissions:
 import { 
@@ -124,6 +134,15 @@ const router = createBrowserRouter([
             {
                 path: "users/edit",
                 element: <EditUserPage />,
+            },
+            // Módulo tasks:
+            {
+                path: "tasks",
+                element: <ListTaskPage />,
+            },
+            {
+                path: "tasks/create",
+                element: <CreateTaskPage />,
             },
 
             // Módulo consumable-materials:
@@ -190,6 +209,11 @@ const router = createBrowserRouter([
                 path: "permissions",
                 element: < ViewPermissionPage/>,
             },
+         // Módulo access:
+            {
+                path: "admin",
+                element: <AccessPage />,
+            },
             
         ],
     },
@@ -214,6 +238,15 @@ const router = createBrowserRouter([
             {
                 path: "users/:id/edit",
                 element: <EditUserPage />,
+            },
+            // Módulo tasks:
+            {
+                path: "tasks/:id",
+                element: <ViewTaskPage />,
+            },
+            {
+                path: "tasks/:id/edit",
+                element: <EditTaskPage />,
             },
 
             // Módulo consumable-materials:

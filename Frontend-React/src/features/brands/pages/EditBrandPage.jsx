@@ -32,53 +32,6 @@ export default function EditBrandPage({ brand, isOpen, onClose }) {
           />
         </div>
 
-        {/* Descripción */}
-        {/* <div className="mb-4">
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Descripción
-          </label>
-          <textarea
-            placeholder="Ingrese una descripción"
-            rows={3}
-            className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-          />
-        </div> */}
-
-        {/* Estado activo */}
-        {/* <div className="mb-4">
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Estado
-          </label>
-          <select className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-            <option value="active">Activo</option>
-            <option value="inactive">Inactivo</option>
-          </select>
-        </div> */}
-
-        {/* Selección de categorías (solo visual, sin estado) */}
-        {/* <div className="mb-4">
-          <p className="mb-2 font-medium">Categorías</p>
-
-          <div className="grid grid-cols-2 gap-2">
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" />
-              Categoría 1
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" />
-              Categoría 2
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" />
-              Categoría 3
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" />
-              Categoría 4
-            </label>
-          </div>
-        </div> */}
-
         {/* Acciones del modal */}
         <div className="flex justify-end gap-2 mt-6">
           {/* Botón cancelar */}
