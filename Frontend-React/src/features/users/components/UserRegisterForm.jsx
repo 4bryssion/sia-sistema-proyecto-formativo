@@ -127,7 +127,7 @@ export default function UserRegisterForm() {
         {/* Columna 1 */}
         <div className="flex flex-col gap-6 my-0 w-[320px]">
           <FileInput
-            className="h-60"
+            className="h-37"
             accept="image/*"
             multiple={false}
             value={formData.image}

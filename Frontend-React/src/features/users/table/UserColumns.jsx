@@ -29,7 +29,9 @@ export const UserColumns = (onChanged) => [
       const handleToggle = async () => {
         try { await userService.toggle(u.id); } finally { onChanged?.(); }
       };
-      return <Switch checked={u.isActive} onChange={handleToggle} size="sm" className="inline-flex" />;
+      return( <div className="flex items-center h-full"><Switch checked={u.isActive} onChange={handleToggle} size="sm" className="inline-flex" />
+      </div> 
+      );
     },
   },
   {

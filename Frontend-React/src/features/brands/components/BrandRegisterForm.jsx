@@ -49,7 +49,7 @@ export default function BrandRegisterForm({ onSuccess }) {
                 onSubmit={handleSubmit}
             >
                 <Input
-                    className="bg-white"
+                    className="bg-white py-0.5 rounded-md"
                     name="brandName"
                     placeholder="Nombre de la marca"
                     value={formData.brandName}

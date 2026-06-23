@@ -19,6 +19,7 @@ export default function Input({
                         mb-1
                         place-self-start
                         font-secondary
+                        
                         ${error ? "text-red-800" : "text-text-primary"}
                     `}
                 >

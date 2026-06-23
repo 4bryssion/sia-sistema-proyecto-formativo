@@ -23,8 +23,8 @@ export default function UserEditRight({
         </h2>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6 w-full">
-        <div className="grid gap-6 justify-items-center">
+      <div className="grid lg:grid-cols-2 w-full">
+        <div className="grid gap-2 justify-items-center">
           <Input
             label="Nombre"
             name="userFirstName"
@@ -72,7 +72,7 @@ export default function UserEditRight({
           />
         </div>
 
-        <div className="grid gap-6 justify-items-center lg:h-max">
+        <div className="grid gap-2 justify-items-center lg:h-max">
           <Select
             label="Tipo de cuenta"
             name="userAccountType"

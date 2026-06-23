@@ -11,24 +11,6 @@ export default function TaskRowActions({ tasks, onChanged }) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
 
-  const isCompleted = tasks.status === "completada";
-  const isFailed = tasks.status === "no_completada";
-
-  const handleStatus = async () => {
-    if (isFailed) return;
-    setBusy(true);
-    try {
-      await taskService.update(tasks.id, {
-        status: isCompleted ? "en_progreso" : "completada",
-      });
-      onChanged?.();
-    } catch {
-      onChanged?.();
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const handleToggle = async () => {
     setBusy(true);
     try {
@@ -45,12 +27,6 @@ export default function TaskRowActions({ tasks, onChanged }) {
     <div className="flex items-center gap-3">
 
       <Switch checked={tasks.isActive} onChange={handleToggle} disabled={busy} size="sm" className="inline-flex"/>
-
-      <Checkbox
-        checked={isCompleted}
-        disable={isFailed || busy}
-        onChange={handleStatus}
-      />
 
       <button
         onClick={() => navigate(`/view/tasks/${tasks.id}/edit`)}

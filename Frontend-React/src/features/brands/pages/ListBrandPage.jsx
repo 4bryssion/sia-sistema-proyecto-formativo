@@ -10,7 +10,7 @@ export default function ListBrandPage() {
     const { brands, loading, error, refetch } = useBrands();
 
     return (
-        <div className="p-2">
+        <div className="p-6">
 
             <div className="mb-6">
                 <IconButton ariaLabel="Devolverse" onClick={() => navigate(-1)}>
@@ -24,7 +24,7 @@ export default function ListBrandPage() {
                     <BrandRegisterForm onSuccess={refetch} />
                 </div>
 
-                <div className="bg-white p-2">
+                <div className="bg-white p-6">
                     <h1 className="text-h2 font-bold mb-6">Marcas</h1>
 
                     {loading ? (
