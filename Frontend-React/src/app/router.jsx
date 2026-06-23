@@ -86,13 +86,6 @@ import {
      AccessPage
 } from "@/features/access";
 
-//Módulo permissions:
-import { 
-   
-    ViewPermissionPage
-     
-
-} from "@/features/permissions";
 
 
 const router = createBrowserRouter([
@@ -204,11 +197,6 @@ const router = createBrowserRouter([
                 element: <ListGroupPage />
             },
 
-         // Módulo permissions:
-            {
-                path: "permissions",
-                element: < ViewPermissionPage/>,
-            },
          // Módulo access:
             {
                 path: "admin",
@@ -294,11 +282,6 @@ const router = createBrowserRouter([
                 element: <h1>Editar Grupos</h1>,
             },
 
-            // Módulo permissions:
-            {
-                path: "permissions/:id",
-                element:< ViewPermissionPage/>,
-            }
         ],
     },    
 ]);

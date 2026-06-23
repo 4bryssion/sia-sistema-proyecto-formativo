@@ -1,2 +1,3 @@
-// permissions — exportar páginas aquí cuando estén creadas
-export { default as ViewPermissionPage } from "./pages/ViewPermissionPage";
+// permissions — catálogo fijo de solo lectura.
+// No tiene módulo CRUD propio (decisión del autor).
+// Se consume vía GET /api/permissions directamente en la feature access.
