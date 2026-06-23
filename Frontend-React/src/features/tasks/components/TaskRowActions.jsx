@@ -1,74 +1,78 @@
+import { useState } from "react";
 import { Pencil, EllipsisVertical } from "lucide-react";
-// Hook de React Router para navegar programáticamente entre rutas
 import { useNavigate } from "react-router-dom";
-
 import {
-    Dropdown,
-    DropdownTrigger,
-    DropdownItem,
-    DropdownContent,
-    Checkbox
+  Dropdown, DropdownTrigger, DropdownItem, DropdownContent,
+  Checkbox, Switch,
 } from "@/shared";
+import taskService from "../services/taskService.js";
 
+export default function TaskRowActions({ tasks, onChanged }) {
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
 
-// Componente que renderiza las acciones de cada fila de usuarios
-// Recibe como prop el objeto users
-export default function TaskRowActions({ tasks }) {
+  const isCompleted = tasks.status === "completada";
+  const isFailed = tasks.status === "no_completada";
 
-    // Hook que permite redirigir a otra ruta desde código
-    const navigate = useNavigate();
+  const handleStatus = async () => {
+    if (isFailed) return;
+    setBusy(true);
+    try {
+      await taskService.update(tasks.id, {
+        status: isCompleted ? "en_progreso" : "completada",
+      });
+      onChanged?.();
+    } catch {
+      onChanged?.();
+    } finally {
+      setBusy(false);
+    }
+  };
 
+  const handleToggle = async () => {
+    setBusy(true);
+    try {
+      await taskService.toggle(tasks.id);
+      onChanged?.();
+    } catch {
+      onChanged?.();
+    } finally {
+      setBusy(false);
+    }
+  };
 
-    // Acción para editar los ususarios
-    // Redirige a la página de edición usando el id los usuarios
-    
+  return (
+    <div className="flex items-center gap-3">
 
-    const handleView = () => {
-        navigate(`/view/tasks/${tasks.id}`)
-    };
+      <Switch checked={tasks.isActive} onChange={handleToggle} disabled={busy} size="sm" className="inline-flex"/>
 
-    const handleEdit = () => {
-        navigate(`/view/tasks/${tasks.id}/edit`)
-    };
+      <Checkbox
+        checked={isCompleted}
+        disable={isFailed || busy}
+        onChange={handleStatus}
+      />
 
+      <button
+        onClick={() => navigate(`/view/tasks/${tasks.id}/edit`)}
+        className="p-1 rounded hover:bg-gray-900"
+      >
+        <Pencil size={16} />
+      </button>
 
-    return (
-        // Contenedor de los botones de acciones
-        <div className="flex gap-2">
-
-            {/* Botón editar */}
-            <button
-                onClick={handleEdit} // Ejecuta la navegación a la página de edición
-                className="p-1 rounded hover:bg-gray-900"
-            >
-                <Pencil size={16} /> {/* Icono de editar */}
+      <Dropdown>
+        <DropdownTrigger>
+          <button className="p-1 rounded hover:bg-gray-900">
+            <EllipsisVertical size={16} />
+          </button>
+        </DropdownTrigger>
+        <DropdownContent className="right-0">
+          <DropdownItem>
+            <button onClick={() => navigate(`/view/tasks/${tasks.id}`)}>
+              Visualizar Tarea
             </button>
-            <Checkbox/>
-
-
-            {/* Botón option */}
-            <Dropdown>
-
-            <DropdownTrigger>
-                <button className="p-1 rounded hover:bg-gray-900">
-                    <EllipsisVertical size={16} /> {/* Icono de opciones */}
-                </button>
-            </DropdownTrigger>
-
-            <DropdownContent className="right-0">
-                <DropdownItem>
-                    <button onClick={handleView}>
-                        Visualizar Tarea
-                    </button>
-                </DropdownItem>
-                {/* <DropdownItem>Opción 2</DropdownItem>
-                <DropdownItem>Opción 3</DropdownItem> */}
-            </DropdownContent>
-
-            </Dropdown>
-
-
-        </div>
-    );
+          </DropdownItem>
+        </DropdownContent>
+      </Dropdown>
+    </div>
+  );
 }
-

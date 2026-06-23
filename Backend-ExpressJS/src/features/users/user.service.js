@@ -15,8 +15,8 @@ const deleteFile = (filePath) => {
 };
 
 export const userService = {
-  async getAll() {
-    return userRepository.findAll();
+  async getAll(status) {
+    return userRepository.findAll(status);
   },
 
   async getById(id) {
@@ -30,15 +30,21 @@ export const userService = {
 
     const data = { ...bodyData };
 
+    const groupId = Number(data.groupId);
+    delete data.groupId;
+
     data.userPhoto = `/uploads/${file.filename}`;
     data.documentTypeId = Number(data.documentTypeId);
-
     if (data.userEndDate) data.userEndDate = new Date(data.userEndDate);
+
+    if (data.userEmailInstitutional && data.userEmailInstitutional === data.userEmail) {
+      throw new Error('El correo institucional no puede ser igual al personal.');
+    }
 
     data.userPassword = await bcrypt.hash(data.userPassword, SALT_ROUNDS);
 
     try {
-      return await userRepository.create(data);
+      return await userRepository.createWithGroup(data, groupId);
     } catch (err) {
       deleteFile(data.userPhoto);
       throw err;
@@ -51,21 +57,17 @@ export const userService = {
     const data = { ...bodyData };
 
     if (file) data.userPhoto = `/uploads/${file.filename}`;
-
-    if (data.userPassword) {
-      data.userPassword = await bcrypt.hash(data.userPassword, SALT_ROUNDS);
-    }
-
+    if (data.userPassword) data.userPassword = await bcrypt.hash(data.userPassword, SALT_ROUNDS);
     if (data.documentTypeId) data.documentTypeId = Number(data.documentTypeId);
     if (data.userEndDate) data.userEndDate = new Date(data.userEndDate);
 
-    // userStatus: campo de cuenta habilitada (gestionado vía PUT)
-    if (data.userStatus !== undefined) {
-      data.userStatus = data.userStatus === true || data.userStatus === 'true';
+    const personal = data.userEmail ?? currentUser.userEmail;
+    if (data.userEmailInstitutional && data.userEmailInstitutional === personal) {
+      throw new Error('El correo institucional no puede ser igual al personal.');
     }
 
-    // userIsActive NO se actualiza por PUT — se gestiona exclusivamente vía PATCH /:id/toggle
-    delete data.userIsActive;
+    delete data.groupId;
+    delete data.isActive;
 
     try {
       const resultado = await userRepository.update(id, data);
@@ -79,6 +81,6 @@ export const userService = {
 
   async toggle(id) {
     const record = await userService.getById(id);
-    return userRepository.toggle(id, !record.userIsActive);
+    return userRepository.toggle(id, !record.isActive);
   },
 };

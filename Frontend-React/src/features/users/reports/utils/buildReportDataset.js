@@ -1,40 +1,14 @@
-//Funcion utilitario para construir el dataset de un reporte (tabla)
-//Patrón: transformacion de datos (input -> output listo para exportar)
+export function buildReportDataset({ users, selectedFields, scope, documentNumber }) {
+  let filtered = [...users];
 
-export function buildReportDataset({
-    users,  //Array de ususario origen
-    selectedFields, //Campos seleccionados para el reporte
-    scope, // Alcance del reporte: "all" | "document"
-    documentNumber // Numero de documento para filtrar (si aplica)
-}) {
-  
-    let filteredUsers = [...users]
+  if (scope === "document" && documentNumber) {
+    filtered = filtered.filter((u) => u.userDocumentNumber === documentNumber);
+  }
 
-    //FIltro por alcance: si es por documento, se aplica filtro especifico
-    if (scope === "document" && documentNumber) {
-        filteredUsers = filteredUsers.filter(
-            (user) => user.document_number === documentNumber
-        );
-    }
+  const headers = selectedFields.map((f) => f.label);
+  const rows = filtered.map((u) =>
+    selectedFields.map((f) => (f.accessor ? f.accessor(u) : (u[f.key] ?? "")))
+  );
 
-    //Contruccion de encabezados del reporte
-    //Se toma el label de cada campo selleccionado
-
-    const headers = selectedFields.map((field) => field.label);
-
-    const rows = filteredUsers.map((user) => 
-    selectedFields.map((field) => {
-        const value = user[field.key]; // Acceso dinamico a la propiedad
-
-        return value ?? "";
-    })
-);
-
-
-//Estructura final desacoplad de la UI
-//Listas para exportar Excel, PDF o renderizar en tabla
-return {
-    headers, // Array de strings (columnas)
-    rows //Array de arrays (filas)
-};
+  return { headers, rows };
 }

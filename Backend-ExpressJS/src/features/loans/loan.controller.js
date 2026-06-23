@@ -18,13 +18,6 @@ export const loanController = {
     } catch (err) { next(err); }
   },
 
-  async update(req, res, next) {
-    try {
-      const data = await loanService.update(Number(req.params.id), req.body);
-      res.json({ mensaje: 'Préstamo actualizado.', data });
-    } catch (err) { next(err); }
-  },
-
   async toggle(req, res, next) {
     try {
       const data = await loanService.toggle(Number(req.params.id));

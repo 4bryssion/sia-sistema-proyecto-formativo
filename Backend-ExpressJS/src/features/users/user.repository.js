@@ -1,28 +1,43 @@
 import prisma from '../../config/prisma.js';
 
 const selectPublic = {
-  id:                true,
-  userFirstName:     true,
-  userLastName:      true,
-  userDocumentNumber: true,
-  userEndDate:       true,
-  userEmail:         true,
-  userPhone:         true,
-  userSecondPhone:   true,
-  userAddress:       true,
-  userStatus:        true, // cuenta habilitada (antes userIsActive)
-  userIsActive:      true, // soft-delete (nuevo)
-  userPhoto:         true,
-  userAccountType:   true,
-  createdAt:         true,
-  updatedAt:         true,
+  id:                     true,
+  userFirstName:          true,
+  userLastName:           true,
+  userDocumentNumber:     true,
+  userEndDate:            true,
+  userEmail:              true,
+  userEmailInstitutional: true,
+  userPhone:              true,
+  userSecondPhone:        true,
+  userAddress:            true,
+  isActive:               true,
+  userPhoto:              true,
+  userAccountType:        true,
+  createdAt:              true,
+  updatedAt:              true,
   documentType: { select: { id: true, documentName: true } },
+  groups: {
+    select: {
+      group: {
+        select: {
+          id: true,
+          groupName: true,
+          _count: { select: { permissions: true } },
+        },
+      },
+    },
+  },
 };
 
 export const userRepository = {
-  async findAll() {
+  async findAll(status = 'active') {
+    const where =
+      status === 'all'      ? {} :
+      status === 'inactive' ? { isActive: false } :
+                              { isActive: true }; // 'active' y cualquier valor desconocido
     return prisma.user.findMany({
-      where: { userIsActive: true },
+      where,
       select: selectPublic,
       orderBy: { userFirstName: 'asc' },
     });
@@ -46,6 +61,14 @@ export const userRepository = {
     });
   },
 
+  async createWithGroup(data, groupId) {
+    return prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({ data });
+      await tx.userGroup.create({ data: { userId: created.id, groupId } });
+      return tx.user.findUnique({ where: { id: created.id }, select: selectPublic });
+    });
+  },
+
   async update(id, data) {
     return prisma.user.update({
       where: { id },
@@ -57,7 +80,7 @@ export const userRepository = {
   async toggle(id, isActive) {
     return prisma.user.update({
       where: { id },
-      data: { userIsActive: isActive },
+      data: { isActive },
       select: selectPublic,
     });
   },

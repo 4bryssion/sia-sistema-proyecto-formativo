@@ -1,24 +1,17 @@
-import { users } from "../../data/users";
-
-//utilidad para transformar datos en dataset de reporte
 import { buildReportDataset } from "../utils/buildReportDataset";
-
-//Servicios de exportacion
 import { generateExcelReport } from "./genarateExcelReport";
 import { generatePdfReport } from "./generatePdfReport";
 
-
 export function generateUserReport({
-    format, // excel | pdf
-    selectedFields, // campos seleccionados por el usuario
-    scope, // alcance del reporte
-    documentNumber // filtro opcional
+    users = [],
+    format,
+    selectedFields,
+    scope,
+    documentNumber
 }) {
 
-    // construccion de dataset (desacoplado de la ui)
-
     const { headers, rows } = buildReportDataset({
-        users, 
+        users,
         selectedFields,
         scope,
         documentNumber

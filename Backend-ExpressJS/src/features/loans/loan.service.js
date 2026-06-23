@@ -12,47 +12,30 @@ export const loanService = {
     return loan;
   },
 
-  async create(bodyData) {
-    const data = {
-      ...bodyData,
-      userId:           Number(bodyData.userId),
-      materialId:       Number(bodyData.materialId),
-      borrowedQuantity: Number(bodyData.borrowedQuantity),
-      apprenticeGroup:  Number(bodyData.apprenticeGroup),
-      returnDate: bodyData.returnDate
-        ? new Date(bodyData.returnDate).toISOString()
-        : undefined,
-    };
-
-    const material = await prisma.consumableMaterial.findUnique({
-      where: { id: data.materialId },
-    });
-
-    if (!material) throw new Error('El material especificado no existe.');
-    if (material.status !== 'Disponible') {
-      throw new Error(`El material no está disponible para préstamo. Estado actual: ${material.status}`);
+  async create(data) {
+    for (const m of data.materials) {
+      const material = await prisma.consumableMaterial.findUnique({ where: { id: m.materialId } });
+      if (!material) throw new Error(`El material ${m.materialId} no existe.`);
+      if (material.status !== 'Disponible') {
+        throw new Error(`El material ${material.materialName} no está disponible (estado: ${material.status}).`);
+      }
     }
 
-    const [loan] = await loanRepository.createWithStatusChange(data, data.materialId);
-    return loan;
-  },
-
-  async update(id, bodyData) {
-    await loanService.getById(id);
-
-    const data = { ...bodyData };
-    if (data.userId)           data.userId           = Number(data.userId);
-    if (data.materialId)       data.materialId       = Number(data.materialId);
-    if (data.borrowedQuantity) data.borrowedQuantity = Number(data.borrowedQuantity);
-    if (data.apprenticeGroup)  data.apprenticeGroup  = Number(data.apprenticeGroup);
-    if (data.returnDate)       data.returnDate       = new Date(data.returnDate).toISOString();
-
-    return loanRepository.update(id, data);
+    const header = {
+      apprenticeGroup: data.apprenticeGroup,
+      useJustification: data.useJustification,
+      returnDate: new Date(data.returnDate),
+    };
+    return loanRepository.create({
+      header,
+      materials: data.materials,
+      parties: { lenderId: data.lenderId, receiverId: data.receiverId },
+    });
   },
 
   async toggle(id) {
     const loan = await loanService.getById(id);
-    const newIsActive = !loan.isActive;
-    return loanRepository.toggleWithMaterialStatus(id, newIsActive, loan.materialId);
+    const materialIds = loan.materials.map((lm) => lm.materialId);
+    return loanRepository.toggle(id, !loan.isActive, materialIds);
   },
 };

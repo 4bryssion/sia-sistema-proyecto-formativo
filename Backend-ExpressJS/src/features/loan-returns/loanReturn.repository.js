@@ -1,18 +1,17 @@
 import prisma from '../../config/prisma.js';
 
 const includeRelations = {
-  loan: {
+  loanMaterial: {
     select: {
-      id: true,
-      loanDate: true,
-      returnDate: true,
       borrowedQuantity: true,
-      apprenticeGroup: true,
-      useJustification: true,
-      user: { select: { id: true, userFirstName: true, userLastName: true } },
+      loan: {
+        select: { id: true, loanDate: true, returnDate: true, apprenticeGroup: true, useJustification: true },
+      },
+      consumableMaterial: {
+        select: { id: true, materialName: true, status: true },
+      },
     },
   },
-  consumableMaterial: { select: { id: true, materialName: true, status: true } },
 };
 
 export const loanReturnRepository = {

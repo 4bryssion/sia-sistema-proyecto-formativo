@@ -1,55 +1,28 @@
 import { z } from "zod";
 
-export const userSchema = z.object({
-
-    userName: z
-        .string()
-        .min(3, "El nombre debe tener mínimo 3 caracteres")
-        .max(60, "El nombre es demasiado largo"),
-
-    userDocumentType: z
-        .string()
-        .min(1, "Debe seleccionar un tipo de documento"),
-
-    userDocumentNumber: z
-        .string()
-        .min(5, "Número de documento inválido")
-        .max(20, "Número de documento demasiado largo"),
-
-    userPhone: z
-        .string()
-        .regex(/^[0-9]{10}$/, "El teléfono debe tener 10 dígitos"),
-
-    userRole: z
-        .string()
-        .min(1, "Debe seleccionar un tipo de documento"),
-    
-    userEndDate: z
-        .string()
-        .min(1, "La fecha es obligatoria")
-        .regex(/^\d{4}-\d{2}-\d{2}$/, "Formato inválido (YYYY-MM-DD)"),
-
-    userEmail: z
-        .string()
-        .email()
-        .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Debe ingresar un email válido"),
-
-    userEmailInstitutional: z
-        .string()
-        .email()
-        .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Debe ingresar un email institucional válido"),
-
-    userDirection: z
-        .string()
-        .min(5, "La dirección es muy corta")
-        .max(100, "La dirección es demasiado larga"),
-
+export const userSchema = z
+  .object({
+    userFirstName: z.string().min(3, "El nombre debe tener mínimo 3 caracteres").max(100, "Demasiado largo"),
+    userLastName: z.string().min(3, "El apellido debe tener mínimo 3 caracteres").max(100, "Demasiado largo"),
+    documentTypeId: z.string().min(1, "Seleccione un tipo de documento"),
+    userDocumentNumber: z.string().min(5, "Número inválido").max(20, "Demasiado largo"),
+    userEndDate: z.string().min(1, "La fecha es obligatoria").regex(/^\d{4}-\d{2}-\d{2}$/, "Formato YYYY-MM-DD"),
+    userEmail: z.string().email("Correo personal inválido"),
+    userEmailInstitutional: z.string().email("Correo institucional inválido").or(z.literal("")).optional(),
+    userPhone: z.string().regex(/^[0-9]{7,15}$/, "Teléfono de 7 a 15 dígitos"),
+    userSecondPhone: z.string().regex(/^[0-9]{7,15}$/, "Teléfono de 7 a 15 dígitos").or(z.literal("")).optional(),
+    userAddress: z.string().min(5, "La dirección es muy corta").max(150, "Demasiado larga"),
+    userAccountType: z.string().min(1, "Seleccione el tipo de cuenta"),
+    groupId: z.string().min(1, "Seleccione un grupo"),
     userPassword: z
-        .string()
-        .min(8, "La contraseña debe tener mínimo 8 caracteres")
-        .regex(/[A-Z]/, "Debe contener al menos una mayúscula")
-        .regex(/[a-z]/, "Debe contener al menos una minúscula")
-        .regex(/[0-9]/, "Debe contener al menos un número")
-        .regex(/[^A-Za-z0-9]/, "Debe contener al menos un carácter especial"),
-       
-});
+      .string()
+      .min(8, "Mínimo 8 caracteres")
+      .regex(/[A-Z]/, "Al menos una mayúscula")
+      .regex(/[a-z]/, "Al menos una minúscula")
+      .regex(/[0-9]/, "Al menos un número")
+      .regex(/[^A-Za-z0-9]/, "Al menos un carácter especial"),
+  })
+  .refine(
+    (d) => !d.userEmailInstitutional || d.userEmailInstitutional !== d.userEmail,
+    { message: "El correo institucional no puede ser igual al personal", path: ["userEmailInstitutional"] }
+  );

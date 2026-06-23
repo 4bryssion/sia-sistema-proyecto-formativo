@@ -1,53 +1,76 @@
 import prisma from '../../config/prisma.js';
 
-const includeRelations = {
-  user:              { select: { id: true, userFirstName: true, userLastName: true, userPhone: true, userEmail: true, userAddress: true } },
-  consumableMaterial: { select: { id: true, materialName: true, status: true } },
-};
-
 export const loanRepository = {
   async findAll() {
     return prisma.loan.findMany({
       where: { isActive: true },
-      include: includeRelations,
       orderBy: { loanDate: 'desc' },
+      include: {
+        materials: { include: { consumableMaterial: true } },
+        signatures: { include: { user: true } },
+      },
     });
   },
 
   async findById(id) {
     return prisma.loan.findUnique({
       where: { id },
-      include: includeRelations,
+      include: {
+        materials: { include: { consumableMaterial: true } },
+        signatures: { include: { user: true } },
+      },
     });
   },
 
-  async createWithStatusChange(data, materialId) {
-    return prisma.$transaction([
-      prisma.loan.create({ data, include: includeRelations }),
-      prisma.consumableMaterial.update({
-        where: { id: materialId },
+  // header: { apprenticeGroup, useJustification, returnDate }
+  // materials: [{ materialId, borrowedQuantity }, ...]
+  // parties: { lenderId, receiverId }
+  async create({ header, materials, parties }) {
+    const materialIds = materials.map((m) => m.materialId);
+    return prisma.$transaction(async (tx) => {
+      const loan = await tx.loan.create({ data: header });
+
+      await tx.loanMaterial.createMany({
+        data: materials.map((m) => ({
+          loanId: loan.id,
+          materialId: m.materialId,
+          borrowedQuantity: m.borrowedQuantity,
+        })),
+      });
+
+      await tx.loanSignature.createMany({
+        data: [
+          { loanId: loan.id, userId: parties.lenderId, party: 'Prestador' },
+          { loanId: loan.id, userId: parties.receiverId, party: 'Receptor' },
+        ],
+      });
+
+      await tx.consumableMaterial.updateMany({
+        where: { id: { in: materialIds } },
         data: { status: 'En_prestamo' },
-      }),
-    ]);
-  },
+      });
 
-  async update(id, data) {
-    return prisma.loan.update({
-      where: { id },
-      data,
-      include: includeRelations,
+      return tx.loan.findUnique({
+        where: { id: loan.id },
+        include: {
+          materials: { include: { consumableMaterial: true } },
+          signatures: { include: { user: true } },
+        },
+      });
     });
   },
 
-  async toggleWithMaterialStatus(id, isActive, materialId) {
+  async toggle(id, isActive, materialIds) {
     const materialStatus = isActive ? 'En_prestamo' : 'Disponible';
-    const [loan] = await prisma.$transaction([
-      prisma.loan.update({ where: { id }, data: { isActive }, include: includeRelations }),
-      prisma.consumableMaterial.update({
-        where: { id: materialId },
-        data: { status: materialStatus },
-      }),
-    ]);
-    return loan;
+    return prisma.$transaction(async (tx) => {
+      const loan = await tx.loan.update({ where: { id }, data: { isActive } });
+      if (materialIds.length) {
+        await tx.consumableMaterial.updateMany({
+          where: { id: { in: materialIds } },
+          data: { status: materialStatus },
+        });
+      }
+      return loan;
+    });
   },
 };

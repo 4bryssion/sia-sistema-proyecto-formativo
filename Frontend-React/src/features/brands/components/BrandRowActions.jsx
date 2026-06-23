@@ -1,49 +1,50 @@
 import { useState } from "react";
-import { Pencil, EllipsisVertical } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { Dropdown, DropdownTrigger, DropdownItem, DropdownContent } from "@/shared";
-import EditBrandPage from "../pages/EditBrandPage";
+import { Pencil } from "lucide-react";
+import { Switch } from "@/shared";
+import brandService from "../services/brandService.js";
+import EditBrandPage from "../pages/EditBrandPage.jsx";
 
-// Componente de acciones por fila de marca
-export default function BrandRowActions({ brand }) {
-
-    const navigate = useNavigate();
+export default function BrandRowActions({ brand, onChanged }) {
 
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const [toggling, setToggling] = useState(false);
 
-    // Navega a la página de visualizar marca
-    const handleView = () => {
-        navigate(`/view/brands/${brand.id}`);
-    };
-
-    // Navega a la página de editar marca
-    const handleEdit = () => {
-        setIsEditOpen(true);
-    };
-
-    const handleSave = async (updatedBrand) => {
-        if (onBrandUpdated) {
-            onBrandUpdated(updatedBrand);
+    const handleToggle = async () => {
+        setToggling(true);
+        try {
+            await brandService.toggle(brand.id);
+            onChanged?.();
+        } catch {
+            onChanged?.();
+        } finally {
+            setToggling(false);
         }
     };
 
     return (
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
 
-            {/* Botón editar */}
-            <button onClick={handleEdit} className="p-1 rounded hover:bg-gray-900">
+            <Switch
+                checked={brand.isActive}
+                onChange={handleToggle}
+                disabled={toggling}
+                size="sm"
+                className="inline-flex"
+            />
+
+            <button
+                onClick={() => setIsEditOpen(true)}
+                className="p-1 rounded hover:bg-gray-900"
+            >
                 <Pencil size={16} />
             </button>
 
-
-            {/* Modal de edición de marca */}
             <EditBrandPage
                 brand={brand}
                 isOpen={isEditOpen}
                 onClose={() => setIsEditOpen(false)}
-                onSave={handleSave}
+                onSave={onChanged}
             />
-
         </div>
     );
 }

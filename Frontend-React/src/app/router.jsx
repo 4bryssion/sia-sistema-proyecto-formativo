@@ -70,13 +70,9 @@ import {
 
 
 // Módulo brands:
-import { 
-   
+import {
     CreateBrandPage,
-    ListBrandPage,
-    EditBrandPage
-     
-
+    ListBrandPage
 } from "@/features/brands";
 
 
@@ -195,25 +191,17 @@ const router = createBrowserRouter([
             // Módulo brands:
             {
                 path: "brands",
-                element:<ListBrandPage />,
+                element: <ListBrandPage />,
             },
             {
                 path: "brands/create",
-                element: <h1>Crear marcas</h1>,
-            },
-            {
-                path: "brands/view",
-                element: <ListUserPage />,
+                element: <CreateBrandPage />,
             },
 
             // Módulo groups:
             {
                 path: "groups",
                 element: <ListGroupPage />
-            },
-            {
-                path: "groups/create",
-                element: <h1>Crear Grupos</h1>,
             },
 
          // Módulo permissions:
@@ -294,16 +282,6 @@ const router = createBrowserRouter([
 {
                 path: "loans/:id/return",
                 element: <CreateLoanReturnPage />,
-            },
-
-            // Módulo brands:
-            {
-                path: "brands/:id",
-                element: <h1>Visualizar marca</h1>,
-            },
-            {
-                path: "brands/:id/edit",
-                element: <EditBrandPage/>,
             },
 
             // Módulo groups:

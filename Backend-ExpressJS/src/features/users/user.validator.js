@@ -6,11 +6,11 @@ const baseSchema = {
   documentTypeId: Joi.number().integer().positive(),
   userDocumentNumber: Joi.string().max(20),
   userEndDate: Joi.date().iso(),
-  userEmail: Joi.string().email().lowercase().max(150),
+  userEmail: Joi.string().email({ tlds: { allow: false } }).lowercase().max(150),
+  userEmailInstitutional: Joi.string().email({ tlds: { allow: false } }).lowercase().max(150).allow('', null),
   userPhone: Joi.string().max(15),
   userSecondPhone: Joi.string().max(15).allow('', null),
   userAddress: Joi.string().max(150),
-  userStatus: Joi.boolean(),
   userAccountType: Joi.string().valid('Solidario', 'Cuentadante'),
 };
 
@@ -25,6 +25,7 @@ export const createUserSchema = Joi.object({
   userPhone: baseSchema.userPhone.required(),
   userAddress: baseSchema.userAddress.required(),
   userPassword: Joi.string().min(8).required(),
+  groupId: Joi.number().integer().positive().required(),
 });
 
 export const updateUserSchema = Joi.object({

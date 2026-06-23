@@ -11,7 +11,7 @@ import { generateUserReport } from "../services/generateUserReport";
 import { Button, Input, Select, Checkbox } from "@/shared";
 
 // Componente modal para configuración de reportes
-export default function ReportConfigModal({ isOpen, onClose }) {
+export default function ReportConfigModal({ isOpen, onClose, users = [] }) {
   // Estado del formato de salida
   const [format, setFormat] = useState("pdf");
 
@@ -46,12 +46,7 @@ export default function ReportConfigModal({ isOpen, onClose }) {
   // Handler principal para generar el reporte
   const handleGenerateReport = () => {
     // Invoca el caso de uso con la configuración actual
-    generateUserReport({
-      format,
-      selectedFields,
-      scope,
-      documentNumber,
-    });
+    generateUserReport({ users, format, selectedFields, scope, documentNumber });
 
 
     // Cierra el modal después de generar el reporte

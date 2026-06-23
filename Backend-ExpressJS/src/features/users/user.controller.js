@@ -3,7 +3,7 @@ import { userService } from './user.service.js';
 export const userController = {
   async getAll(req, res, next) {
     try {
-      res.json(await userService.getAll());
+      res.json(await userService.getAll(req.query.status));
     } catch (err) { next(err); }
   },
 
@@ -30,7 +30,7 @@ export const userController = {
   async toggle(req, res, next) {
     try {
       const data = await userService.toggle(Number(req.params.id));
-      const mensaje = data.userIsActive ? 'Usuario activado.' : 'Usuario desactivado.';
+      const mensaje = data.isActive ? 'Usuario activado.' : 'Usuario desactivado.';
       res.json({ mensaje, data });
     } catch (err) { next(err); }
   },

@@ -17,8 +17,7 @@ export const authService = {
     const isMatch = await bcrypt.compare(password, user.userPassword);
     if (!isMatch) throw authError('Credenciales inválidas');
 
-    if (!user.userIsActive) throw authError('Usuario no disponible');
-    if (!user.userStatus)   throw authError('Usuario inactivo');
+    if (!user.isActive) throw authError('Usuario inactivo');
 
     const token = jwt.sign(
       { id: user.id, email: user.userEmail },
