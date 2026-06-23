@@ -1,0 +1,79 @@
+import { useState, useEffect } from "react";
+import { Button, Input } from "@/shared";
+import { groupSchema } from "../schemas/groupSchema.js";
+import groupService from "../services/groupService.js";
+
+export default function CreateGroupModal({ isOpen, onClose, onSave }) {
+  const [groupName, setGroupName] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setGroupName("");
+      setError("");
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleSave = async () => {
+    const result = groupSchema.safeParse({ groupName });
+    if (!result.success) {
+      setError(result.error.issues[0]?.message ?? "Dato inválido");
+      return;
+    }
+    setSaving(true);
+    try {
+      await groupService.create(result.data);
+      setGroupName("");
+      setError("");
+      onSave?.();
+      onClose?.();
+    } catch (err) {
+      setError(err.response?.data?.error ?? "Error al crear el grupo");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-xl bg-white p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="mb-6 text-xl font-semibold">Crear Grupo</h2>
+
+        <div className="mb-4">
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            Nombre del grupo
+          </label>
+          <Input
+            type="text"
+            name="groupName"
+            placeholder="Ej: Administrador"
+            value={groupName}
+            onChange={(e) => {
+              setGroupName(e.target.value);
+              setError("");
+            }}
+            error={error}
+          />
+        </div>
+
+        <div className="flex justify-end gap-2 mt-6">
+          <Button variant="secondary" size="sm" onClick={onClose} disabled={saving}>
+            Cancelar
+          </Button>
+          <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
+            {saving ? "Guardando..." : "Crear"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
