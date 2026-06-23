@@ -3,7 +3,7 @@ import { returnableMaterialSchema } from "../schemas/returnableMaterialSchema.js
 
 import { Input, Button, Select, FileInput } from "@/shared";
 
-import { getDocumentTypes } from "@/features/users/services/selectService.js";
+import documentTypeService from "@/features/users/services/documentTypeService.js";
 
 export default function ReturnableMaterialRegisterForm(){
 
@@ -38,7 +38,7 @@ export default function ReturnableMaterialRegisterForm(){
     // Efectos:
 
     useEffect (() => {
-        getDocumentTypes().then(setDocumentTypes);
+        documentTypeService.getAll().then(setDocumentTypes).catch(() => {});
     }, []);
 
     // ===========================================

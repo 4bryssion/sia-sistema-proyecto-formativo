@@ -1,266 +1,274 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { userSchema } from "../schemas/userSchema.js";
-
 import { Input, Button, Select, FileInput } from "@/shared";
+import userService from "../services/userService.js";
+import documentTypeService from "../services/documentTypeService.js";
+import groupService from "@/features/groups/services/groupService";
 
-import { getDocumentTypes } from "@/features/users/services/selectService.js";
+const ACCOUNT_TYPE_OPTIONS = [
+  { id: "Solidario", value: "Solidario", label: "Solidario" },
+  { id: "Cuentadante", value: "Cuentadante", label: "Cuentadante" },
+];
 
-export default function UserRegisterForm(){
+export default function UserRegisterForm() {
+  const navigate = useNavigate();
 
-   // Estados:
+  const [documentTypes, setDocumentTypes] = useState([]);
+  const [groups, setGroups] = useState([]);
 
-    const [documentTypes, setDocumentTypes] = useState([]);
+  const [formData, setFormData] = useState({
+    userFirstName: "",
+    userLastName: "",
+    documentTypeId: "",
+    userDocumentNumber: "",
+    userPhone: "",
+    userSecondPhone: "",
+    userAccountType: "",
+    groupId: "",
+    userEndDate: "",
+    userEmail: "",
+    userEmailInstitutional: "",
+    userAddress: "",
+    userPassword: "",
+    image: [],
+  });
+  const [errors, setErrors] = useState({});
 
-    const [formData, setFormData] = useState({
-        userName: "", 
-        userDocumentType: "",
-        userDocumentNumber: "",
-        userState: "Activo",
+  useEffect(() => {
+    documentTypeService
+      .getAll()
+      .then((dts) =>
+        setDocumentTypes(
+          dts.map((d) => ({
+            id: d.id,
+            value: String(d.id),
+            label: d.documentName,
+          })),
+        ),
+      )
+      .catch(() => setDocumentTypes([]));
+    groupService
+      .getAll()
+      .then((gs) =>
+        setGroups(
+          gs
+            .filter((g) => g.groupName !== "SuperAdmin")
+            .map((g) => ({
+              id: g.id,
+              value: String(g.id),
+              label: g.groupName,
+            })),
+        ),
+      )
+      .catch(() => setGroups([]));
+  }, []);
 
-        userPhone: "",
-        userRole: "",
-        userEndDate: "",
-        userEmail: "",
-        userEmailInstitutional: "",
-        userDirection: "",
-        userPassword: ""
-    });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-    const [errors, setErrors] = useState({})
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    const [fecha] = useState(() => {
-        const hoy = new Date();
-        return hoy.toISOString().split("T")[0];
-    });
-
-    // Efectos:
-
-    useEffect (() => {
-        getDocumentTypes().then(setDocumentTypes);
-    }, []);
-
-    // ===========================================
-    //                 Handles
-    // ===========================================
-    // Función que se ejecuta cada vez que cambia el valor de un input del formulario
-
-    // Handle genérico:
-
-    const handleChange = (e) => {
-        // Se obtiene el nombre del campo y su valor
-        const { name, value } = e.target;
-
-        setFormData((prev) => ({
-            // Se copian todos los valores anteriores del estado
-            ...prev,
-
-            // Se actualiza únicamente lo que cambió
-            [name]: value
-        }));
+    const result = userSchema.safeParse(formData);
+    if (!result.success) {
+      const fieldErrors = {};
+      result.error.issues.forEach((issue) => {
+        fieldErrors[issue.path[0]] = issue.message;
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+    if (!formData.image || formData.image.length === 0) {
+      setErrors({ image: "La foto es requerida" });
+      return;
     }
 
-    // Handles personalizados:
-    
-    // Función que se ejecuta cuando se envía el formulario 
-    const handleSubmit = (e) => {
-        e.preventDefault();
+    const d = result.data;
+    const fd = new FormData();
+    fd.append("userFirstName", d.userFirstName);
+    fd.append("userLastName", d.userLastName);
+    fd.append("documentTypeId", d.documentTypeId);
+    fd.append("userDocumentNumber", d.userDocumentNumber);
+    fd.append("userEndDate", d.userEndDate);
+    fd.append("userEmail", d.userEmail);
+    fd.append("userPhone", d.userPhone);
+    fd.append("userAddress", d.userAddress);
+    fd.append("userAccountType", d.userAccountType);
+    fd.append("groupId", d.groupId);
+    fd.append("userPassword", d.userPassword);
+    if (d.userEmailInstitutional)
+      fd.append("userEmailInstitutional", d.userEmailInstitutional);
+    if (d.userSecondPhone) fd.append("userSecondPhone", d.userSecondPhone);
+    fd.append("image", formData.image[0]);
 
-        // Se valida el objeto de formData usando el esquema definido con Zod
-        // safeParse devuelve un objeto indicando si la validacion fue exitosa o no
-        const result = userSchema.safeParse(formData);
+    try {
+      await userService.create(fd);
+      setErrors({});
+      navigate("/dashboard/users");
+    } catch (error) {
+      const det = error.response?.data?.detalles;
+      setErrors({
+        form: det?.length
+          ? det.join(" · ")
+          : (error.response?.data?.error ?? "Error al crear el usuario"),
+      });
+    }
+  };
 
-        // Si la validación falla
-        if (!result.success){
-            // Objeto donde se almacenarán los errores por campo
-            const fieldErrors = {};
+  return (
+    <div className="flex justify-center pt-6">
+      <form
+        className="grid place-self-center gap-6 mx-6 md:grid-cols-2 lg:grid-cols-3 md:mx-12 1400:grid-cols-3 1400:mx-0 justify-items-center max-w-max"
+        onSubmit={handleSubmit}
+      >
+        {/* Columna 1 */}
+        <div className="flex flex-col gap-6 my-0 w-[320px]">
+          <FileInput
+            className="h-60"
+            accept="image/*"
+            multiple={false}
+            value={formData.image}
+            onChange={(files) =>
+              setFormData((prev) => ({ ...prev, image: files }))
+            }
+            children="Cargar imagen"
+          />
+          {errors.image && (
+            <p className="text-error text-caption">{errors.image}</p>
+          )}
 
-            // Zod devuelve los errores en un arreglo llamado issues
-            // Se recorren para asociar cada error a su campo correspondiente
-            result.error.issues.forEach((issue) => {
-                // Issue.path contiene la ruta del campo que falló
-                const field = issue.path[0];
-
-                // Se guarda el mensaje de error en el objeto fieldErrors
-                fieldErrors[field] = issue.message;
-            });
-
-            // Se actualiza el estado de errores para mostrarlos en el formulario
-            setErrors(fieldErrors);
-
-            // Se detiene la ejecución porque el formulario tiene errores
-            return;
-        }
-
-        // Si la validación es exitosa se limpian los errores anteriores 
-        setErrors({});
-
-        // result.data contiene los datos ya validados por Zod
-        console.log("Usuario valido:", result.data)
-
-    };
-
-
-    return(
-        <div className="flex justify-center pt-6" >
-        
-
-            <form 
-            className="grid place-self-center gap-6 mx-6 md:grid-cols-2 lg:grid-cols-3 md:mx-12 1400:grid-cols-3 1400:mx-0 justify-items-center max-w-max"
-
-                onSubmit={handleSubmit}
-            >
-                 <div
-                    className="flex flex-col gap-6 my-0 w-[320px]"
-                >
-                    <div className="flex flex-col">
-                        <FileInput
-                            className=" h-[240px]"
-                            accept="image/*"
-                            multiple={false}
-                            value={formData.consumableImage}
-                            onChange={(files) => setFormData((prev) => ({ ...prev, consumableImage: files }))}
-                            children="Cargar imagen"
-                        />
-                    </div>
-                    {/* Inputs */}
-                    <Input 
-                        label = "Nombre"
-                        name = "userName"
-                        placeholder = "Ingrese su nombre"
-                        value={formData.userName}
-                        onChange = {handleChange}
-                        error={errors.userName}
-                    />
-
-                    <Select 
-                        label = "Tipo de documento"
-                        name="userDocumentType"
-                        options={documentTypes}
-                        value={formData.userDocumentType}
-                        onChange = {handleChange}
-                        error={errors.userDocumentType}
-                    />
-
-                </div>
-
-                {/* Columna del medio */}
-                <div
-                    className="flex flex-col gap-6 my-0 w-[320px]"
-                >
-                    {/* Inputs */}
-                     <Input 
-                        label = "Número de documento"
-                        name = "userDocumentNumber"
-                        placeholder = "Ingrese su número de documento"
-                        value={formData.userDocumentNumber}
-                        onChange = {handleChange}
-                        error={errors.userDocumentNumber}
-                    />
-                    <Input 
-                        label = "Estado"
-                        name="userState"
-                        placeholder = "Activo/Inactivo"
-                        type="text"
-                        value={formData.userState}
-                        readOnly
-                    />
-                    <Input 
-                        label = "Teléfono"
-                        name = "userPhone"
-                        placeholder = "Ingrese su teléfono"
-                        type="tel"
-                        value={formData.userPhone}
-                        onChange = {handleChange}
-                        error={errors.userPhone}
-                    />
-
-                    <Select 
-                        label = "Rol del usuario"
-                        name="userRole"
-                        options={documentTypes}
-                        value={formData.userDocumentType}
-                        onChange = {handleChange}
-                        error={errors.userDocumentType}
-                    />
-
-                    <Input 
-                        label = "Fecha de inicio"
-                        name="userStartDate"
-                        type="date"
-                        value={fecha}
-                        readOnly
-                    />
-
-                </div>
-
-                {/* Columna izquierda */}
-                <div
-                    className="flex flex-col gap-6 my-0 w-[320px]"
-                >
-                    <Input 
-                        label = "Fecha de finalización"
-                        name="userEndDate"
-                        type="date"
-                        value={formData.userEndDate}
-                        onChange = {handleChange}
-                        error={errors.userEndDate}
-                    />
-                    <Input 
-                        label = "Correo personal"
-                        name="userEmail"
-                        placeholder = "Ingrese su correo personal"
-                        type="email"
-                        value={formData.userEmail}
-                        onChange = {handleChange}
-                        error={errors.userEmail}
-                    />
-
-                    <Input 
-                        label = "Correo institucional"
-                        name="userEmailInstitutional"
-                        placeholder = "Ingrese su correo institucional"
-                        type="email"
-                        value={formData.userEmailInstitutional}
-                        onChange = {handleChange}
-                        error={errors.userEmailInstitutional}
-                    />
-
-                    <Input 
-                        label = "Dirección"
-                        name="userDirection"
-                        placeholder="Dirección de domicilio"
-                        value={formData.userDirection}
-                        onChange = {handleChange}
-                        error={errors.userDirection}
-                    />
-
-                    <Input 
-                        label = "Contraseña"
-                        name  = "userPassword"
-                        placeholder = "Ingrese su contraseña"
-                        type="password"
-                        value={formData.userPassword}
-                        onChange = {handleChange}
-                        error={errors.userPassword}
-                    />
-
-                    {/* Actions */}
-                    <div 
-                        className=" 
-                            flex 
-                            items-center justify-center 
-                            gap-6
-                        "
-                    >
-                        <Button
-                            variant = "primary"
-                            size = "sm"
-                        >
-                            Crear Usuario
-                        </Button>
-                    </div>
-                </div>   
-            </form>
+          <Input
+            label="Nombre"
+            name="userFirstName"
+            value={formData.userFirstName}
+            onChange={handleChange}
+            error={errors.userFirstName}
+            placeholder="Ej: Sofía"
+          />
+          <Input
+            label="Apellido"
+            name="userLastName"
+            value={formData.userLastName}
+            onChange={handleChange}
+            error={errors.userLastName}
+            placeholder="Ej: Cardona"
+          />
+          <Select
+            label="Tipo de documento"
+            name="documentTypeId"
+            options={documentTypes}
+            value={formData.documentTypeId}
+            onChange={handleChange}
+            error={errors.documentTypeId}
+          />
         </div>
-    )
+
+        {/* Columna 2 */}
+        <div className="flex flex-col gap-6 my-0 w-[320px]">
+          <Input
+            label="Número de documento"
+            name="userDocumentNumber"
+            value={formData.userDocumentNumber}
+            onChange={handleChange}
+            error={errors.userDocumentNumber}
+            placeholder="Ej: 1078546789"
+          />
+          <Input
+            label="Teléfono"
+            name="userPhone"
+            type="tel"
+            value={formData.userPhone}
+            onChange={handleChange}
+            error={errors.userPhone}
+            placeholder="Ej: 3125667890"
+          />
+          <Input
+            label="Teléfono secundario (opcional)"
+            name="userSecondPhone"
+            type="tel"
+            value={formData.userSecondPhone}
+            onChange={handleChange}
+            error={errors.userSecondPhone}
+            placeholder="Opcional"
+          />
+          <Select
+            label="Tipo de cuenta"
+            name="userAccountType"
+            options={ACCOUNT_TYPE_OPTIONS}
+            value={formData.userAccountType}
+            onChange={handleChange}
+            error={errors.userAccountType}
+          />
+          <Select
+            label="Grupo (rol)"
+            name="groupId"
+            options={groups}
+            value={formData.groupId}
+            onChange={handleChange}
+            error={errors.groupId}
+          />
+        </div>
+
+        {/* Columna 3 */}
+        <div className="flex flex-col gap-6 my-0 w-[320px]">
+          <Input
+            label="Fecha de finalización"
+            name="userEndDate"
+            type="date"
+            value={formData.userEndDate}
+            onChange={handleChange}
+            error={errors.userEndDate}
+          />
+          <Input
+            label="Correo personal"
+            name="userEmail"
+            type="email"
+            value={formData.userEmail}
+            onChange={handleChange}
+            error={errors.userEmail}
+            placeholder="Ej: sofia@correo.com"
+          />
+          <Input
+            label="Correo institucional (opcional)"
+            name="userEmailInstitutional"
+            type="email"
+            value={formData.userEmailInstitutional}
+            onChange={handleChange}
+            error={errors.userEmailInstitutional}
+            placeholder="Opcional"
+          />
+          <Input
+            label="Dirección"
+            name="userAddress"
+            value={formData.userAddress}
+            onChange={handleChange}
+            error={errors.userAddress}
+            placeholder="Ej: Calle 12 # 5-8"
+          />
+          <Input
+            label="Contraseña"
+            name="userPassword"
+            type="password"
+            value={formData.userPassword}
+            onChange={handleChange}
+            error={errors.userPassword}
+            placeholder="Mín 8, mayús, minús, número y símbolo"
+          />
+
+          {errors.form && (
+            <p className="text-error text-caption">{errors.form}</p>
+          )}
+
+          <div className="flex items-center justify-center gap-6">
+            <Button variant="primary" size="sm" type="submit">
+              Crear Usuario
+            </Button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
 }

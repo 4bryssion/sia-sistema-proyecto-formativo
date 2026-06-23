@@ -9,6 +9,7 @@ export const groupRepository = {
         permissions: {
           include: { permission: { select: { id: true, permissionName: true } } },
         },
+        _count: { select: { users: true, permissions: true } },
       },
     });
   },

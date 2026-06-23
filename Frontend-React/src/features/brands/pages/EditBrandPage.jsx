@@ -1,56 +1,72 @@
+import { useState, useEffect } from "react";
 import { Button, Input } from "@/shared";
+import { brandSchema } from "../schemas/brandSchema.js";
+import brandService from "../services/brandService.js";
 
-// Componente visual del modal de edición de marca (sin lógica funcional)
-export default function EditBrandPage({ brand, isOpen, onClose }) {
+export default function EditBrandPage({ brand, isOpen, onClose, onSave }) {
 
-  // Control de render: si el modal no está abierto, no se monta en el DOM
+  const [brandName, setBrandName] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && brand) {
+      setBrandName(brand.brandName ?? "");
+      setError("");
+    }
+  }, [isOpen, brand]);
+
   if (!isOpen) return null;
 
+  const handleSave = async () => {
+    const result = brandSchema.safeParse({ brandName });
+    if (!result.success) {
+      setError(result.error.issues[0]?.message ?? "Dato inválido");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await brandService.update(brand.id, result.data);
+      onSave?.();
+      onClose?.();
+    } catch (err) {
+      setError(err.response?.data?.error ?? "Error al actualizar la marca");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    // Overlay del modal: cierra al hacer click afuera
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
       onClick={onClose}
     >
-      {/* Contenedor del modal: detiene el click para no cerrar al hacer click dentro */}
       <div
         className="w-full max-w-md rounded-xl bg-white p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        
         <h2 className="mb-6 text-xl font-semibold">Editar marca</h2>
 
-        
         <div className="mb-4">
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Nombre
-          </label>
+          <label className="mb-1 block text-sm font-medium text-gray-700">Nombre</label>
           <Input
             type="text"
+            name="brandName"
             placeholder="Ingrese el nombre de la marca"
-
+            value={brandName}
+            onChange={(e) => setBrandName(e.target.value)}
+            error={error}
           />
         </div>
 
-        {/* Acciones del modal */}
         <div className="flex justify-end gap-2 mt-6">
-          {/* Botón cancelar */}
-          <Button
-                variant="secondary"
-                size="sm"
-                onClick={onClose}
-            >
-                Cancelar
-            </Button>
-
-          {/* Botón guardar */}
-            <Button
-                variant="primary"
-                onClick={onClose}
-                size="sm"
-            >
-                Guardar
-            </Button>
+          <Button variant="secondary" size="sm" onClick={onClose} disabled={saving}>
+            Cancelar
+          </Button>
+          <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
+            Guardar
+          </Button>
         </div>
       </div>
     </div>

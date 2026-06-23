@@ -1,23 +1,19 @@
 import Joi from 'joi';
 
-export const createLoanSchema = Joi.object({
-  userId: Joi.number().integer().positive().required(),
+const materialLine = Joi.object({
   materialId: Joi.number().integer().positive().required(),
   borrowedQuantity: Joi.number().integer().positive().required(),
+});
+
+export const createLoanSchema = Joi.object({
   apprenticeGroup: Joi.number().integer().positive().required(),
   useJustification: Joi.string().max(255).required(),
   returnDate: Joi.date().iso().greater('now').required()
     .messages({ 'date.greater': 'La fecha de devolución debe ser futura.' }),
+  lenderId: Joi.number().integer().positive().required(),
+  receiverId: Joi.number().integer().positive().invalid(Joi.ref('lenderId')).required(),
+  materials: Joi.array().items(materialLine).min(1).required(),
 });
-
-export const updateLoanSchema = Joi.object({
-  userId: Joi.number().integer().positive(),
-  materialId: Joi.number().integer().positive(),
-  borrowedQuantity: Joi.number().integer().positive(),
-  apprenticeGroup: Joi.number().integer().positive(),
-  useJustification: Joi.string().max(255),
-  returnDate: Joi.date().iso(),
-}).min(1);
 
 export const validate = (schema) => (req, res, next) => {
   const { error } = schema.validate(req.body, { abortEarly: false });

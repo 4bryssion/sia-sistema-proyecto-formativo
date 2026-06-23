@@ -8,8 +8,7 @@ export const authRepository = {
         id:           true,
         userEmail:    true,
         userPassword: true,
-        userIsActive: true, // soft-delete: usuario no desactivado
-        userStatus:   true, // cuenta habilitada para auth
+        isActive: true, // estado único: si es false, no puede iniciar sesión
       },
     });
   },

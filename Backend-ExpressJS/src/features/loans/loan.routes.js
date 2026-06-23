@@ -1,13 +1,12 @@
 import { Router } from 'express';
 import { loanController } from './loan.controller.js';
-import { validate, createLoanSchema, updateLoanSchema } from './loan.validator.js';
+import { validate, createLoanSchema } from './loan.validator.js';
 
 const router = Router();
 
-router.get('/',       loanController.getAll);
-router.get('/:id',    loanController.getById);
-router.post('/',      validate(createLoanSchema), loanController.create);
-router.put('/:id',          validate(updateLoanSchema), loanController.update);
+router.get('/',             loanController.getAll);
+router.get('/:id',          loanController.getById);
+router.post('/',            validate(createLoanSchema), loanController.create);
 router.patch('/:id/toggle', loanController.toggle);
 
 router.use((err, req, res, next) => {

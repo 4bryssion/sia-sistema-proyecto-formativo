@@ -1,18 +1,19 @@
-// Componente de acciones por fila
 import BrandRowActions from "../components/BrandRowActions";
 
-// Definición de columnas de la tabla de marcas
-export const brandColumns = [
+export const brandColumns = (onChanged) => [
     {
         accessorKey: "id",
         header: "Id",
     },
     {
-        accessorKey: "nombre",
+        accessorKey: "brandName",
         header: "Nombre",
     },
     {
         id: "actions",
-        cell: ({ row }) => <BrandRowActions brand={row.original} />,
+        header: "Acciones",
+        cell: ({ row }) => (
+            <BrandRowActions brand={row.original} onChanged={onChanged} />
+        ),
     },
 ];

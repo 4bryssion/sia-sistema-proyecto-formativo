@@ -32,3 +32,4 @@ export { default as AuthLayout } from "./layouts/AuthLayout"
 // Shared - Auth
 
 export { default as ProtectedRoute } from "./components/auth/ProtectedRoute";
+export { default as GuestRoute } from "./components/auth/GuestRoute";

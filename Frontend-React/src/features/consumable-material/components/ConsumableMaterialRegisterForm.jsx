@@ -9,7 +9,7 @@ import {
 
 } from "@/shared";
 
-import { getDocumentTypes } from "@/features/users/services/selectService.js";
+import documentTypeService from "@/features/users/services/documentTypeService.js";
 
 export default function ConsumableMaterialRegisterForm() {
 
@@ -41,7 +41,7 @@ export default function ConsumableMaterialRegisterForm() {
     // Efectos:
 
     useEffect (() => {
-        getDocumentTypes().then(setDocumentTypes);
+        documentTypeService.getAll().then(setDocumentTypes).catch(() => {});
     }, []);
 
     // ===========================================

@@ -2,10 +2,12 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 
 // Import componentes:
 
-import {  
+import {
     AuthLayout,
     DashboardLayout,
-    ViewLayout
+    ViewLayout,
+    ProtectedRoute,
+    GuestRoute
 
 } from "@/shared"
 
@@ -68,13 +70,9 @@ import {
 
 
 // Módulo brands:
-import { 
-   
+import {
     CreateBrandPage,
-    ListBrandPage,
-    EditBrandPage
-     
-
+    ListBrandPage
 } from "@/features/brands";
 
 
@@ -105,7 +103,7 @@ const router = createBrowserRouter([
     },
     {
         path: "/auth",
-        element: <AuthLayout />,
+        element: <GuestRoute><AuthLayout /></GuestRoute>,
         children: [
             {
                 index: true
@@ -114,7 +112,7 @@ const router = createBrowserRouter([
     },
     {
         path: "/dashboard",
-        element: <DashboardLayout />,
+        element: <ProtectedRoute><DashboardLayout /></ProtectedRoute>,
         children: [
             // Este modulo de alert-history aún estamos en duda de si realizarlo o no.
             {
@@ -193,25 +191,17 @@ const router = createBrowserRouter([
             // Módulo brands:
             {
                 path: "brands",
-                element:<ListBrandPage />,
+                element: <ListBrandPage />,
             },
             {
                 path: "brands/create",
-                element: <h1>Crear marcas</h1>,
-            },
-            {
-                path: "brands/view",
-                element: <ListUserPage />,
+                element: <CreateBrandPage />,
             },
 
             // Módulo groups:
             {
                 path: "groups",
                 element: <ListGroupPage />
-            },
-            {
-                path: "groups/create",
-                element: <h1>Crear Grupos</h1>,
             },
 
          // Módulo permissions:
@@ -237,7 +227,7 @@ const router = createBrowserRouter([
     // Queda más limpio y legible
     {
         path: "/view",
-        element: <ViewLayout />,
+        element: <ProtectedRoute><ViewLayout /></ProtectedRoute>,
         children: [
             // Módulo users:
             {
@@ -292,16 +282,6 @@ const router = createBrowserRouter([
 {
                 path: "loans/:id/return",
                 element: <CreateLoanReturnPage />,
-            },
-
-            // Módulo brands:
-            {
-                path: "brands/:id",
-                element: <h1>Visualizar marca</h1>,
-            },
-            {
-                path: "brands/:id/edit",
-                element: <EditBrandPage/>,
             },
 
             // Módulo groups:
