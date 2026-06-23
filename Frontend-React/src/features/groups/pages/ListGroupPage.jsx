@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { DataTable, Button, IconButton } from "@/shared";
 import { groupColumns } from "../table/groupColumns";
 import { useGroups } from "../hooks/useGroups";
 import { useNavigate } from "react-router-dom";
 import { Undo2 } from "lucide-react";
+import CreateGroupModal from "./CreateGroupModal.jsx";
 
 export default function ListGroupPage() {
   const navigate = useNavigate();
   const { groups, loading, error, refetch } = useGroups();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (
     <div className="p-6">
@@ -20,7 +23,7 @@ export default function ListGroupPage() {
         </div>
 
         <div className="grid sm:flex gap-12 items-center">
-          <Button variant="primary" onClick={() => navigate("/dashboard/admin")}>
+          <Button variant="primary" onClick={() => setIsCreateOpen(true)}>
             Crear Grupo
           </Button>
         </div>
@@ -33,6 +36,12 @@ export default function ListGroupPage() {
       ) : (
         <DataTable data={groups} columns={groupColumns(refetch)} />
       )}
+
+      <CreateGroupModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSave={refetch}
+      />
     </div>
   );
 }
