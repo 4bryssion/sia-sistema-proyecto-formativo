@@ -15,17 +15,19 @@ export default function UserEditLeft({ user, image, onImageChange }) {
           <img
             src={`${API_FILES}${user.userPhoto}`}
             alt={fullName}
-            className="w-24 h-24 object-cover rounded mx-auto"
+            className="w-30 h-30 object-cover rounded mx-auto"
           />
         )}
+        <div className="justify-self-center">
         <FileInput
-          className="w-30 h-30"
+          className="w-24 h-24"
           accept="image/*"
           multiple={false}
           value={image}
           onChange={onImageChange}
           children="Cambiar foto"
         />
+        </div>
         <h3 className="text-h3 text-center">@{getTopGroupName(user)} - {fullName}</h3>
       </div>
 

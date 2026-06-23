@@ -22,7 +22,7 @@ export default function UserViewRight({ user }) {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 w-full">
-        <div className="grid gap-6 justify-items-center">
+        <div className="grid gap-2 justify-items-center">
           <Input label="Nombre" value={fullName} disabled />
           <Input
             label="Tipo de documento"
@@ -52,7 +52,7 @@ export default function UserViewRight({ user }) {
           />
         </div>
 
-        <div className="grid gap-6 justify-items-center lg:h-max">
+        <div className="grid gap-2 justify-items-center lg:h-max">
           <Input
             label="Tipo de cuenta"
             value={user?.userAccountType ?? ""}
