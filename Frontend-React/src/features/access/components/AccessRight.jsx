@@ -113,12 +113,8 @@ export default function AccessRight({
   );
 
   return (
-    <div className="relative mt-4">
-      <h2 className="font-main text-h2 text-center font-bold mb-6 1400:text-start">
-        Permisos
-      </h2>
-
-      <div className="grid lg:grid-cols-3 gap-6">
+    <div className="w-full min-w-0 overflow-x-auto">
+      <div className="grid gap-6 min-w-0">
         {PERMISSION_MODULES.map((module) => {
           const modulePerms = module.names
             .map((name) => permByName[name])
@@ -127,20 +123,22 @@ export default function AccessRight({
           if (modulePerms.length === 0) return null;
 
           return (
-            <div key={module.title} className="grid gap-4 justify-items-center">
-              <h4 className="text-center font-medium">{module.title}</h4>
+            <section key={module.title} className="border rounded-lg p-6 min-w-0">
+              <h2 className="text-lg font-semibold mb-4">{module.title}</h2>
 
-              {modulePerms.map((permission) => (
-                <Checkbox
-                  key={permission.id}
-                  id={`perm-${permission.id}`}
-                  name={permission.permissionName}
-                  label={permission.description}
-                  checked={entityPermIds.has(permission.id)}
-                  onChange={() => onToggle(permission.id)}
-                />
-              ))}
-            </div>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4 min-w-0">
+                {modulePerms.map((permission) => (
+                  <Checkbox
+                    key={permission.id}
+                    id={`perm-${permission.id}`}
+                    name={permission.permissionName}
+                    label={permission.description}
+                    checked={entityPermIds.has(permission.id)}
+                    onChange={() => onToggle(permission.id)}
+                  />
+                ))}
+              </div>
+            </section>
           );
         })}
       </div>

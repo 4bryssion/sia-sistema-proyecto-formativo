@@ -2,6 +2,7 @@ import { Switch } from "@/shared";
 import UserRowActions from "../components/UserRowActions";
 import { getTopGroupName } from "../utils/topGroup";
 import userService from "../services/userService";
+import { Link } from "react-router-dom";
 
 export const UserColumns = (onChanged) => [
   { accessorKey: "id", header: "Id" },
@@ -9,6 +10,16 @@ export const UserColumns = (onChanged) => [
     id: "nombre",
     header: "Nombre",
     accessorFn: (row) => `${row.userFirstName} ${row.userLastName}`,
+    cell: ({ row }) => {
+      const u = row.original;
+      return (
+        <Link
+          to={`/view/users/${u.id}`}
+        >
+          {u.userFirstName} {u.userLastName}
+        </Link>
+      );
+    },
   },
   {
     id: "tipoUsuario",

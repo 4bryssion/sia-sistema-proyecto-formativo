@@ -141,8 +141,8 @@ export default function AccessPage() {
         <p className="mb-2 text-sm text-red-600 px-4">{error}</p>
       )}
 
-      <div className="p-6 grid 1400:grid-cols-[380px_1fr]">
-        <div className="bg-black p-16 1400:h-full">
+      <div className="p-6 grid 1400:grid-cols-[380px_1fr] 1400:h-[calc(100vh-160px)]">
+        <div className="bg-black p-16 1400:h-full overflow-y-auto">
           <AccessLeft
             groups={allGroups}
             users={allUsers}
@@ -156,7 +156,7 @@ export default function AccessPage() {
           />
         </div>
 
-        <div className="bg-white p-4">
+        <div className="bg-white p-4 overflow-y-auto">
           <AccessRight
             allPermissions={allPermissions}
             entityPermIds={entityPermIds}
