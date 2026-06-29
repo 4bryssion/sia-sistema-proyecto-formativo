@@ -22,8 +22,12 @@ const parseNumericos = (data) => ({
 });
 
 export const consumableMaterialService = {
-  async getAll() {
-    return consumableMaterialRepository.findAll();
+  async getAll(status) {
+    const filter =
+      status === 'inactive' ? false :
+      status === 'all'      ? undefined :
+      true;
+    return consumableMaterialRepository.findAll(filter);
   },
 
   async getById(id) {

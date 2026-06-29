@@ -2,7 +2,7 @@ import { consumableMaterialService } from './consumableMaterial.service.js';
 
 export const consumableMaterialController = {
   async getAll(req, res, next) {
-    try { res.json(await consumableMaterialService.getAll()); }
+    try { res.json(await consumableMaterialService.getAll(req.query.status)); }
     catch (err) { next(err); }
   },
   async getById(req, res, next) {

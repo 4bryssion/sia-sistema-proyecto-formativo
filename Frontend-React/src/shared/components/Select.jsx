@@ -53,10 +53,10 @@ export default function Select({
                     Seleccione una opción
                 </option>
 
-                {   
+                {
                     options.map((opt) => (
                         <option
-                            key={opt.id}
+                            key={opt.value ?? opt.id}
                             value={opt.value}
                         >
                             {opt.label}

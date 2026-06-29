@@ -6,9 +6,11 @@ const includeRelations = {
 };
 
 export const consumableMaterialRepository = {
-  async findAll() {
+  async findAll(isActiveFilter) {
+    const where = { returnable: null };
+    if (isActiveFilter !== undefined) where.isActive = isActiveFilter;
     return prisma.consumableMaterial.findMany({
-      where: { returnable: null, isActive: true },
+      where,
       include: includeRelations,
       orderBy: { materialName: 'asc' },
     });

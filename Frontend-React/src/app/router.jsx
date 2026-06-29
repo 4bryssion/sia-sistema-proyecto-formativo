@@ -170,11 +170,6 @@ const router = createBrowserRouter([
                 path: "consumable-materials/create",
                 element: <CreateConsumablesMaterialPage />,
             },
-            {
-                path: "consumable-materials/edit",
-                element: <EditConsumibleMaterialPage />,
-            },
-
             // Módulo returnable-materials:
             {
                 path: "returnable-materials",
