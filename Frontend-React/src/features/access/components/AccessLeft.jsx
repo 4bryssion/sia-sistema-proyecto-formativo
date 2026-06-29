@@ -16,6 +16,7 @@ export default function AccessLeft({
   onAssignGroup,
   onRemoveGroup,
 }) {
+
   const [groupToAssign, setGroupToAssign] = useState("");
 
   useEffect(() => {
@@ -51,10 +52,11 @@ export default function AccessLeft({
   };
 
   return (
-    <div className="font-main space-y-10 grid sm:flex sm:space-y-0 sm:gap-10 sm:items-start sm:justify-evenly 1400:grid 1400:space-y-10 1400:h-full">
+
+    <div className="font-main space-y-6 grid min-w-0 min-[768px]:max-[1023px]:grid-cols-2 min-[768px]:max-[1023px]:gap-4 min-[768px]:max-[1023px]:space-y-0">
 
       {/* Sección Grupos */}
-      <div className="grid gap-4 justify-items-center">
+      <div className="justify-items-center w-full max-w-[320px] justify-self-center min-w-0">
 
         <h3 className="text-h3 text-text-inverse text-center">
           Grupos usuarios
@@ -65,13 +67,13 @@ export default function AccessLeft({
           value={selectedGroupId ? String(selectedGroupId) : ""}
           onChange={(e) => onGroupChange(e.target.value)}
           options={groupOptions}
-          className="bg-white"
+          className="bg-white rounded-md h-12 w-full"
         />
 
       </div>
 
       {/* Sección Usuario individual */}
-      <div className="grid gap-4 justify-items-center w-full">
+      <div className="grid gap-2 justify-items-center w-full max-w-[320px] justify-self-center min-w-0">
 
         <h3 className="text-h3 text-text-inverse text-center">
           Usuario individual
@@ -82,24 +84,24 @@ export default function AccessLeft({
           value={selectedUserId ? String(selectedUserId) : ""}
           onChange={(e) => onUserChange(e.target.value)}
           options={userOptions}
-          className="bg-white"
+          className="bg-white rounded-md justify-self-center w-full"
         />
 
         {selectedUserId && (
-          <div className="w-full grid gap-3 mt-2">
+          <div className="w-full grid gap-2 mt-1 justify-self-center min-w-0">
             {userGroups.length > 0 ? (
-              <div className="grid gap-2">
+              <div className="grid gap-2 w-full justify-self-center min-w-0">
                 {userGroups.map((ug) => (
                   <div
                     key={ug.groupId}
-                    className="flex items-center justify-between bg-white/10 rounded px-3 py-1"
+                    className="flex items-center justify-between bg-white rounded px-2 py-1 w-full min-w-0 box-border"
                   >
-                    <span className="text-text-inverse text-sm">
+                    <span className="bg-white rounded-md w-full min-w-0 truncate">
                       {ug.group.groupName}
                     </span>
                     <button
                       onClick={() => onRemoveGroup(ug.groupId)}
-                      className="text-red-400 hover:text-red-300 text-xs ml-2"
+                      className="text-red-600 hover:text-red-300 text-xs "
                       title="Remover grupo"
                     >
                       ✕
@@ -114,19 +116,20 @@ export default function AccessLeft({
             )}
 
             {availableGroups.length > 0 && (
-              <div className="grid gap-2">
+              <div className="grid gap-1.5 w-full">
                 <Select
                   name="groupToAssign"
                   value={groupToAssign}
                   onChange={(e) => setGroupToAssign(e.target.value)}
                   options={assignOptions}
-                  className="bg-white"
+                  className="bg-white rounded-md justify-self-center w-full"
                 />
                 <Button
                   variant="primary"
                   size="sm"
                   onClick={handleAssign}
                   disabled={!groupToAssign}
+                  className="w-full justify-self-center"
                 >
                   Agregar grupo
                 </Button>
