@@ -14,9 +14,16 @@ import {
 // Import pages
 
 // Módulo home:
-import { HomePage } from "@/features/home"
+import { 
+    HomePage 
+
+} from "@/features/home"
 
 // Módulo auth:
+import { 
+    RecoverPasswordForm 
+
+} from "@/features/auth";
 
 
 // Módulo users:
@@ -100,8 +107,16 @@ const router = createBrowserRouter([
         children: [
             {
                 index: true
-            }
+            },  
+            //Aca debemos colocar la ruta soolo que no me lo permitio porque esta hardcodeado
+            //linea 116
+            //liena120          
         ],
+    },
+    //Ruta de recuperar contraseña
+    {
+        path: "recover-password",
+        element: <RecoverPasswordForm />,
     },
     {
         path: "/dashboard",
