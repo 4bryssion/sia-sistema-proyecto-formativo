@@ -15,6 +15,10 @@ export const createLoanSchema = Joi.object({
   materials: Joi.array().items(materialLine).min(1).required(),
 });
 
+export const updateLoanSchema = createLoanSchema.keys({
+  status: Joi.string().valid('Activo', 'Finalizado'),
+});
+
 export const validate = (schema) => (req, res, next) => {
   const { error } = schema.validate(req.body, { abortEarly: false });
   if (error) {

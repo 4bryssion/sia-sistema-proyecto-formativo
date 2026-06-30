@@ -1,111 +1,103 @@
-import { useState } from "react";
 import { Input, Button, Select } from "@/shared";
-import { Pencil, Search } from "lucide-react";
+import { Pencil } from "lucide-react";
 import logo from "@/assets/logos/logo-sena-negro.png";
+import LoanMaterialLines from "./LoanMaterialLines";
 
-export default function LoanEditRight() {
-  // Estado del formulario con los campos del préstamo
-  // Cada campo inicia vacío y se llena con los datos actuales del préstamo
-  const [form, setForm] = useState({
-    loanMaterial: "",         // Material a prestar
-    loanQuantity: "",         // Cantidad del material
-    loanUser: "",             // Usuario que solicita préstamo
-    loanGroup: "",            // Grupo de aprendices asociado
-    loanDateStart: "",        // Fecha de salida
-    loanDateEnd: "",          // Fecha de entrega
-    loanJustification: "",    // Justificación de uso
-  });
+const STATUS_OPTIONS = [
+  { value: "Activo",     label: "Activo" },
+  { value: "Finalizado", label: "Finalizado" },
+];
 
-  // Actualiza el campo correspondiente en el estado cuando el usuario escribe
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  // Maneja el envío del formulario
-  // Por ahora imprime los datos en consola; aquí irá la llamada a la API
-  const handleSubmit = () => {
-    console.log("Datos editados:", form);
-  };
-
+export default function LoanEditRight({
+  form,
+  onChange,
+  userOptions,
+  materialOptions,
+  materials,
+  onMaterialChange,
+  onAddMaterial,
+  onRemoveMaterial,
+  materialErrors,
+  errors,
+  onSubmit,
+  saving,
+}) {
   return (
     <div className="relative">
-      <div className="mb-6 1400:grid 1400:grid-cols-2 1400:gap-6">
-        <h2 className="font-main text-h2 text-center font-bold 1400:text-start 1400:justify-self-center 1400:w-[320px]">
-          Editar Préstamo
-        </h2>
-      </div>
+      <h2 className="font-main text-h2 text-center font-bold mb-6 1400:text-start">Editar Préstamo</h2>
 
-      {/* gap reducido de gap-6 a gap-3 para que los inputs queden más juntos
-          y sea más rápido navegar entre ellos con Tab
-          reorganizado para balancear columnas: 4 izquierda, 3 derecha */}
-      <div className="grid lg:grid-cols-2 gap-1 w-full">
-
-        {/* Columna izquierda: Material, Cantidad, Usuario, Grupo */}
-        <div className="grid gap-1 justify-items-center">
+      <div className="grid lg:grid-cols-2 gap-4 w-full">
+        <div className="grid gap-4 justify-items-center">
           <Select
-            label="Material"
-            name="loanMaterial"
-            placeholder="Seleccione una opción"
-            value={form.loanMaterial}
-            onChange={handleChange}
-          />
-          <Input
-            label="Cantidad"
-            name="loanQuantity"
-            placeholder="Ingrese la cantidad"
-            value={form.loanQuantity}
-            onChange={handleChange}
+            label="Prestador"
+            name="lenderId"
+            options={userOptions}
+            value={form.lenderId}
+            onChange={onChange}
+            error={errors.lenderId}
           />
           <Select
-            label="Usuario solicitante"
-            name="loanUser"
-            placeholder="Seleccione una opción"
-            value={form.loanUser}
-            onChange={handleChange}
+            label="Receptor"
+            name="receiverId"
+            options={userOptions}
+            value={form.receiverId}
+            onChange={onChange}
+            error={errors.receiverId}
           />
           <Input
             label="Grupo de aprendices"
-            name="loanGroup"
-            placeholder="Ingrese el número del grupo"
-            value={form.loanGroup}
-            onChange={handleChange}
+            name="apprenticeGroup"
+            type="number"
+            value={form.apprenticeGroup}
+            onChange={onChange}
+            error={errors.apprenticeGroup}
           />
         </div>
-
-        {/* Columna derecha: Fecha salida, Fecha entrega, Justificación */}
-        <div className="grid gap-3 justify-items-center lg:h-max">
+        <div className="grid gap-4 justify-items-center">
           <Input
-            label="Fecha de salida"
-            name="loanDateStart"
-            placeholder="dd/mm/aaaa"
-            value={form.loanDateStart}
-            onChange={handleChange}
-          />
-          <Input
-            label="Fecha de entrega del material"
-            name="loanDateEnd"
-            placeholder="dd/mm/aaaa"
-            value={form.loanDateEnd}
-            onChange={handleChange}
+            label="Fecha de devolución"
+            name="returnDate"
+            type="date"
+            value={form.returnDate}
+            onChange={onChange}
+            error={errors.returnDate}
           />
           <Input
             label="Justificación de uso"
-            name="loanJustification"
-            placeholder="Escriba aquí la justificación"
-            value={form.loanJustification}
-            onChange={handleChange}
+            name="useJustification"
+            value={form.useJustification}
+            onChange={onChange}
+            error={errors.useJustification}
+          />
+          <Select
+            label="Estado"
+            name="status"
+            options={STATUS_OPTIONS}
+            value={form.status}
+            onChange={onChange}
+            error={errors.status}
           />
         </div>
       </div>
 
+      <div className="mt-6 w-full max-w-170">
+        <LoanMaterialLines
+          lines={materials}
+          options={materialOptions}
+          onChange={onMaterialChange}
+          onAdd={onAddMaterial}
+          onRemove={onRemoveMaterial}
+          errors={materialErrors}
+          generalError={errors.materials}
+        />
+      </div>
+
+      {errors.form && <p className="text-error font-secondary text-center mt-4">{errors.form}</p>}
+
       <div className="grid gap-6 mt-6 sm:flex sm:justify-end lg:w-full">
-        <Button
-          variant="primary"
-          className="gap-2 lg:justify-self-end lg:mr-24"
-          onClick={handleSubmit}
-        >
+        <Button variant="primary" type="button" className="gap-2" onClick={onSubmit} disabled={saving}>
           <Pencil size={16} />
-          Guardar
+          {saving ? "Guardando..." : "Guardar"}
         </Button>
       </div>
 

@@ -2,8 +2,10 @@ import { returnableMaterialService } from './returnableMaterial.service.js';
 
 export const returnableMaterialController = {
   async getAll(req, res, next) {
-    try { res.json(await returnableMaterialService.getAll()); }
-    catch (err) { next(err); }
+    try {
+      const { status = 'active' } = req.query;
+      res.json(await returnableMaterialService.getAll(status));
+    } catch (err) { next(err); }
   },
   async getById(req, res, next) {
     try { res.json(await returnableMaterialService.getById(Number(req.params.id))); }

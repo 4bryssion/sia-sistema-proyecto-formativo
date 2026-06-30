@@ -2,8 +2,11 @@ import { loanService } from './loan.service.js';
 
 export const loanController = {
   async getAll(req, res, next) {
-    try { res.json(await loanService.getAll()); }
-    catch (err) { next(err); }
+    try {
+      const valid = ['active', 'inactive', 'all'];
+      const status = valid.includes(req.query.status) ? req.query.status : 'active';
+      res.json(await loanService.getAll(status));
+    } catch (err) { next(err); }
   },
 
   async getById(req, res, next) {
@@ -23,6 +26,13 @@ export const loanController = {
       const data = await loanService.toggle(Number(req.params.id));
       const mensaje = data.isActive ? 'Préstamo activado.' : 'Préstamo desactivado.';
       res.json({ mensaje, data });
+    } catch (err) { next(err); }
+  },
+
+  async update(req, res, next) {
+    try {
+      const data = await loanService.update(Number(req.params.id), req.body);
+      res.json({ mensaje: 'Préstamo actualizado.', data });
     } catch (err) { next(err); }
   },
 };

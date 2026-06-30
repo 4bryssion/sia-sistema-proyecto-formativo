@@ -1,88 +1,83 @@
-import { Input, Button, Select } from "@/shared";
 import { Pencil } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/shared";
+import loanService from "../services/loanService";
 import logo from "@/assets/logos/logo-sena-negro.png";
 
-export default function LoanViewRight() {
+export default function LoanViewRight({ loan, onToggled }) {
+  const navigate = useNavigate();
+  const [toggling, setToggling] = useState(false);
+  const canEdit = loan?.status === "Activo";
+  const lender   = loan?.signatures?.find((s) => s.party === "Prestador");
+  const receiver = loan?.signatures?.find((s) => s.party === "Receptor");
+
+  const partyLine = (sig) =>
+    sig?.user
+      ? `${sig.user.userFirstName} ${sig.user.userLastName} — ${sig.signed ? "Firmado" : "Sin firmar"}`
+      : "—";
+
+  const handleToggle = async () => {
+    setToggling(true);
+    try {
+      await loanService.toggle(loan.id);
+      onToggled?.();
+    } catch (err) {
+      alert(err.response?.data?.error ?? "Error al cambiar estado");
+    } finally {
+      setToggling(false);
+    }
+  };
+
   return (
     <div className="relative">
-      <div className="mb-6 1400:grid 1400:grid-cols-2 1400:gap-6">
-        <h2
-          className="
-            font-main text-h2 text-center font-bold 
-            1400:text-start 1400:justify-self-center 1400:w-[320px]
-          "
-        >
-          Préstamo
-        </h2>
-      </div>
+      <h2 className="font-main text-h2 text-center font-bold mb-6 1400:text-start">Préstamo</h2>
 
-      {/* Inputs */}
-      <div className="grid lg:grid-cols-2 gap-6 w-full">
-        <div className="grid gap-6 justify-items-center">
-          <Select
-            label="Material"
-            name="loanMaterial"
-            placeholder="Seleccione una opción"
-          />
-
-          <Input
-            label="Cantidad"
-            name="loanQuantity"
-            placeholder="Ingrese la cantidad"
-          />
-
-          <Select
-            label="Usuario solicitante"
-            name="loanUser"
-            placeholder="Seleccione una opción"
-          />
-
-          <Input
-            label="Grupo de aprendices"
-            name="loanGroup"
-            placeholder="Ingrese el número del grupo"
-          />
-
-          <Input
-            label="Fecha de salida"
-            name="loanDateStart"
-            placeholder="dd/mm/aaaa"
-          />
+      <div className="grid lg:grid-cols-2 gap-6 w-full font-main">
+        <div className="grid gap-3">
+          <p><strong>Grupo de aprendices:</strong> {loan?.apprenticeGroup ?? "—"}</p>
+          <p><strong>Justificación de uso:</strong> {loan?.useJustification ?? "—"}</p>
+          <p><strong>Prestador:</strong> {partyLine(lender)}</p>
+          <p><strong>Receptor:</strong> {partyLine(receiver)}</p>
         </div>
 
-        <div className="grid gap-6 justify-items-center lg:h-max">
-          <Input
-            label="Fecha de entrega del material"
-            name="loanDateEnd"
-            placeholder="dd/mm/aaaa"
-          />
-
-          <Input
-            label="Justificación de uso"
-            name="loanJustification"
-            placeholder="Escriba aquí la justificación"
-          />
+        <div className="grid gap-2">
+          <strong>Materiales prestados:</strong>
+          <ul className="list-disc ml-5">
+            {(loan?.materials ?? []).map((m) => (
+              <li key={m.materialId}>
+                {m.consumableMaterial?.materialName ?? `#${m.materialId}`} — cantidad {m.borrowedQuantity}
+              </li>
+            ))}
+            {(loan?.materials ?? []).length === 0 && <li>—</li>}
+          </ul>
         </div>
       </div>
 
-      {/* Acciones */}
-      <div
-        className="
-          grid gap-6 mt-6 sm:flex sm:w-80 sm:mx-auto sm:justify-between 
-          lg:grid lg:grid-cols-2 lg:gap-6 lg:w-full
-        "
-      >
+      <div className="grid gap-6 mt-6 lg:grid-cols-2 lg:gap-6 lg:w-full">
         <div className="lg:w-[320px] lg:justify-self-center">
-          <Button variant="toggle" activeLabel="Activo" inactiveLabel="Desactivado" />
+          <Button
+            variant="toggle"
+            activeLabel="Activo"
+            inactiveLabel="Desactivado"
+            checked={loan?.isActive}
+            disabled={toggling}
+            onClick={handleToggle}
+          />
         </div>
 
-        <Button variant="primary" className="gap-2 lg:justify-self-end lg:mr-24">
+        <Button
+          variant="primary"
+          className="gap-2 lg:justify-self-end lg:mr-24"
+          disabled={!canEdit}
+          title={canEdit ? "Editar préstamo" : "Solo préstamos en estado Activo pueden editarse"}
+          onClick={() => canEdit && navigate(`/view/loans/${loan.id}/edit`)}
+        >
           <Pencil size={16} />
           Editar
         </Button>
       </div>
 
-      {/* Logo SENA */}
       <img src={logo} alt="Logo SENA" className="absolute right-0 bottom-0 w-16" />
     </div>
   );

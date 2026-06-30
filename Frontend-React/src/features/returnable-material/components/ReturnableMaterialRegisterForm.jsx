@@ -1,299 +1,305 @@
 import { useState, useEffect } from "react";
-import { returnableMaterialSchema } from "../schemas/returnableMaterialSchema.js";
-
+import { useNavigate } from "react-router-dom";
 import { Input, Button, Select, FileInput } from "@/shared";
+import { returnableMaterialSchema } from "../schemas/returnableMaterialSchema";
+import returnableMaterialService from "../services/returnableMaterialService";
+import categoryService from "../services/categoryService";
+import brandService from "@/features/brands/services/brandService";
+import userService from "@/features/users/services/userService";
 
-import documentTypeService from "@/features/users/services/documentTypeService.js";
+const STATUS_OPTIONS = [
+  { value: "", label: "— Selecciona un estado —" },
+  { value: "Disponible",    label: "Disponible" },
+  { value: "No_disponible", label: "No disponible" },
+  { value: "Mantenimiento", label: "Mantenimiento" },
+  { value: "En_prestamo",   label: "En préstamo" },
+  { value: "Traslado",      label: "Traslado" },
+  { value: "Baja",          label: "Baja" },
+];
 
-export default function ReturnableMaterialRegisterForm(){
+export default function ReturnableMaterialRegisterForm() {
+  const navigate = useNavigate();
 
-    // Estados:
-    
-    const [documentTypes, setDocumentTypes] = useState([]);
+  const [brandOptions, setBrandOptions]       = useState([]);
+  const [categoryOptions, setCategoryOptions] = useState([]);
+  const [userOptions, setUserOptions]         = useState([]);
 
-    const [formData, setFormData] = useState({
-        returnableID: "Automático",
-        returnableFiles: [], 
+  useEffect(() => {
+    brandService.getAll()
+      .then((b) => setBrandOptions([
+        { value: "", label: "— Selecciona una marca —" },
+        ...b.map((x) => ({ value: String(x.id), label: x.brandName })),
+      ]))
+      .catch(() => {});
 
-        returnableCategory: "",
-        returnableName: "",
-        returnableBrand: "",
-        returnableModel: "",
-        returnableSerial: "",
-        returnableSenaPlate: "",
+    categoryService.getAll()
+      .then((c) => setCategoryOptions([
+        { value: "", label: "— Selecciona una categoría —" },
+        ...c.map((x) => ({ value: String(x.id), label: x.categoryName })),
+      ]))
+      .catch(() => {});
 
-        returnableDimensions: "",
-        returnableAccountant: "",
-        returnableLocation: "",
-        returnableState: "",
-        returnableQuantity: "",
+    userService.getAll()
+      .then((users) =>
+        setUserOptions([
+          { value: "", label: "— Selecciona un cuentadante —" },
+          ...users
+            .filter((u) => u.userAccountType === "Cuentadante")
+            .map((u) => ({
+              value: String(u.id),
+              label: `${u.userFirstName} ${u.userLastName}`,
+            })),
+        ])
+      )
+      .catch(() => {});
+  }, []);
 
-        returnableUnitValue: "",
-        returnableTotalValue: "",
-        returnableDescrption: ""
-    });
+  const [files, setFiles] = useState([]);
 
-    const [errors, setErrors] = useState({})
+  const [formData, setFormData] = useState({
+    materialName: "",
+    brandId:      "",
+    categoryId:   "",
+    userId:       "",
+    senaPlate:    "",
+    quantity:     "",
+    location:     "",
+    status:       "",
+    unitPrice:    "",
+    totalPrice:   "",
+    purchaseDate: "",
+    description:  "",
+    model:        "",
+    serial:       "",
+    dimensions:   "",
+  });
 
-    // Efectos:
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
 
-    useEffect (() => {
-        documentTypeService.getAll().then(setDocumentTypes).catch(() => {});
-    }, []);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-    // ===========================================
-    //                 Handles
-    // ===========================================
-    // Función que se ejecuta cada vez que cambia el valor de un input del formulario
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    // Handle genérico:
-
-    const handleChange = (e) => {
-        // Se obtiene el nombre del campo y su valor
-        const { name, value } = e.target;
-
-        setFormData((prev) => ({
-            // Se copian todos los valores anteriores del estado
-            ...prev,
-
-            // Se actualiza únicamente lo que cambió
-            [name]: value
-        }));
+    const result = returnableMaterialSchema.safeParse(formData);
+    if (!result.success) {
+      const fieldErrors = {};
+      result.error.issues.forEach((issue) => {
+        fieldErrors[issue.path[0]] = issue.message;
+      });
+      setErrors(fieldErrors);
+      return;
     }
 
-    // Handles personalizados:
-    
-    // Función que se ejecuta cuando se envía el formulario 
-    const handleSubmit = (e) => {
-        e.preventDefault();
+    const imageFiles = files.filter((f) => f.type.startsWith("image/"));
+    const sheetFiles = files.filter((f) => !f.type.startsWith("image/"));
 
-        // Se valida el objeto de formData usando el esquema definido con Zod
-        // safeParse devuelve un objeto indicando si la validacion fue exitosa o no
-        const result = returnableMaterialSchema.safeParse(formData);
+    if (!imageFiles.length) {
+      setErrors({ files: "Se requiere una imagen del material" });
+      return;
+    }
+    if (!sheetFiles.length) {
+      setErrors({ files: "Se requiere la ficha técnica (PDF o Excel)" });
+      return;
+    }
 
-        // Si la validación falla
-        if (!result.success){
-            // Objeto donde se almacenarán los errores por campo
-            const fieldErrors = {};
+    setErrors({});
+    setSaving(true);
 
-            // Zod devuelve los errores en un arreglo llamado issues
-            // Se recorren para asociar cada error a su campo correspondiente
-            result.error.issues.forEach((issue) => {
-                // Issue.path contiene la ruta del campo que falló
-                const field = issue.path[0];
+    const fd = new FormData();
+    Object.entries(result.data).forEach(([key, val]) => {
+      if (val !== undefined && val !== "") fd.append(key, val);
+    });
+    fd.append("image", imageFiles[0]);
+    fd.append("technical_sheet", sheetFiles[0]);
 
-                // Se guarda el mensaje de error en el objeto fieldErrors
-                fieldErrors[field] = issue.message;
-            });
+    try {
+      await returnableMaterialService.create(fd);
+      navigate("/dashboard/returnable-materials");
+    } catch (err) {
+      setErrors({ form: err.response?.data?.error ?? "Error al crear el material" });
+    } finally {
+      setSaving(false);
+    }
+  };
 
-            // Se actualiza el estado de errores para mostrarlos en el formulario
-            setErrors(fieldErrors);
+  return (
+    <div className="flex justify-center">
+      <form
+        className="grid gap-6 mx-6 md:grid-cols-2 md:mx-12 1400:grid-cols-4 1400:mx-0 justify-items-center max-w-max"
+        onSubmit={handleSubmit}
+      >
+        {errors.form && (
+          <p className="md:col-span-2 1400:col-span-4 text-error text-sm">{errors.form}</p>
+        )}
 
-            // Se detiene la ejecución porque el formulario tiene errores
-            return;
-        }
-
-        // Si la validación es exitosa se limpian los errores anteriores 
-        setErrors({});
-
-        // result.data contiene los datos ya validados por Zod
-        console.log("Material devolutivo valido:", result.data)
-
-    };
-
-    return(
-        <div className="flex justify-center">
-            <form
-                className="
-                    grid gap-6 mx-6 md:grid-cols-2 md:mx-12 1400:grid-cols-4 1400:mx-0 justify-items-center max-w-max
-                "
-
-                onSubmit={handleSubmit}
+        {/* Columna 1 — Archivos + ID */}
+        <div className="flex flex-col gap-6 my-0 w-[320px]">
+          <div className="flex-1 flex">
+            <FileInput
+              className="flex-1"
+              accept="image/jpeg,image/png,image/jpg,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              multiple={true}
+              value={files}
+              onChange={setFiles}
             >
-                {/* Columna 1 */}
-                <div
-                    className="flex flex-col gap-6 my-0 w-[320px]"
-                >
-                    <div className="flex-1 flex">
-                        <FileInput
-                            className="flex-1"
-                            accept="image/*,application/pdf"
-                            multiple={true}
-                            value={formData.returnableFiles}
-                            onChange={(files) => setFormData((prev) => ({ ...prev, returnableFiles: files }))}
-                            children="Cargar imagen/pdf"
-                        />
-                    </div>
+              Cargar imagen y ficha técnica
+            </FileInput>
+          </div>
+          {errors.files && <p className="text-error text-xs">{errors.files}</p>}
 
-                    <Input
-                        label="ID del material"
-                        name="returnableID"
-                        value={formData.returnableID}
-                        readOnly
-                    />         
-                </div>
-
-                {/* Columna 2 */}
-                <div
-                    className="flex flex-col gap-6 my-0 w-[320px]"
-                >
-                    <Select 
-                        label="Categoría"
-                        name="returnableCategory"
-                        options={documentTypes}
-                        value={formData.returnableCategory}
-                        onChange = {handleChange}
-                        error={errors.returnableCategory}
-                    />
-
-                    <Input 
-                        label="Nombre del devolutivo"
-                        name="returnableName"
-                        placeholder="Ingrese el nombre del elemento"
-                        value={formData.returnableName}
-                        onChange = {handleChange}
-                        error={errors.returnableName}
-                    />
-
-                    <Select
-                        label="Marca"
-                        name="returnableBrand"
-                        options={documentTypes}
-                        value={formData.returnableBrand}
-                        onChange = {handleChange}
-                        error={errors.returnableBrand}
-                    />
-
-                    <Input 
-                        label = "Modelo"
-                        name="returnableModel"
-                        placeholder = "Ingrese el modelo"
-                        value={formData.returnableModel}
-                        onChange = {handleChange}
-                        error={errors.returnableModel}
-                    />
-
-                    <Input 
-                        label = "Serial"
-                        name="returnableSerial"
-                        placeholder = "Ingrese el serial"
-                        value={formData.returnableSerial}
-                        onChange = {handleChange}
-                        error={errors.returnableSerial}
-                    /> 
-                </div>
-
-                {/* Columna 3 */}
-                <div
-                    className="flex flex-col gap-6 my-0 w-[320px]"
-                >
-                    <Input
-                        label="Placa SENA"
-                        name="returnableSenaPlate"
-                        placeholder="Ingrese la placa SENA"
-                        value={formData.returnableSenaPlate}
-                        onChange = {handleChange}
-                        error={errors.returnableSenaPlate}
-                    />
-
-                    <Input
-                        label = "Dimensiones"
-                        name="returnableDimensions"
-                        placeholder = "Ingrese las dimensiones"
-                        value={formData.returnableDimensions}
-                        onChange = {handleChange}
-                        error={errors.returnableDimensions}
-                    />
-
-                    <Input
-                        label="Cuentadante"
-                        name="returnableAccountant"
-                        placeholder="Ingrese el usuario cuentadante"
-                        value={formData.returnableAccountant}
-                        onChange = {handleChange}
-                        error={errors.returnableAccountant}
-                    />
-
-                    <Input
-                        label="Ubicación"
-                        name="returnableLocation"
-                        placeholder="Ingrese la ubicación"
-                        value={formData.returnableLocation}
-                        onChange = {handleChange}
-                        error={errors.returnableLocation}
-                    />
-
-                    <Select
-                        label="Estado"
-                        name="returnableState"
-                        options={documentTypes}
-                        value={formData.returnableState}
-                        onChange = {handleChange}
-                        error={errors.returnableState}
-                    />
-                </div>
-
-                {/* Columna 4 */}
-                <div
-                    className="flex flex-col gap-6 my-0 w-[320px]"
-                >
-                    <Input
-                        label="Cantidad"
-                        placeholder="Ingrese la cantidad"
-                        name="returnableQuantity"
-                        type="number"
-                        value={formData.returnableQuantity}
-                        onChange = {handleChange}
-                        error={errors.returnableQuantity}
-                    />
-                    
-                    <Input
-                        label="Valor unitario"
-                        name="returnableUnitValue"
-                        placeholder="Ingrese el valor unitario"
-                        type="number"
-                        value={formData.returnableUnitValue}
-                        onChange = {handleChange}
-                        error={errors.returnableUnitValue}
-                    />
-
-                    <Input
-                        label="Valor total"
-                        name="returnableTotalValue"
-                        placeholder="Ingrese el valor total"
-                        type="number"
-                        value={formData.returnableTotalValue}
-                        onChange = {handleChange}
-                        error={errors.returnableTotalValue}
-                    />
-
-                    {/* Este luego se cambia a un text area */}
-                    <Input
-                        label="Descripción"
-                        name="returnableDescrption"
-                        placeholder="Escriba aquí"
-                        value={formData.returnableDescrption}
-                        onChange = {handleChange}
-                        error={errors.returnableDescrption}
-                    />
-
-                    {/* Actions */}
-                    <div 
-                        className=" 
-                            flex 
-                            items-center justify-center 
-                            gap-6
-                        "
-                    >
-                        <Button
-                            variant = "primary"
-                            size = "sm"
-                        >
-                            Crear Material
-                        </Button>
-                    </div>
-                </div>   
-            </form>   
+          <Input label="ID del material" value="Automático" readOnly />
         </div>
-    )
+
+        {/* Columna 2 — Identificación */}
+        <div className="flex flex-col gap-6 my-0 w-[320px]">
+          <Select
+            label="Categoría"
+            name="categoryId"
+            options={categoryOptions}
+            value={formData.categoryId}
+            onChange={handleChange}
+            error={errors.categoryId}
+          />
+          <Input
+            label="Nombre del material"
+            name="materialName"
+            placeholder="Ingrese el nombre"
+            value={formData.materialName}
+            onChange={handleChange}
+            error={errors.materialName}
+          />
+          <Select
+            label="Marca"
+            name="brandId"
+            options={brandOptions}
+            value={formData.brandId}
+            onChange={handleChange}
+            error={errors.brandId}
+          />
+          <Input
+            label="Modelo"
+            name="model"
+            placeholder="Ingrese el modelo"
+            value={formData.model}
+            onChange={handleChange}
+            error={errors.model}
+          />
+          <Input
+            label="Serial"
+            name="serial"
+            placeholder="Ingrese el serial"
+            value={formData.serial}
+            onChange={handleChange}
+            error={errors.serial}
+          />
+        </div>
+
+        {/* Columna 3 — Datos físicos */}
+        <div className="flex flex-col gap-6 my-0 w-[320px]">
+          <Input
+            label="Placa SENA (opcional)"
+            name="senaPlate"
+            placeholder="Ingrese la placa SENA"
+            value={formData.senaPlate}
+            onChange={handleChange}
+            error={errors.senaPlate}
+          />
+          <Input
+            label="Cantidad"
+            name="quantity"
+            type="number"
+            placeholder="Cantidad de unidades"
+            value={formData.quantity}
+            onChange={handleChange}
+            error={errors.quantity}
+          />
+          {!formData.senaPlate && (
+            <p className="text-xs text-gray-500 -mt-4">
+              Requerida cuando no hay Placa SENA
+            </p>
+          )}
+          <Input
+            label="Dimensiones (opcional)"
+            name="dimensions"
+            placeholder="Ej: 30cm x 20cm x 10cm"
+            value={formData.dimensions}
+            onChange={handleChange}
+            error={errors.dimensions}
+          />
+          <Select
+            label="Cuentadante"
+            name="userId"
+            options={userOptions}
+            value={formData.userId}
+            onChange={handleChange}
+            error={errors.userId}
+          />
+          <Input
+            label="Ubicación"
+            name="location"
+            placeholder="Ingrese la ubicación"
+            value={formData.location}
+            onChange={handleChange}
+            error={errors.location}
+          />
+          <Select
+            label="Estado"
+            name="status"
+            options={STATUS_OPTIONS}
+            value={formData.status}
+            onChange={handleChange}
+            error={errors.status}
+          />
+        </div>
+
+        {/* Columna 4 — Valores + descripción */}
+        <div className="flex flex-col gap-6 my-0 w-[320px]">
+          <Input
+            label="Valor unitario"
+            name="unitPrice"
+            placeholder="Ej: 250000"
+            type="number"
+            value={formData.unitPrice}
+            onChange={handleChange}
+            error={errors.unitPrice}
+          />
+          <Input
+            label="Valor total"
+            name="totalPrice"
+            placeholder="Ej: 1250000"
+            type="number"
+            value={formData.totalPrice}
+            onChange={handleChange}
+            error={errors.totalPrice}
+          />
+          <Input
+            label="Fecha de compra"
+            name="purchaseDate"
+            type="date"
+            value={formData.purchaseDate}
+            onChange={handleChange}
+            error={errors.purchaseDate}
+          />
+          <Input
+            label="Descripción"
+            name="description"
+            placeholder="Descripción del material"
+            value={formData.description}
+            onChange={handleChange}
+            error={errors.description}
+          />
+          <div className="flex items-center justify-center gap-6">
+            <Button type="submit" variant="primary" size="sm" disabled={saving}>
+              {saving ? "Guardando..." : "Crear Material"}
+            </Button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
 }
