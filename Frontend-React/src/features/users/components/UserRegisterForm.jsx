@@ -119,9 +119,9 @@ export default function UserRegisterForm() {
   };
 
   return (
-    <div className="flex justify-center pt-6">
+    <div className="flex justify-center pt-4">
       <form
-        className="grid place-self-center gap-6 mx-6 md:grid-cols-2 lg:grid-cols-3 md:mx-12 1400:grid-cols-3 1400:mx-0 justify-items-center max-w-max"
+        className="grid place-self-center gap-5 mx-6 md:grid-cols-2 lg:grid-cols-3 md:mx-12 1400:grid-cols-3 1400:mx-0 justify-items-center max-w-max"
         onSubmit={handleSubmit}
       >
         {/* Columna 1 */}

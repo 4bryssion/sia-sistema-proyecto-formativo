@@ -12,12 +12,20 @@ export const UserColumns = (onChanged) => [
     accessorFn: (row) => `${row.userFirstName} ${row.userLastName}`,
     cell: ({ row }) => {
       const u = row.original;
+
+      // Cambio: se reemplaza la navegación de un solo clic por doble clic
+      // según observación del instructor, para evitar redirecciones accidentales
+      const handleDoubleClick = () => {
+        window.location.href = `/view/users/${u.id}`;
+      };
+
       return (
-        <Link
-          to={`/view/users/${u.id}`}
+        <span
+          onDoubleClick={handleDoubleClick}
+          className="cursor-pointer hover:underline"
         >
           {u.userFirstName} {u.userLastName}
-        </Link>
+        </span>
       );
     },
   },

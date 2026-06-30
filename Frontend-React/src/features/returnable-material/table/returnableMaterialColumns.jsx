@@ -17,6 +17,26 @@ export const returnableMaterialColumns = [
     {
     accessorKey: "nombre_material", // Campo del objeto material retornable
     header: "Nombre",    // Encabezado visible
+
+    
+     // Cambio: doble clic en el id navega a visualizar el material consumible
+    // según observación del instructor, para evitar redirecciones accidentales
+    cell: ({ row }) => {
+      const returnable = row.original;
+
+      const handleDoubleClick = () => {
+        window.location.href = `/view/returnable-material/${returnable.nombre_material}`;
+      };
+
+      return (
+        <span
+          onDoubleClick={handleDoubleClick}
+          className="cursor-pointer hover:underline"
+        >
+          {returnable.nombre_material}
+        </span>
+      );
+    },
     },
 
     // Columna cuentadante

@@ -31,7 +31,7 @@ export default function CreateUserPage(){
 
             <div
                 className="
-                    flex items-center gap-4 mt-2 mb-6 1400:absolute 1400:top-0
+                     flex items-center gap-4 mt-2 mb-3 1400:absolute 1400:top-0
                 "
             >
                 <IconButton

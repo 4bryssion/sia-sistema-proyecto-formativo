@@ -16,15 +16,19 @@ export default function UserEditRight({
   saving,
 }) {
   return (
+    // Se reduce el espacio inferior del encabezado. linea 24
+    // Se reduce la separación entre las dos columnas.linea 28
+    //cambio en 30 y 31.
+    //cambio en la 79 y 134.
     <div className="relative">
-      <div className="mb-6 1400:grid 1400:grid-cols-2 1400:gap-6">
+      <div className="mb-4 1400:grid 1400:grid-cols-2 1400:gap-6">
         <h2 className="font-main text-h2 text-center font-bold 1400:text-start 1400:justify-self-center 1400:w-[320px]">
           Usuario
         </h2>
       </div>
 
-      <div className="grid lg:grid-cols-2 w-full">
-        <div className="grid gap-2 justify-items-center">
+      <div className="grid lg:grid-cols-2 lg:gap-4 w-full">
+        <div className="grid gap-1 justify-items-center">
           <Input
             label="Nombre"
             name="userFirstName"
@@ -72,7 +76,7 @@ export default function UserEditRight({
           />
         </div>
 
-        <div className="grid gap-2 justify-items-center lg:h-max">
+        <div className="grid gap-1 justify-items-center lg:h-max">
           <Select
             label="Tipo de cuenta"
             name="userAccountType"
@@ -126,8 +130,8 @@ export default function UserEditRight({
       {errors.form && (
         <p className="text-error text-caption mt-4">{errors.form}</p>
       )}
-
-      <div className="grid gap-6 mt-6 sm:flex sm:w-80 sm:mx-auto sm:justify-end lg:flex lg:w-full">
+      
+      <div className="grid gap-4 mt-4 sm:flex sm:w-80 sm:mx-auto sm:justify-end lg:flex lg:w-full">
         <Button
           variant="primary"
           className="gap-2 lg:justify-self-end lg:mr-24"

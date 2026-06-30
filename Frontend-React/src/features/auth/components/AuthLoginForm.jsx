@@ -136,8 +136,8 @@ export default function AuthRegisterForm(){
 
                 </div>
 
-                <Link className="font-secondary text-body" to="/recover-password">
-                    ¿Olvidó su Contraseña?
+                <Link className="font-secondary text-small underline text-blue-600" to="/auth/recover-password">
+                    ¿Olvidó su contraseña?
                 </Link>
                 
             </form>

@@ -11,6 +11,25 @@ export const loanColumns = [
     {
         accessorKey: "id",
         header: "Id",
+
+        // Cambio: doble clic en el id navega a visualizar el préstamo
+        // según observación del instructor, para evitar redirecciones accidentales
+        cell: ({ row }) => {
+            const loan = row.original;
+
+            const handleDoubleClick = () => {
+                window.location.href = `/view/loans/${loan.id}`;
+            };
+
+            return (
+                <span
+                    onDoubleClick={handleDoubleClick}
+                    className="cursor-pointer hover:underline"
+                >
+                    {loan.id}
+                </span>
+            );
+        },
     },
 
     // Columna usuario solicitante
