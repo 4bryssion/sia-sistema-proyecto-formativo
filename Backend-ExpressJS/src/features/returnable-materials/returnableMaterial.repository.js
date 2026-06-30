@@ -11,9 +11,12 @@ const includeComplete = {
 };
 
 export const returnableMaterialRepository = {
-  async findAll() {
+  async findAll(status = 'active') {
+    const where = {};
+    if (status === 'active')   where.consumableMaterial = { isActive: true };
+    if (status === 'inactive') where.consumableMaterial = { isActive: false };
     return prisma.returnableMaterial.findMany({
-      where: { consumableMaterial: { isActive: true } },
+      where,
       include: includeComplete,
       orderBy: { consumableMaterial: { materialName: 'asc' } },
     });

@@ -1,152 +1,111 @@
-import { useState } from "react";
-import { Input, Button } from "@/shared";
-import { Save } from "lucide-react";
+import { Input, Button, Select, IconButton, FileInput } from "@/shared";
+import { Save, FileText } from "lucide-react";
 import logo from "@/assets/logos/logo-sena-negro.png";
 
-export default function ReturnableMaterialEditRight() {
-    const [form, setForm] = useState({
-        returnableName: "",
-        returnableBrand: "",
-        returnableModel: "",
-        returnableSerial: "",
-        returnableSenaPlate: "",
-        returnableState: "",
-        returnableAccountant: "",
-        returnableLocation: "",
-        returnableDimensions: "",
-        returnableQuantity: "",
-        returnableUnitValue: "",
-        returnableTotalValue: "",
-        returnableDescrption: "",
-    });
+const IMG_BASE = "http://localhost:5000";
 
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
-    };
+const STATUS_OPTIONS = [
+  { value: "Disponible",    label: "Disponible" },
+  { value: "No_disponible", label: "No disponible" },
+  { value: "Mantenimiento", label: "Mantenimiento" },
+  { value: "En_prestamo",   label: "En préstamo" },
+  { value: "Traslado",      label: "Traslado" },
+  { value: "Baja",          label: "Baja" },
+];
 
-    const handleSubmit = () => {
-        console.log("Datos editados:", form);
-    };
+export default function ReturnableMaterialEditRight({
+  form,
+  onChange,
+  brandOptions    = [],
+  categoryOptions = [],
+  userOptions     = [],
+  errors          = {},
+  onSubmit,
+  saving,
+  isActive,
+  onToggle,
+  toggling,
+  technicalSheet,
+  techSheetFile,
+  onTechSheetChange,
+}) {
+  const openSheet = () => {
+    if (technicalSheet) window.open(`${IMG_BASE}${technicalSheet}`, "_blank");
+  };
 
-    return (
-        <div className="relative">
-            <div className="mb-6 1400:grid 1400:grid-cols-2 1400:gap-6">
-                <h2 className="font-main text-h2 text-center font-bold 1400:text-start 1400:justify-self-center 1400:w-[320px]">
-                    Material Retornable
-                </h2>
-            </div>
+  return (
+    <div className="relative">
+      {errors.form && <p className="text-error text-sm mb-4">{errors.form}</p>}
 
-            <div className="grid lg:grid-cols-2 gap-6 w-full">
-                <div className="grid gap-6 justify-items-center">
-                    <Input
-                        label="Nombre del retornable"
-                        name="returnableName"
-                        placeholder="Taladro percutor industrial"
-                        value={form.returnableName}
-                        onChange={handleChange}
-                    />
-                    <Input
-                        label="Marca"
-                        name="returnableBrand"
-                        placeholder="Bosch"
-                        value={form.returnableBrand}
-                        onChange={handleChange}
-                    />
-                    <Input
-                        label="Modelo"
-                        name="returnableModel"
-                        placeholder="GSB 13 RE"
-                        value={form.returnableModel}
-                        onChange={handleChange}
-                    />
-                    <Input
-                        label="Serial"
-                        name="returnableSerial"
-                        placeholder="SN-20230915-001"
-                        value={form.returnableSerial}
-                        onChange={handleChange}
-                    />
-                    <Input
-                        label="Placa SENA"
-                        name="returnableSenaPlate"
-                        placeholder="SENA-2023-001"
-                        value={form.returnableSenaPlate}
-                        onChange={handleChange}
-                    />
-                    <Input
-                        label="Estado"
-                        name="returnableState"
-                        placeholder="Disponible"
-                        value={form.returnableState}
-                        onChange={handleChange}
-                    />
-                    <Input
-                        label="Cuentadante"
-                        name="returnableAccountant"
-                        placeholder="Santiago Acevedo"
-                        value={form.returnableAccountant}
-                        onChange={handleChange}
-                    />
-                </div>
+      <div className="mb-6 1400:grid 1400:grid-cols-2 1400:gap-6">
+        <h2 className="font-main text-h2 text-center font-bold 1400:text-start 1400:justify-self-center 1400:w-[320px]">
+          Material Retornable
+        </h2>
+      </div>
 
-                <div className="grid gap-6 justify-items-center lg:h-max">
-                    <Input
-                        label="Ubicación"
-                        name="returnableLocation"
-                        placeholder="ADSO - Zona 6"
-                        value={form.returnableLocation}
-                        onChange={handleChange}
-                    />
-                    <Input
-                        label="Dimensiones"
-                        name="returnableDimensions"
-                        placeholder="30cm x 20cm x 10cm"
-                        value={form.returnableDimensions}
-                        onChange={handleChange}
-                    />
-                    <Input
-                        label="Cantidad"
-                        name="returnableQuantity"
-                        placeholder="5"
-                        value={form.returnableQuantity}
-                        onChange={handleChange}
-                    />
-                    <Input
-                        label="Valor unitario"
-                        name="returnableUnitValue"
-                        placeholder="250.000"
-                        value={form.returnableUnitValue}
-                        onChange={handleChange}
-                    />
-                    <Input
-                        label="Valor total"
-                        name="returnableTotalValue"
-                        placeholder="1.250.000"
-                        value={form.returnableTotalValue}
-                        onChange={handleChange}
-                    />
-                    <Input
-                        label="Descripción"
-                        name="returnableDescrption"
-                        placeholder="Taladro para uso en taller de metalmecánica"
-                        value={form.returnableDescrption}
-                        onChange={handleChange}
-                    />
-                </div>
-            </div>
-
-            <div className="grid gap-6 mt-6 sm:flex sm:justify-end lg:w-full">
-                <Button
-                    variant="primary"
-                    className="gap-2 lg:justify-self-end lg:mr-24"
-                    onClick={handleSubmit}
-                >
-                    <Save size={16} />
-                    Guardar
-                </Button>
-            </div>
-
-            <img src={logo} alt="Logo SENA" className="absolute right-0 bottom-0 w-16" />
+      <div className="grid lg:grid-cols-2 gap-6 w-full">
+        <div className="grid gap-2 justify-items-center">
+          <Input label="Nombre del material" name="materialName" value={form.materialName} onChange={onChange} error={errors.materialName} />
+          <Select label="Marca"      name="brandId"    options={brandOptions}    value={form.brandId}    onChange={onChange} error={errors.brandId} />
+          <Select label="Categoría"  name="categoryId" options={categoryOptions} value={form.categoryId} onChange={onChange} error={errors.categoryId} />
+          <Input label="Modelo"      name="model"      value={form.model}      onChange={onChange} error={errors.model} />
+          <Input label="Serial"      name="serial"     value={form.serial}     onChange={onChange} error={errors.serial} />
+          <Input label="Placa SENA (opcional)" name="senaPlate" value={form.senaPlate} onChange={onChange} error={errors.senaPlate} />
+          <Input label="Cantidad" name="quantity" type="number" value={form.quantity} onChange={onChange} error={errors.quantity} />
+          <Input label="Dimensiones (opcional)" name="dimensions" value={form.dimensions} onChange={onChange} error={errors.dimensions} />
         </div>
-    );
+        <div className="grid gap-2 justify-items-center lg:h-max">
+          <Select label="Estado"      name="status"  options={STATUS_OPTIONS} value={form.status}  onChange={onChange} error={errors.status} />
+          <Select label="Cuentadante" name="userId"  options={userOptions}    value={form.userId}  onChange={onChange} error={errors.userId} />
+          <Input label="Ubicación"    name="location"     value={form.location}     onChange={onChange} error={errors.location} />
+          <Input label="Valor unitario" name="unitPrice"  type="number" value={form.unitPrice}  onChange={onChange} error={errors.unitPrice} />
+          <Input label="Valor total"    name="totalPrice" type="number" value={form.totalPrice} onChange={onChange} error={errors.totalPrice} />
+          <Input label="Fecha de compra" name="purchaseDate" type="date" value={form.purchaseDate} onChange={onChange} error={errors.purchaseDate} />
+          <Input label="Descripción"  name="description" value={form.description} onChange={onChange} error={errors.description} />
+        </div>
+      </div>
+
+      <div className="grid gap-6 mt-6 sm:flex sm:w-80 sm:mx-auto sm:justify-between lg:grid lg:grid-cols-2 lg:gap-6 lg:w-full">
+        <div className="lg:w-[320px] lg:justify-self-center">
+          <Button
+            variant="toggle"
+            activeLabel="Activo"
+            inactiveLabel="Inactivo"
+            checked={isActive}
+            onClick={onToggle}
+            disabled={toggling}
+          />
+        </div>
+
+        <div className="flex items-center gap-2 lg:justify-self-end lg:mr-24">
+          <IconButton ariaLabel="Ver ficha técnica" onClick={openSheet}>
+            <FileText size={20} />
+          </IconButton>
+          <FileInput
+            className="h-10 overflow-hidden"
+            accept="application/pdf,.pdf,application/vnd.ms-excel,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx"
+            multiple={false}
+            value={techSheetFile}
+            onChange={onTechSheetChange}
+          >
+            Cargar
+          </FileInput>
+        </div>
+      </div>
+
+      <div className="flex justify-end mt-4 lg:mr-24">
+        <Button
+          variant="primary"
+          className="gap-2"
+          onClick={onSubmit}
+          disabled={saving}
+        >
+          <Save size={16} />
+          {saving ? "Guardando..." : "Guardar"}
+        </Button>
+      </div>
+
+      <img src={logo} alt="Logo SENA" className="absolute right-0 bottom-0 w-16" />
+    </div>
+  );
 }

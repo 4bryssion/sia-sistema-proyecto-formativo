@@ -1,1 +1,0 @@
-// Servicio de préstamos - conexiones pendientes de implementación

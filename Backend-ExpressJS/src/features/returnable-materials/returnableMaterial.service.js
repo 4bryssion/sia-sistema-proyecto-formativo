@@ -15,12 +15,15 @@ const deleteFiles = (archivos) => {
 
 const parseCampos = (body) => ({
   ...body,
-  userId: body.userId ? Number(body.userId) : undefined,
-  brandId: body.brandId ? Number(body.brandId) : undefined,
-  categoryId: body.categoryId ? Number(body.categoryId) : undefined,
-  unitPrice: body.unitPrice ? Number(body.unitPrice) : undefined,
-  totalPrice: body.totalPrice ? Number(body.totalPrice) : undefined,
+  userId:      body.userId      ? Number(body.userId)      : undefined,
+  brandId:     body.brandId     ? Number(body.brandId)     : undefined,
+  categoryId:  body.categoryId  ? Number(body.categoryId)  : undefined,
+  unitPrice:   body.unitPrice   ? Number(body.unitPrice)   : undefined,
+  totalPrice:  body.totalPrice  ? Number(body.totalPrice)  : undefined,
   purchaseDate: body.purchaseDate ? new Date(body.purchaseDate).toISOString() : undefined,
+  quantity:    body.quantity !== undefined && body.quantity !== ''
+                 ? Number(body.quantity)
+                 : undefined,
 });
 
 const separar = (data) => {
@@ -39,8 +42,8 @@ const separar = (data) => {
 };
 
 export const returnableMaterialService = {
-  async getAll() {
-    return returnableMaterialRepository.findAll();
+  async getAll(status = 'active') {
+    return returnableMaterialRepository.findAll(status);
   },
 
   async getById(id) {

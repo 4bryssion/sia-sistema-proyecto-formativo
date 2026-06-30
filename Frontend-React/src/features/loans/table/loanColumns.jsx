@@ -1,85 +1,48 @@
-// Componente que contiene los botones de acciones de cada préstamo
-import LoanRowActions from "../components/LoanRowActions";
-
 import { Switch } from "@/shared";
+import LoanRowActions from "../components/LoanRowActions";
+import loanService from "../services/loanService";
+import { getLoanStatusLabel } from "../utils/loanStatusLabel";
 
-// Definición de las columnas de la tabla de préstamos
-// Este arreglo se utiliza para configurar las columnas de la tabla
-export const loanColumns = [
+const partyName = (loan, party) => {
+  const sig = loan.signatures?.find((s) => s.party === party);
+  return sig?.user ? `${sig.user.userFirstName} ${sig.user.userLastName}` : "—";
+};
 
-    // Columna identificador del préstamo
-    {
-        accessorKey: "id",
-        header: "Id",
+const materialsLabel = (loan) => {
+  const mats = loan.materials ?? [];
+  if (!mats.length) return "—";
+  return mats
+    .map((m) => `${m.consumableMaterial?.materialName ?? "?"} (${m.borrowedQuantity})`)
+    .join(", ");
+};
+
+export const loanColumns = (refetch) => [
+  { accessorKey: "id", header: "ID" },
+  { id: "receiver", header: "Usuario solicitante", cell: ({ row }) => partyName(row.original, "Receptor") },
+  { id: "lender",   header: "Aprobado por",        cell: ({ row }) => partyName(row.original, "Prestador") },
+  { id: "materials", header: "Materiales",          cell: ({ row }) => materialsLabel(row.original) },
+  { accessorKey: "apprenticeGroup", header: "Grupo" },
+  {
+    id: "returnDate",
+    header: "Fecha devolución",
+    cell: ({ row }) => (row.original.returnDate ? String(row.original.returnDate).slice(0, 10) : "—"),
+  },
+  { id: "status", header: "Estado", cell: ({ row }) => getLoanStatusLabel(row.original.status) },
+  {
+    accessorKey: "isActive",
+    header: "Activo",
+    cell: ({ row }) => {
+      const loan = row.original;
+      const handleToggle = async () => {
+        try {
+          await loanService.toggle(loan.id);
+          refetch();
+        } catch (err) {
+          console.error("Error al cambiar estado del préstamo:", err);
+        }
+      };
+      return <Switch checked={loan.isActive} onChange={handleToggle} className="inline-flex" />;
     },
-
-    // Columna usuario solicitante
-    {
-        accessorKey: "usuario",
-        header: "Usuario",
-    },
-
-    // Columna material prestado
-    {
-        accessorKey: "material",
-        header: "Material",
-    },
-
-    // Columna grupo de aprendices asociado al préstamo
-    {
-        accessorKey: "grupo_aprendices",
-        header: "Grupo",
-    },
-
-    // Columna fecha de devolución del material
-    {
-        accessorKey: "fecha_devolucion",
-        header: "Fecha devolución",
-    },
-
-    // Columna estado del préstamo (activo / inactivo)
-    {
-        accessorKey: "is_active",
-        header: "Activo",
-
-        // Render personalizado para mostrar un switch
-        cell: ({ row }) => {
-
-            // Se obtiene el objeto completo del préstamo de la fila
-            const loan = row.original;
-
-            // Función ejecutada cuando cambia el estado del switch
-            const handleChange = (value) => {
-
-                // value representa el nuevo estado (true / false)
-                console.log(
-                    "Actualizar estado préstamo:",
-                    loan.loan_id,
-                    value
-                );
-
-                // Aquí normalmente se consumiría la API
-                // updateLoanStatus(loan.loan_id, value)
-            };
-
-            return (
-                // Componente reutilizable para cambiar el estado
-                <Switch
-                    checked={loan.is_active} // Estado actual del préstamo
-                    onChange={handleChange}  // Manejo del cambio de estado
-                    className="inline-flex"
-                />
-            );
-        },
-    },
-
-    // Columna acciones (editar, eliminar, opciones, etc.)
-    {
-        id: "actions",
-
-        // Renderiza el componente de acciones pasando el préstamo completo
-        cell: ({ row }) => (
-            <LoanRowActions loan={row.original} />
-        ),
-    },
+  },
+  { id: "actions", cell: ({ row }) => <LoanRowActions loan={row.original} /> },
 ];

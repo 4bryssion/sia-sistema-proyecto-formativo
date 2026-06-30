@@ -1,40 +1,26 @@
-// Función utilitaria para construir el dataset de un reporte (tabla)
-// Patrón: transformación de datos (input -> output listo para exportar)
+import { receiverName } from "../config/loanReportField";
 
 export function buildReportDataset({
-    loans,          // Array de préstamos origen
-    selectedFields, // Campos seleccionados para el reporte [{key, label}]
-    scope,          // Alcance del reporte: "all" | "user"
-    usuario         // Nombre de usuario para filtrar (si aplica)
+  loans = [],
+  selectedFields,
+  scope,
+  usuario,
 }) {
-    // Copia inmutable del array original (evita mutaciones)
-    let filteredLoans = [...loans];
+  let filtered = [...loans];
 
-    // Filtro por alcance: si es por usuario, se aplica filtro específico
-    if (scope === "user" && usuario) {
-        filteredLoans = filteredLoans.filter(
-            (loan) => loan.usuario === usuario
-        );
-    }
+  if (scope === "user" && usuario) {
+    const needle = usuario.trim().toLowerCase();
+    filtered = filtered.filter((loan) => receiverName(loan).toLowerCase().includes(needle));
+  }
 
-    // Construcción de encabezados del reporte
-    // Se toma el label de cada campo seleccionado
-    const headers = selectedFields.map((field) => field.label);
+  const headers = selectedFields.map((f) => f.label);
 
-    // Construcción de filas del reporte
-    // Cada préstamo se transforma en un array de valores según los campos seleccionados
-    const rows = filteredLoans.map((loan) =>
-        selectedFields.map((field) => {
-            const value = loan[field.key]; // Acceso dinámico a la propiedad
-            // Normalización: evita undefined o null en el reporte
-            return value ?? "";
-        })
-    );
+  const rows = filtered.map((loan) =>
+    selectedFields.map((field) => {
+      const value = field.getter ? field.getter(loan) : (loan[field.key] ?? "");
+      return value ?? "";
+    })
+  );
 
-    // Estructura final desacoplada de la UI
-    // Lista para exportar en Excel, PDF, o renderizar en tabla
-    return {
-        headers, // Array de strings (columnas)
-        rows     // Array de arrays (filas)
-    };
+  return { headers, rows };
 }

@@ -11,7 +11,7 @@ import { generateLoanReport } from "../services/generateLoanReport";
 import { Button, Input, Select, Checkbox } from "@/shared";
 
 // Componente modal para configuración de reportes de préstamos
-export default function ReportConfigModal({ isOpen, onClose }) {
+export default function ReportConfigModal({ isOpen, onClose, loans = [] }) {
 
     // Estado del formato de salida
     const [format, setFormat] = useState("pdf");
@@ -52,6 +52,7 @@ export default function ReportConfigModal({ isOpen, onClose }) {
             selectedFields,
             scope,
             usuario,
+            loans,
         });
 
         // Cierra el modal después de generar el reporte
@@ -117,7 +118,7 @@ export default function ReportConfigModal({ isOpen, onClose }) {
                         onChange={(e) => setScope(e.target.value)}
                         options={[
                             { label: "Todos los préstamos", value: "all" },
-                            { label: "Filtrar por usuario", value: "user" },
+                            { label: "Filtrar por receptor", value: "user" },
                         ]}
                     />
                 </div>
@@ -126,10 +127,10 @@ export default function ReportConfigModal({ isOpen, onClose }) {
                 {scope === "user" && (
                     <div className="mb-4">
                         <Input
-                            label="Nombre del usuario"
+                            label="Nombre del receptor"
                             value={usuario}
                             onChange={(e) => setUsuario(e.target.value)}
-                            placeholder="Ingrese el nombre del usuario"
+                            placeholder="Ingrese el nombre del receptor"
                         />
                     </div>
                 )}
