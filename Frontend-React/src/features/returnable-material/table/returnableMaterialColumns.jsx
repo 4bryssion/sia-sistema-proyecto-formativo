@@ -8,11 +8,26 @@ export const returnableMaterialColumns = (refetch) => [
     accessorKey: "id",
     header: "ID",
   },
-  {
-    id: "materialName",
-    header: "Nombre",
-    cell: ({ row }) => row.original.consumableMaterial?.materialName ?? "—",
-  },
+    {
+        id: "materialName",
+        header: "Nombre", // Encabezado visible
+        cell: ({ row }) => {
+            const returnable = row.original;
+
+            const handleDoubleClick = () => {
+            window.location.href = `/view/returnable-material/${returnable.materialName}`;
+            };
+
+            return (
+            <span
+                onDoubleClick={handleDoubleClick}
+                className="cursor-pointer hover:underline"
+            >
+                {returnable.consumableMaterial?.materialName ?? "—"}
+            </span>
+            );
+        },
+    },
   {
     id: "accountant",
     header: "Cuentadante",

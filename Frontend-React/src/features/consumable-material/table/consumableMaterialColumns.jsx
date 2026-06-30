@@ -11,6 +11,25 @@ export const consumableMaterialColumns = (refetch) => [
   {
     accessorKey: "materialName",
     header: "Nombre",
+
+     // Cambio: doble clic en el id navega a visualizar el material consumible
+    // según observación del instructor, para evitar redirecciones accidentales
+    cell: ({ row }) => {
+      const consumable = row.original;
+
+      const handleDoubleClick = () => {
+        window.location.href = `/view/consumable-materials/${consumable.materialName}`;
+      };
+
+      return (
+        <span
+          onDoubleClick={handleDoubleClick}
+          className="cursor-pointer hover:underline"
+        >
+          {consumable.materialName}
+        </span>
+      );
+    },
   },
   {
     id: "brand",

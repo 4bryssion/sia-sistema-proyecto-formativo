@@ -111,10 +111,10 @@ export default function DataTable({ data, columns, className = "" }) {
               <tr key={headerGroup.id}>
 
                 {headerGroup.headers.map(header => (
-
+                  //cambiamos como el instructor nos indico MF
                   <th
                     key={header.id}
-                    className="p-3 text-left border-b"
+                    className="p-3 py-2 text-left border-b"
                   >
 
                     {/* 
@@ -154,8 +154,9 @@ export default function DataTable({ data, columns, className = "" }) {
                 {/* Celdas visibles de cada fila */}
                 {row.getVisibleCells().map(cell => (
 
-
-                  <td key={cell.id} className="p-3 border-b">
+                  //* Padding vertical reducido de p-3 a py-2 para que la altura de la fila
+                  //no supere los 48px máximo, según observación del instructor MF
+                  <td key={cell.id} className="px-3 py-2 border-b">
 
 
                     {/* Render dinámico del contenido de la celda */}

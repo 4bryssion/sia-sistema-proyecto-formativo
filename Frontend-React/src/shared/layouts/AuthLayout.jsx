@@ -1,7 +1,5 @@
 import { Outlet } from "react-router-dom";
 import bg from "@/assets/images/background-oscuro.jpg"
-import { AuthLoginForm } from "@/features/auth"
-
 
 export default function AuthLayout(){
     return(
@@ -19,7 +17,6 @@ export default function AuthLayout(){
             />
 
             <main>
-                <AuthLoginForm />
                 <Outlet />
             </main>  
         </div>

@@ -88,7 +88,7 @@ export default function RecoverPasswordForm() {
 
                 {/* Descripción */}
                 <p className="font-secondary text-body text-center max-w-xs">
-                        ¡Ingrese su correo registrado para restablecer su contraseña!
+                    ¡Ingrese su correo registrado para restablecer su contraseña!
                 </p>
 
                 {/* Inputs */}
@@ -116,7 +116,7 @@ export default function RecoverPasswordForm() {
                 {/* Botón */}
                 <div className="flex items-center justify-center gap-6">
                     <Button variant="primary" size="md" type="submit">
-                        Recuperar Contraseña
+                        Confirmar
                     </Button>
                 </div>
 

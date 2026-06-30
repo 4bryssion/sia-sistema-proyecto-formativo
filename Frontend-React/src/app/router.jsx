@@ -21,7 +21,8 @@ import {
 
 // Módulo auth:
 import { 
-    RecoverPasswordForm 
+    RecoverPasswordForm, 
+    AuthLoginForm
 
 } from "@/features/auth";
 
@@ -106,18 +107,19 @@ const router = createBrowserRouter([
         element: <GuestRoute><AuthLayout /></GuestRoute>,
         children: [
             {
-                index: true
-            },  
-            //Aca debemos colocar la ruta soolo que no me lo permitio porque esta hardcodeado
-            //linea 116
-            //liena120          
+            index: true,
+            element: <AuthLoginForm />,
+            }, 
+
+            //Ruta de recuperar contraseña
+            {
+                path: "recover-password",
+                element: <RecoverPasswordForm />,
+            },
+      
         ],
     },
-    //Ruta de recuperar contraseña
-    {
-        path: "recover-password",
-        element: <RecoverPasswordForm />,
-    },
+
     {
         path: "/dashboard",
         element: <ProtectedRoute><DashboardLayout /></ProtectedRoute>,

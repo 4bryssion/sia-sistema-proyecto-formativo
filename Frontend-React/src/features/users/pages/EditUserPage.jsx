@@ -88,11 +88,13 @@ export default function EditUserPage() {
   if (!form) return <p className="p-6 text-gray-600">Cargando usuario...</p>;
 
   return (
-    <div className="p-6 grid 1400:grid-cols-[380px_1fr]">
-      <div className="bg-black p-16 1400:h-full">
+    // Se reduce el espacio entre las dos columnas para aprovechar mejor el ancho.
+    // Se reduce el padding interno del panel izquierdo para disminuir la altura total.linea 94
+    <div className="p-4 grid 1400:grid-cols-[380px_1fr]">
+      <div className="bg-black p-8 1400:h-full">
         <UserEditLeft user={user} image={image} onImageChange={setImage} />
       </div>
-      <div className="bg-white p-4">
+      <div className="bg-white p-3">
         <UserEditRight
           form={form}
           onChange={handleChange}

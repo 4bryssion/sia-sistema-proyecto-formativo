@@ -7,9 +7,9 @@ const fmtDateOnly = (d) => (d ? new Date(d).toLocaleDateString("es-CO", { timeZo
 
 export default function UserEditLeft({ user, image, onImageChange }) {
   const fullName = `${user?.userFirstName ?? ""} ${user?.userLastName ?? ""}`.trim();
-
+  //cambio de space-6 a 4
   return (
-    <div className="font-main text-text-inverse space-y-6 grid sm:flex sm:space-y-0 sm:gap-6 sm:items-center sm:justify-evenly 1400:grid 1400:h-full">
+    <div className="font-main text-text-inverse space-y-4 grid sm:flex sm:space-y-0 sm:gap-6 sm:items-center sm:justify-evenly 1400:grid 1400:h-full">
       <div className="grid items-center justify-center gap-3 1400:content-between">
         {user?.userPhoto && (
           <img

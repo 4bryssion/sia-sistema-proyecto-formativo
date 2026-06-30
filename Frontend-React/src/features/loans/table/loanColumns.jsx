@@ -17,7 +17,30 @@ const materialsLabel = (loan) => {
 };
 
 export const loanColumns = (refetch) => [
-  { accessorKey: "id", header: "ID" },
+  // Columna identificador del préstamo
+    {
+        accessorKey: "id",
+        header: "ID",
+
+        // Cambio: doble clic en el id navega a visualizar el préstamo
+        // según observación del instructor, para evitar redirecciones accidentales
+        cell: ({ row }) => {
+            const loan = row.original;
+
+            const handleDoubleClick = () => {
+                window.location.href = `/view/loans/${loan.id}`;
+            };
+
+            return (
+                <span
+                    onDoubleClick={handleDoubleClick}
+                    className="cursor-pointer hover:underline"
+                >
+                    {loan.id}
+                </span>
+            );
+        },
+    },    
   { id: "receiver", header: "Usuario solicitante", cell: ({ row }) => partyName(row.original, "Receptor") },
   { id: "lender",   header: "Aprobado por",        cell: ({ row }) => partyName(row.original, "Prestador") },
   { id: "materials", header: "Materiales",          cell: ({ row }) => materialsLabel(row.original) },
