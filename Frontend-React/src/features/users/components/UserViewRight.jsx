@@ -82,7 +82,7 @@ export default function UserViewRight({ user }) {
         </div>
       </div>
 
-      <div className="grid gap-6 mt-6 sm:flex sm:w-80 sm:mx-auto sm:justify-end lg:flex lg:w-full">
+      <div className="grid gap-6 mt-6 sm:flex sm:w-80 sm:mx-auto lg:justify-end justify-center lg:flex lg:w-full">
         <Button
           variant="primary"
           className="gap-2 lg:justify-self-end lg:mr-24"
@@ -96,7 +96,7 @@ export default function UserViewRight({ user }) {
       <img
         src={logo}
         alt="Logo SENA"
-        className="absolute right-0 bottom-0 w-16"
+        className="absolute right-0 -bottom-3 w-16"
       />
     </div>
   );
