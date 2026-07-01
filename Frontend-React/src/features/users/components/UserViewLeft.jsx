@@ -35,7 +35,7 @@ export default function UserViewLeft({ user }) {
         <p>{fmtDateOnly(user?.userEndDate)}</p>
       </div>
 
-    <div className="lg:justify-self-center">
+    <div className="lg:justify-self-center pl-4">
       <Link to="/dashboard/tasks/create">
         <Button variant="primary">Asignar Tarea</Button>
       </Link>
