@@ -121,11 +121,11 @@ export default function UserRegisterForm() {
   return (
     <div className="flex justify-center pt-4">
       <form
-        className="grid place-self-center gap-5 mx-6 md:grid-cols-2 lg:grid-cols-3 md:mx-12 1400:grid-cols-3 1400:mx-0 justify-items-center max-w-max"
+        className="grid place-self-center gap-5 mx-6 w-full md:max-w-max md:grid-cols-2 lg:grid-cols-3 md:mx-12 1400:grid-cols-3 1400:mx-0 justify-items-center"
         onSubmit={handleSubmit}
       >
         {/* Columna 1 */}
-        <div className="flex flex-col gap-6 my-0 w-[320px]">
+        <div className="flex flex-col gap-6 my-0 w-full md:max-w-[320px]">
           <FileInput
             className="h-37"
             accept="image/*"
@@ -167,7 +167,7 @@ export default function UserRegisterForm() {
         </div>
 
         {/* Columna 2 */}
-        <div className="flex flex-col gap-6 my-0 w-[320px]">
+        <div className="flex flex-col gap-6 my-0 w-full md:max-w-[320px]">
           <Input
             label="Número de documento"
             name="userDocumentNumber"
@@ -213,7 +213,7 @@ export default function UserRegisterForm() {
         </div>
 
         {/* Columna 3 */}
-        <div className="flex flex-col gap-6 my-0 w-[320px]">
+        <div className="flex flex-col gap-6 my-0 w-full md:max-w-[320px]">
           <Input
             label="Fecha de finalización"
             name="userEndDate"

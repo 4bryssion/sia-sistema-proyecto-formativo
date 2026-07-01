@@ -139,9 +139,9 @@ export default function ReturnableMaterialRegisterForm() {
 
         {/* Columna 1 — Archivos + ID */}
         <div className="flex flex-col gap-6 my-0 w-[320px]">
-          <div className="flex-1 flex">
+          <div className="flex ">
             <FileInput
-              className="flex-1"
+              className="flex-1 h-[232px]"
               accept="image/jpeg,image/png,image/jpg,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               multiple={true}
               value={files}
@@ -153,10 +153,6 @@ export default function ReturnableMaterialRegisterForm() {
           {errors.files && <p className="text-error text-xs">{errors.files}</p>}
 
           <Input label="ID del material" value="Automático" readOnly />
-        </div>
-
-        {/* Columna 2 — Identificación */}
-        <div className="flex flex-col gap-6 my-0 w-[320px]">
           <Select
             label="Categoría"
             name="categoryId"
@@ -165,6 +161,11 @@ export default function ReturnableMaterialRegisterForm() {
             onChange={handleChange}
             error={errors.categoryId}
           />
+        </div>
+
+        {/* Columna 2 — Identificación */}
+        <div className="flex flex-col gap-6 my-0 w-[320px]">
+          
           <Input
             label="Nombre del material"
             name="materialName"
@@ -197,10 +198,6 @@ export default function ReturnableMaterialRegisterForm() {
             onChange={handleChange}
             error={errors.serial}
           />
-        </div>
-
-        {/* Columna 3 — Datos físicos */}
-        <div className="flex flex-col gap-6 my-0 w-[320px]">
           <Input
             label="Placa SENA (opcional)"
             name="senaPlate"
@@ -209,20 +206,11 @@ export default function ReturnableMaterialRegisterForm() {
             onChange={handleChange}
             error={errors.senaPlate}
           />
-          <Input
-            label="Cantidad"
-            name="quantity"
-            type="number"
-            placeholder="Cantidad de unidades"
-            value={formData.quantity}
-            onChange={handleChange}
-            error={errors.quantity}
-          />
-          {!formData.senaPlate && (
-            <p className="text-xs text-gray-500 -mt-4">
-              Requerida cuando no hay Placa SENA
-            </p>
-          )}
+        </div>
+
+        {/* Columna 3 — Datos físicos */}
+        <div className="flex flex-col gap-6 my-0 w-[320px]">
+          
           <Input
             label="Dimensiones (opcional)"
             name="dimensions"
@@ -255,6 +243,21 @@ export default function ReturnableMaterialRegisterForm() {
             onChange={handleChange}
             error={errors.status}
           />
+          <Input
+            className="-mt-1"
+            label="Cantidad"
+            name="quantity"
+            type="number"
+            placeholder="Cantidad de unidades"
+            value={formData.quantity}
+            onChange={handleChange}
+            error={errors.quantity}
+          />
+          {!formData.senaPlate && (
+            <p className="text-xs text-gray-500 -mt-4">
+              Requerida cuando no hay Placa SENA
+            </p>
+          )}
         </div>
 
         {/* Columna 4 — Valores + descripción */}
