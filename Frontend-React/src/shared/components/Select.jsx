@@ -11,7 +11,7 @@ export default function Select({
 
     return(
         <div
-            className={`w-full max-w-[320px] ${className}`}
+            className={`w-full md:max-w-[320px] ${className}`}
         >
             {label && (
                 <label

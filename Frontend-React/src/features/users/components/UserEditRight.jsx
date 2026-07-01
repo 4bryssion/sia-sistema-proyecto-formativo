@@ -146,7 +146,7 @@ export default function UserEditRight({
       <img
         src={logo}
         alt="Logo SENA"
-        className="absolute right-0 bottom-0 w-16"
+        className="absolute right-0 -bottom-3 w-16"
       />
     </div>
   );
