@@ -54,6 +54,7 @@ export default function ReturnableMaterialEditRight({
           <Input label="Cantidad" name="quantity" type="number" value={form.quantity} onChange={onChange} error={errors.quantity} />
           <Input label="Dimensiones (opcional)" name="dimensions" value={form.dimensions} onChange={onChange} error={errors.dimensions} />
         </div>
+
         <div className="grid gap-2 justify-items-center lg:h-max">
           <Select label="Estado"      name="status"  options={STATUS_OPTIONS} value={form.status}  onChange={onChange} error={errors.status} />
           <Select label="Cuentadante" name="userId"  options={userOptions}    value={form.userId}  onChange={onChange} error={errors.userId} />
@@ -62,41 +63,35 @@ export default function ReturnableMaterialEditRight({
           <Input label="Valor total"    name="totalPrice" type="number" value={form.totalPrice} onChange={onChange} error={errors.totalPrice} />
           <Input label="Fecha de compra" name="purchaseDate" type="date" value={form.purchaseDate} onChange={onChange} error={errors.purchaseDate} />
           <Input label="Descripción"  name="description" value={form.description} onChange={onChange} error={errors.description} />
+
+          <div className="flex items-center justify-center gap-4 mt-4 w-full">
+            <IconButton className="items-center shrink-0" ariaLabel="Ver ficha técnica" onClick={openSheet}>
+              <FileText size={48} className="sm:w-20 sm:h-20" />
+            </IconButton>
+            <FileInput
+              className="h-16 w-16 sm:h-20 sm:w-20 overflow-hidden shrink-0"
+              accept="application/pdf,.pdf,application/vnd.ms-excel,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx"
+              multiple={false}
+              value={techSheetFile}
+              onChange={onTechSheetChange}
+            >
+              Cargar
+            </FileInput>
+          </div>
         </div>
       </div>
-
-      <div className="grid gap-6 mt-6 sm:flex sm:w-80 sm:mx-auto sm:justify-between lg:grid lg:grid-cols-2 lg:gap-6 lg:w-full">
-        <div className="lg:w-[320px] lg:justify-self-center">
-          <Button
-            variant="toggle"
-            activeLabel="Activo"
-            inactiveLabel="Inactivo"
-            checked={isActive}
-            onClick={onToggle}
-            disabled={toggling}
-          />
-        </div>
-
-        <div className="flex items-center gap-2 lg:justify-self-end lg:mr-24">
-          <IconButton ariaLabel="Ver ficha técnica" onClick={openSheet}>
-            <FileText size={20} />
-          </IconButton>
-          <FileInput
-            className="h-10 overflow-hidden"
-            accept="application/pdf,.pdf,application/vnd.ms-excel,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx"
-            multiple={false}
-            value={techSheetFile}
-            onChange={onTechSheetChange}
-          >
-            Cargar
-          </FileInput>
-        </div>
-      </div>
-
-      <div className="flex justify-end mt-4 lg:mr-24">
+      <div className="flex items-center justify-between mt-6 gap-4 sm:pl-24 pr-20 sm:pr-24">
+        <Button
+          variant="toggle"
+          activeLabel="Activo"
+          inactiveLabel="Inactivo"
+          checked={isActive}
+          onClick={onToggle}
+          disabled={toggling}
+        />
         <Button
           variant="primary"
-          className="gap-2"
+          className="gap-2 shrink-0"
           onClick={onSubmit}
           disabled={saving}
         >
@@ -105,7 +100,7 @@ export default function ReturnableMaterialEditRight({
         </Button>
       </div>
 
-      <img src={logo} alt="Logo SENA" className="absolute right-0 bottom-0 w-16" />
+      <img src={logo} alt="Logo SENA" className="absolute right-0 bottom-0 w-12 sm:w-16" />
     </div>
   );
 }
