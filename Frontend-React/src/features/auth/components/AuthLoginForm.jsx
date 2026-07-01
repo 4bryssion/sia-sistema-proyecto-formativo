@@ -88,6 +88,7 @@ export default function AuthRegisterForm(){
             const data =  await login(result.data)
 
             sessionStorage.setItem("token", data.token); // Clave
+            sessionStorage.setItem("user", JSON.stringify(data.user)); // { id, email } — usado por Navbar para "Mi perfil"
 
             navigate("/dashboard");
         } catch (error) {

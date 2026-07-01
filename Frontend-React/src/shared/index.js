@@ -33,3 +33,4 @@ export { default as AuthLayout } from "./layouts/AuthLayout"
 
 export { default as ProtectedRoute } from "./components/auth/ProtectedRoute";
 export { default as GuestRoute } from "./components/auth/GuestRoute";
+export { getCurrentUser } from "./services/authStorage";

@@ -6,16 +6,18 @@ import { logout } from "@/features/auth/services/logoutService";
 import {
     Bell,
     Menu,
-    Undo2
+    Undo2,
+    CircleUser
 
 } from "lucide-react";
 
-import { 
+import {
     IconButton,
-    Dropdown, 
-    DropdownTrigger, 
-    DropdownItem, 
-    DropdownContent
+    Dropdown,
+    DropdownTrigger,
+    DropdownItem,
+    DropdownContent,
+    getCurrentUser
 
 } from "@/shared";
 
@@ -31,9 +33,18 @@ export default function Navbar(){
         navigate("/auth", { replace: true });
     };
 
-    const handleClick = (value) => { 
+    const handleClick = (value) => {
         setView(value)
     }
+
+    // Reusa el módulo de usuarios (P20+P21): navega al "ver" del usuario autenticado
+    // tomando el id guardado en sessionStorage al hacer login (ver authService/AuthLoginForm).
+    const handleProfileClick = () => {
+        const currentUser = getCurrentUser();
+        if (currentUser?.id) {
+            navigate(`/view/users/${currentUser.id}`);
+        }
+    };
 
     return(
         <nav
@@ -74,10 +85,10 @@ export default function Navbar(){
                         </h1>
                     </Link>
 
-                    {/* Sección derecha: búsqueda + usuario */}
+                    {/* Sección derecha: búsqueda + usuario + menu */}
                     <div
                         className={`
-                            flex items-center gap-5    
+                            flex items-center gap-4    
                         `}
                     >
                         {/* Icono de notificaciones de historial general */}
@@ -88,6 +99,14 @@ export default function Navbar(){
                                 <Bell strokeWidth={2.8} />
                             </IconButton>
                         </Link>
+
+                        {/* Icono de usuario autenticado: ver el propio perfil (reusa ViewUserPage) */}
+                        <IconButton
+                            ariaLabel = "Mi perfil de usuario autenticado"
+                            onClick={handleProfileClick}
+                        >
+                            <CircleUser strokeWidth={2.8} />
+                        </IconButton>
 
                         {/* IconButton + Dropdown */}
                         <div
@@ -113,10 +132,8 @@ export default function Navbar(){
                                     {view === "main" ? (
 
                                         <>
-                                            <DropdownItem>
-                                                <Link to="/dashboard/profile" className="block w-full">
-                                                    Mi perfil
-                                                </Link>
+                                            <DropdownItem onClick={handleProfileClick}>
+                                                Mi perfil
                                             </DropdownItem>
 
                                             <DropdownItem>

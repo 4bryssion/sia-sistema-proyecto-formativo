@@ -6,6 +6,7 @@ import {
     useState,
     cloneElement
 } from "react"
+import { createPortal } from "react-dom"
 
 export const DropdownContext = createContext(null)
 
@@ -17,6 +18,10 @@ export function Dropdown({
 
 }) {
     const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+
+    // triggerRef: referencia al elemento trigger para que DropdownContent
+    // pueda calcular su posición con getBoundingClientRect (necesario para el portal)
+    const triggerRef = useRef(null)
 
     const isControlled = controlledOpen !== undefined
     const open = isControlled ? controlledOpen : uncontrolledOpen
@@ -36,9 +41,15 @@ export function Dropdown({
     const containerRef = useRef(null)
 
     // Click outside o fuera del componente
+    // Excluye el portal (data-dropdown-portal) para no cerrar el menú antes de
+    // que el DropdownItem dispare su onClick (el portal vive fuera del containerRef)
     useEffect(() => {
         const handleClickOutside = (e) => {
-            if(containerRef.current && !containerRef.current.contains(e.target)) {
+            if(
+                containerRef.current &&
+                !containerRef.current.contains(e.target) &&
+                !e.target.closest("[data-dropdown-portal]")
+            ) {
                 setOpen(false)
             }
         }
@@ -57,10 +68,19 @@ export function Dropdown({
         return () => document.removeEventListener("keydown", handleEscape)
     }, [])
 
+    // Cierra el menú al hacer scroll para que no quede flotando
+    // desconectado del trigger (el portal usa posición fija calculada al abrir)
+    useEffect(() => {
+        if(!open) return
+        const handleScroll = () => setOpen(false)
+        window.addEventListener("scroll", handleScroll, true)
+        return () => window.removeEventListener("scroll", handleScroll, true)
+    }, [open])
+
     return (
         // Inyecta el estado compartido al dropdown
-        <DropdownContext.Provider 
-            value={{ open, setOpen }}
+        <DropdownContext.Provider
+            value={{ open, setOpen, triggerRef }}
         >
             <div
                 ref={containerRef}
@@ -73,12 +93,14 @@ export function Dropdown({
 }
 
 // Trigger (asChild pattern)
+// Adjunta triggerRef al elemento hijo para que DropdownContent pueda leer su posición
 export function DropdownTrigger({ children }){
-    const { open, setOpen } = useContext(DropdownContext)
+    const { open, setOpen, triggerRef } = useContext(DropdownContext)
 
     if(!children) return null
 
     return cloneElement(children, {
+        ref: triggerRef,
         onClick: (e) => {
             children.props.onClick?.(e)
             setOpen(!open)
@@ -89,18 +111,37 @@ export function DropdownTrigger({ children }){
 }
 
 // Context
+// Se renderiza en un portal (document.body) para escapar del overflow:hidden/auto
+// de la tabla y evitar que el menú quede clippeado. La posición se calcula con
+// getBoundingClientRect sobre triggerRef y se aplica como position:fixed.
 export function DropdownContent({ children, className = "" }) {
-    const { open } = useContext(DropdownContext)
-   
+    const { open, triggerRef } = useContext(DropdownContext)
+    const [style, setStyle] = useState({})
+
+    useEffect(() => {
+        if(open && triggerRef.current) {
+            const rect = triggerRef.current.getBoundingClientRect()
+            setStyle({
+                top: rect.bottom + 4,
+                // Alinea el borde derecho del menú con el borde derecho del trigger
+                // (equivalente al antiguo right-0 en posicionamiento absoluto)
+                right: window.innerWidth - rect.right,
+            })
+        }
+    }, [open])
+
     if(!open) return null
 
-    return(
+    return createPortal(
         <div
+            data-dropdown-portal
             role="menu"
-            className={`absolute z-100 mt-1 min-w-48 border text-text-inverse p-1 dark:bg-neutral-950/80 backdrop-blur-[1px] shadow-lg rounded-2xl overflow-hidden hover:shadow-black transition-shadow duration-700 ${className}`}
+            style={style}
+            className={`fixed z-9999 min-w-48 border text-text-inverse p-1 dark:bg-neutral-950/80 backdrop-blur-[1px] shadow-lg rounded-2xl overflow-hidden hover:shadow-black transition-shadow duration-700 ${className}`}
         >
             {children}
-        </div>
+        </div>,
+        document.body
     )
 }
 
@@ -128,5 +169,5 @@ export function DropdownItem({
             {children}
         </button>
     )
-    
+
 }
