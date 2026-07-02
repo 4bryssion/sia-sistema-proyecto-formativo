@@ -9,7 +9,7 @@ export default function LoanViewRight({ loan, onToggled }) {
   const navigate = useNavigate();
   const [toggling, setToggling] = useState(false);
   const canEdit = loan?.status === "Activo";
-  const lender   = loan?.signatures?.find((s) => s.party === "Prestador");
+  const lender = loan?.signatures?.find((s) => s.party === "Prestador");
   const receiver = loan?.signatures?.find((s) => s.party === "Receptor");
 
   const partyLine = (sig) =>
@@ -40,15 +40,40 @@ export default function LoanViewRight({ loan, onToggled }) {
       <div className="grid lg:grid-cols-2 gap-6 w-full">
         {/* Columna izquierda */}
         <div className="grid gap-6 justify-items-center">
-          <Input label="Grupo de aprendices" value={loan?.apprenticeGroup ?? "—"} readOnly />
-          <Input label="Justificación de uso" value={loan?.useJustification ?? "—"} readOnly />
-          <Input label="Prestador" value={partyLine(lender)} readOnly />
-          <Input label="Receptor" value={partyLine(receiver)} readOnly />
+          {/* El max-width solo aplica desde sm (640px), antes de eso el Input ocupa todo el ancho */}
+          <Input
+            className="sm:max-w-[320px]"
+            label="Grupo de aprendices"
+            value={loan?.apprenticeGroup ?? "—"}
+            readOnly
+          />
+
+          <Input
+            className="sm:max-w-[320px]"
+            label="Justificación de uso"
+            value={loan?.useJustification ?? "—"}
+            readOnly
+          />
+
+          <Input
+            className="sm:max-w-[320px]"
+            label="Prestador"
+            value={partyLine(lender)}
+            readOnly
+          />
+
+          <Input
+            className="sm:max-w-[320px]"
+            label="Receptor"
+            value={partyLine(receiver)}
+            readOnly
+          />
         </div>
 
         {/* Columna derecha */}
         <div className="grid gap-6 lg:h-max md:justify-items-center md:items-start md:mx-auto">
           <strong className="justify-self-start">Materiales prestados:</strong>
+
           <ul className="list-disc ml-5 w-full">
             {(loan?.materials ?? []).map((m) => (
               <li key={m.materialId}>
@@ -60,29 +85,40 @@ export default function LoanViewRight({ loan, onToggled }) {
         </div>
       </div>
 
-      {/* Botones al final */}
-      <div className="grid gap-6 mt-6 sm:flex sm:justify-center md:justify-end lg:flex lg:w-full">
-        <Button
-          variant="toggle"
-          activeLabel="Activo"
-          inactiveLabel="Desactivado"
-          checked={loan?.isActive}
-          disabled={toggling}
-          onClick={handleToggle}
-        />
-         <Button
-          variant="primary"
-          className="gap-2 lg:justify-self-end lg:mr-24"
-          disabled={!canEdit}
-          title={canEdit ? "Editar préstamo" : "Solo préstamos en estado Activo pueden editarse"}
-          onClick={() => canEdit && navigate(`/view/loans/${loan.id}/edit`)}
-        >
-          <Pencil size={16} />
-          Editar
-        </Button>
-      </div>
+      {/* Acciones + Logo */}
+      <div className="flex flex-wrap items-center justify-end gap-6 mt-6">
+        <div className="flex flex-wrap justify-end gap-3 flex-1 min-w-0">
+          <Button
+            variant="toggle"
+            activeLabel="Activo"
+            inactiveLabel="Desactivado"
+            checked={loan?.isActive}
+            disabled={toggling}
+            onClick={handleToggle}
+          />
 
-      <img src={logo} alt="Logo SENA" className="absolute right-0 bottom-0 w-16" />
+          <Button
+            variant="primary"
+            className="gap-2"
+            disabled={!canEdit}
+            title={
+              canEdit
+                ? "Editar préstamo"
+                : "Solo préstamos en estado Activo pueden editarse"
+            }
+            onClick={() => canEdit && navigate(`/view/loans/${loan.id}/edit`)}
+          >
+            <Pencil size={16} />
+            Editar
+          </Button>
+        </div>
+
+        <img
+          src={logo}
+          alt="Logo SENA"
+          className="w-16 shrink-0"
+        />
+      </div>
     </div>
   );
 }
