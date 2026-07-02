@@ -62,28 +62,31 @@ export default function LoanReturnRight() {
         </div>
       </div>
 
-      {/* Acciones */}
-      <div className="grid gap-6 mt-6 sm:flex sm:justify-end lg:w-full">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => navigate(-1)}
-        >
-          Cancelar
-        </Button>
+      {/* Acciones + Logo: en un mismo contenedor flex con wrap para que
+          nunca se superpongan, sin importar el ancho de pantalla */}
+      <div className="flex flex-wrap items-center justify-end gap-6 mt-6">
+        <div className="flex flex-wrap justify-end gap-3 flex-1 min-w-0">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => navigate(-1)}
+          >
+            Cancelar
+          </Button>
 
-        <Button
-          variant="primary"
-          className="gap-2 lg:justify-self-end lg:mr-24"
-          onClick={handleSubmit}
-        >
-          <CornerDownLeft size={16} />
-          Registrar retorno
-        </Button>
+          <Button
+            variant="primary"
+            className="gap-2"
+            onClick={handleSubmit}
+          >
+            <CornerDownLeft size={16} />
+            Registrar retorno
+          </Button>
+        </div>
+
+        {/* Logo SENA: ahora en el flujo normal, nunca se monta encima */}
+        <img src={logo} alt="Logo SENA" className="w-16 shrink-0" />
       </div>
-
-      {/* Logo SENA */}
-      <img src={logo} alt="Logo SENA" className="absolute right-0 bottom-0 w-16" />
     </div>
   );
 }
