@@ -69,7 +69,7 @@ export default function ReturnableMaterialEditRight({
               <FileText size={48} className="sm:w-20 sm:h-20" />
             </IconButton>
             <FileInput
-              className="h-16 w-16 sm:h-20 sm:w-20 overflow-hidden shrink-0"
+              className="h-24 w-24 sm:h-28 sm:w-28 shrink-0"
               accept="application/pdf,.pdf,application/vnd.ms-excel,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx"
               multiple={false}
               value={techSheetFile}

@@ -121,11 +121,10 @@ export default function UserRegisterForm() {
   return (
     <div className="flex justify-center pt-4">
       <form
-        className="grid place-self-center gap-5 mx-6 w-full md:max-w-max md:grid-cols-2 lg:grid-cols-3 md:mx-12 1400:grid-cols-3 1400:mx-0 justify-items-center"
+        className="grid gap-x-5 gap-y-6 mx-6 w-full md:max-w-max md:grid-cols-2 lg:grid-cols-3 md:mx-12 1400:mx-0 justify-items-center"
         onSubmit={handleSubmit}
       >
-        {/* Columna 1 */}
-        <div className="flex flex-col gap-6 my-0 w-full md:max-w-[320px]">
+        <div className="flex flex-col gap-2 w-full md:max-w-[320px] md:col-start-1 md:row-start-1 md:row-span-2 lg:col-start-1 lg:row-start-1 lg:row-span-2">
           <FileInput
             className="h-37"
             accept="image/*"
@@ -139,134 +138,143 @@ export default function UserRegisterForm() {
           {errors.image && (
             <p className="text-error text-caption">{errors.image}</p>
           )}
-
-          <Input
-            label="Nombre"
-            name="userFirstName"
-            value={formData.userFirstName}
-            onChange={handleChange}
-            error={errors.userFirstName}
-            placeholder="Ej: Sofía"
-          />
-          <Input
-            label="Apellido"
-            name="userLastName"
-            value={formData.userLastName}
-            onChange={handleChange}
-            error={errors.userLastName}
-            placeholder="Ej: Cardona"
-          />
-          <Select
-            label="Tipo de documento"
-            name="documentTypeId"
-            options={documentTypes}
-            value={formData.documentTypeId}
-            onChange={handleChange}
-            error={errors.documentTypeId}
-          />
         </div>
 
-        {/* Columna 2 */}
-        <div className="flex flex-col gap-6 my-0 w-full md:max-w-[320px]">
-          <Input
-            label="Número de documento"
-            name="userDocumentNumber"
-            value={formData.userDocumentNumber}
-            onChange={handleChange}
-            error={errors.userDocumentNumber}
-            placeholder="Ej: 1078546789"
-          />
-          <Input
-            label="Teléfono"
-            name="userPhone"
-            type="tel"
-            value={formData.userPhone}
-            onChange={handleChange}
-            error={errors.userPhone}
-            placeholder="Ej: 3125667890"
-          />
-          <Input
-            label="Teléfono secundario (opcional)"
-            name="userSecondPhone"
-            type="tel"
-            value={formData.userSecondPhone}
-            onChange={handleChange}
-            error={errors.userSecondPhone}
-            placeholder="Opcional"
-          />
-          <Select
-            label="Tipo de cuenta"
-            name="userAccountType"
-            options={ACCOUNT_TYPE_OPTIONS}
-            value={formData.userAccountType}
-            onChange={handleChange}
-            error={errors.userAccountType}
-          />
-          <Select
-            label="Grupo (rol)"
-            name="groupId"
-            options={groups}
-            value={formData.groupId}
-            onChange={handleChange}
-            error={errors.groupId}
-          />
-        </div>
+        <Input
+          className="md:col-start-1 md:row-start-3 lg:col-start-1 lg:row-start-3"
+          label="Nombre"
+          name="userFirstName"
+          value={formData.userFirstName}
+          onChange={handleChange}
+          error={errors.userFirstName}
+          placeholder="Ej: Sofía"
+        />
+        <Input
+          className="md:col-start-1 md:row-start-4 lg:col-start-1 lg:row-start-4"
+          label="Apellido"
+          name="userLastName"
+          value={formData.userLastName}
+          onChange={handleChange}
+          error={errors.userLastName}
+          placeholder="Ej: Cardona"
+        />
+        <Select
+          className="md:col-start-1 md:row-start-5 lg:col-start-1 lg:row-start-5"
+          label="Tipo de documento"
+          name="documentTypeId"
+          options={documentTypes}
+          value={formData.documentTypeId}
+          onChange={handleChange}
+          error={errors.documentTypeId}
+        />
+        <Input
+          className="md:col-start-1 md:row-start-6 lg:col-start-2 lg:row-start-1"
+          label="Número de documento"
+          name="userDocumentNumber"
+          value={formData.userDocumentNumber}
+          onChange={handleChange}
+          error={errors.userDocumentNumber}
+          placeholder="Ej: 1078546789"
+        />
+        <Input
+          className="md:col-start-1 md:row-start-7 lg:col-start-2 lg:row-start-2"
+          label="Teléfono"
+          name="userPhone"
+          type="tel"
+          value={formData.userPhone}
+          onChange={handleChange}
+          error={errors.userPhone}
+          placeholder="Ej: 3125667890"
+        />
+        <Select
+          className="md:col-start-1 md:row-start-8 lg:col-start-2 lg:row-start-4"
+          label="Tipo de cuenta"
+          name="userAccountType"
+          options={ACCOUNT_TYPE_OPTIONS}
+          value={formData.userAccountType}
+          onChange={handleChange}
+          error={errors.userAccountType}
+        />
 
-        {/* Columna 3 */}
-        <div className="flex flex-col gap-6 my-0 w-full md:max-w-[320px]">
-          <Input
-            label="Fecha de finalización"
-            name="userEndDate"
-            type="date"
-            value={formData.userEndDate}
-            onChange={handleChange}
-            error={errors.userEndDate}
-          />
-          <Input
-            label="Correo personal"
-            name="userEmail"
-            type="email"
-            value={formData.userEmail}
-            onChange={handleChange}
-            error={errors.userEmail}
-            placeholder="Ej: sofia@correo.com"
-          />
-          <Input
-            label="Correo institucional (opcional)"
-            name="userEmailInstitutional"
-            type="email"
-            value={formData.userEmailInstitutional}
-            onChange={handleChange}
-            error={errors.userEmailInstitutional}
-            placeholder="Opcional"
-          />
-          <Input
-            label="Dirección"
-            name="userAddress"
-            value={formData.userAddress}
-            onChange={handleChange}
-            error={errors.userAddress}
-            placeholder="Ej: Calle 12 # 5-8"
-          />
-          <Input
-            label="Contraseña"
-            name="userPassword"
-            type="password"
-            value={formData.userPassword}
-            onChange={handleChange}
-            error={errors.userPassword}
-            placeholder="Mín 8, mayús, minús, número y símbolo"
-          />
+        <Input
+          className="md:col-start-2 md:row-start-1 lg:col-start-2 lg:row-start-3"
+          label="Teléfono secundario (opcional)"
+          name="userSecondPhone"
+          type="tel"
+          value={formData.userSecondPhone}
+          onChange={handleChange}
+          error={errors.userSecondPhone}
+          placeholder="Opcional"
+        />
+        <Select
+          className="md:col-start-2 md:row-start-2 lg:col-start-2 lg:row-start-5"
+          label="Grupo (rol)"
+          name="groupId"
+          options={groups}
+          value={formData.groupId}
+          onChange={handleChange}
+          error={errors.groupId}
+        />
 
-          {errors.form && (
-            <p className="text-error text-caption">{errors.form}</p>
-          )}
+        <Input
+          className="md:col-start-2 md:row-start-3 lg:col-start-3 lg:row-start-1"
+          label="Fecha de finalización"
+          name="userEndDate"
+          type="date"
+          value={formData.userEndDate}
+          onChange={handleChange}
+          error={errors.userEndDate}
+        />
+        <Input
+          className="md:col-start-2 md:row-start-4 lg:col-start-3 lg:row-start-2"
+          label="Correo personal"
+          name="userEmail"
+          type="email"
+          value={formData.userEmail}
+          onChange={handleChange}
+          error={errors.userEmail}
+          placeholder="Ej: sofia@correo.com"
+        />
+        <Input
+          className="md:col-start-2 md:row-start-5 lg:col-start-3 lg:row-start-3"
+          label="Correo institucional (opcional)"
+          name="userEmailInstitutional"
+          type="email"
+          value={formData.userEmailInstitutional}
+          onChange={handleChange}
+          error={errors.userEmailInstitutional}
+          placeholder="Opcional"
+        />
+        <Input
+          className="md:col-start-2 md:row-start-6 lg:col-start-3 lg:row-start-4"
+          label="Dirección"
+          name="userAddress"
+          value={formData.userAddress}
+          onChange={handleChange}
+          error={errors.userAddress}
+          placeholder="Ej: Calle 12 # 5-8"
+        />
+        <Input
+          className="md:col-start-2 md:row-start-7 lg:col-start-3 lg:row-start-5"
+          label="Contraseña"
+          name="userPassword"
+          type="password"
+          value={formData.userPassword}
+          onChange={handleChange}
+          error={errors.userPassword}
+          placeholder="Mín 8, mayús, minús, número y símbolo"
+        />
 
-          <div className="flex items-center justify-center gap-6">
-            <Button variant="primary" size="sm" type="submit">
-              Crear Usuario
-            </Button>
-          </div>
+        {errors.form && (
+          <p className="text-error text-caption md:col-start-2 md:row-start-[8] lg:col-start-3 lg:row-start-[6]">
+            {errors.form}
+          </p>
+        )}
+
+        <div className="flex items-center justify-center gap-6 md:col-start-2 md:row-start-[8] lg:col-start-3 lg:row-start-[7]">
+          <Button variant="primary" size="sm" type="submit">
+            Crear Usuario
+          </Button>
         </div>
       </form>
     </div>

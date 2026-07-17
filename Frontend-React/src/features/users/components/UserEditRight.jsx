@@ -16,10 +16,6 @@ export default function UserEditRight({
   saving,
 }) {
   return (
-    // Se reduce el espacio inferior del encabezado. linea 24
-    // Se reduce la separación entre las dos columnas.linea 28
-    //cambio en 30 y 31.
-    //cambio en la 79 y 134.
     <div className="relative">
       <div className="mb-4 1400:grid 1400:grid-cols-2 1400:gap-6">
         <h2 className="font-main text-h2 text-center font-bold 1400:text-start 1400:justify-self-center 1400:w-[320px]">
