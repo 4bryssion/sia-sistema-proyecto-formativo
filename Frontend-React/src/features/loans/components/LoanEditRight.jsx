@@ -94,14 +94,14 @@ export default function LoanEditRight({
 
       {errors.form && <p className="text-error font-secondary text-center mt-4">{errors.form}</p>}
 
-      <div className="grid gap-6 mt-6 sm:flex sm:justify-end lg:w-full">
+      <div className="flex flex-wrap items-center justify-end gap-6 mt-6">
         <Button variant="primary" type="button" className="gap-2" onClick={onSubmit} disabled={saving}>
           <Pencil size={16} />
           {saving ? "Guardando..." : "Guardar"}
         </Button>
-      </div>
 
-      <img src={logo} alt="Logo SENA" className="absolute right-0 bottom-0 w-16" />
+        <img src={logo} alt="Logo SENA" className="w-16 shrink-0" />
+      </div>
     </div>
   );
 }

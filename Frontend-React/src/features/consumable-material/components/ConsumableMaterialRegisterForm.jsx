@@ -113,7 +113,7 @@ export default function ConsumableMaterialRegisterForm() {
   return (
     <div className="flex justify-center">
       <form
-        className="grid gap-6 mx-6 md:grid-cols-2 md:mx-12 1400:grid-cols-4 1400:mx-0 justify-items-center max-w-max"
+        className="grid gap-6 mx-6 md:grid-cols-2 md:mx-12 1400:grid-cols-4 1400:mx-0 justify-items-center w-full md:max-w-max"
         onSubmit={handleSubmit}
       >
         {errors.form && (
@@ -121,7 +121,7 @@ export default function ConsumableMaterialRegisterForm() {
         )}
 
         {/* Columna 1 — Imagen */}
-        <div className="flex flex-col gap-6 my-0 w-[320px]">
+        <div className="flex flex-col gap-6 my-0 w-full md:w-[320px]">
           <div className="flex-1 flex">
             <FileInput
               className="flex-1"
@@ -144,7 +144,7 @@ export default function ConsumableMaterialRegisterForm() {
         </div>
 
         {/* Columna 2 */}
-        <div className="flex flex-col gap-6 my-0 w-[320px]">
+        <div className="flex flex-col gap-6 my-0 w-full md:w-[320px]">
           <Input
             label="Nombre del material"
             name="materialName"
@@ -183,7 +183,7 @@ export default function ConsumableMaterialRegisterForm() {
         </div>
 
         {/* Columna 3 — Información económica */}
-        <div className="flex flex-col gap-6 my-0 w-[320px]">
+        <div className="flex flex-col gap-6 my-0 w-full md:w-[320px]">
           <Input
             label="Cantidad"
             name="quantity"
@@ -225,7 +225,7 @@ export default function ConsumableMaterialRegisterForm() {
         </div>
 
         {/* Columna 4 */}
-        <div className="flex flex-col gap-6 my-0 w-[320px]">
+        <div className="flex flex-col gap-6 my-0 w-full md:w-[320px]">
           <Input
             label="Fecha de compra"
             name="purchaseDate"
