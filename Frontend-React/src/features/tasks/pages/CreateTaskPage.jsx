@@ -67,11 +67,12 @@ export default function CreateTaskPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex justify-center mt-12 pt-6">
-        <div className="grid place-self-center gap-6 mx-6 md:grid-cols-2 md:mx-12 1400:grid-cols-2 1400:mx-0 justify-items-center max-w-max">
+        <div className="grid lg:grid-cols-2 gap-6 w-full mx-6">
 
           {/* Columna izquierda */}
-          <div className="flex flex-col gap-6 my-0 w-[320px]">
+          <div className="grid gap-6 justify-items-center">
             <Input
+              className="sm:max-w-[320px]"
               label="Título de la tarea"
               name="taskName"
               placeholder="Ej: Revisar inventario de marcas"
@@ -80,6 +81,7 @@ export default function CreateTaskPage() {
               error={errors.taskName}
             />
             <Input
+              className="sm:max-w-[320px]"
               label="Descripción de la tarea"
               name="description"
               placeholder="Ej: Verificar que las marcas activas coincidan con el catálogo"
@@ -87,12 +89,13 @@ export default function CreateTaskPage() {
               onChange={handleChange}
               error={errors.description}
             />
-            <Input label="Estado" name="status" value="En progreso" disabled />
+            <Input className="sm:max-w-[320px]" label="Estado" name="status" value="En progreso" disabled />
           </div>
 
           {/* Columna derecha */}
-          <div className="flex flex-col gap-6 my-0 w-[320px]">
+          <div className="grid gap-6 justify-items-center">
             <Select
+              className="sm:max-w-[320px]"
               label="Usuario asignado"
               name="userId"
               value={formData.userId}
@@ -101,6 +104,7 @@ export default function CreateTaskPage() {
               error={errors.userId}
             />
             <Input
+              className="sm:max-w-[320px]"
               label="Fecha de fin"
               name="endDate"
               type="date"

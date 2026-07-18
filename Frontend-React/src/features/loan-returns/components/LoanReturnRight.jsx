@@ -5,13 +5,12 @@ import logo from "@/assets/logos/logo-sena-negro.png";
 import { useNavigate } from "react-router-dom";
 
 export default function LoanReturnRight() {
-
   const navigate = useNavigate();
 
   // Estado del formulario con los campos requeridos
   const [form, setForm] = useState({
-    remainingQuantity: "",  // Cantidad sobrante (solo consumibles)
-    observations: "",       // Observaciones del retorno
+    remainingQuantity: "", // Cantidad sobrante (solo consumibles)
+    observations: "", // Observaciones del retorno
   });
 
   // Actualiza el campo correspondiente en el estado
@@ -28,7 +27,6 @@ export default function LoanReturnRight() {
 
   return (
     <div className="relative">
-
       {/* Título */}
       <div className="mb-6 1400:grid 1400:grid-cols-2 1400:gap-6">
         <h2 className="font-main text-h2 text-center font-bold 1400:text-start 1400:justify-self-center 1400:w-[320px]">
@@ -39,9 +37,9 @@ export default function LoanReturnRight() {
       {/* gap reducido de gap-6 a gap-3 para inputs más juntos */}
       <div className="grid lg:grid-cols-2 gap-3 w-full">
         <div className="grid gap-3 justify-items-center">
-
-          {/* Cantidad sobrante - solo para materiales de consumo */}
+          {/* Antes de 640px el Input ocupa todo el ancho; desde 640px se limita a 320px */}
           <Input
+            className="sm:max-w-[320px]"
             label="Cantidad sobrante"
             name="remainingQuantity"
             placeholder="Ingrese la cantidad sobrante"
@@ -50,40 +48,42 @@ export default function LoanReturnRight() {
             onChange={handleChange}
           />
 
-          {/* Observaciones del estado del material devuelto */}
           <Input
+            className="sm:max-w-[320px]"
             label="Observaciones"
             name="observations"
             placeholder="Escriba las observaciones del retorno"
             value={form.observations}
             onChange={handleChange}
           />
-
         </div>
       </div>
 
-      {/* Acciones */}
-      <div className="grid gap-6 mt-6 sm:flex sm:justify-end lg:w-full">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => navigate(-1)}
-        >
-          Cancelar
-        </Button>
+      {/* Acciones + Logo: en un mismo contenedor flex con wrap para que
+          nunca se superpongan, sin importar el ancho de pantalla */}
+      <div className="flex flex-wrap items-center justify-end gap-6 mt-6">
+        <div className="flex flex-wrap justify-end gap-3 flex-1 min-w-0">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => navigate(-1)}
+          >
+            Cancelar
+          </Button>
 
-        <Button
-          variant="primary"
-          className="gap-2 lg:justify-self-end lg:mr-24"
-          onClick={handleSubmit}
-        >
-          <CornerDownLeft size={16} />
-          Registrar retorno
-        </Button>
+          <Button
+            variant="primary"
+            className="gap-2"
+            onClick={handleSubmit}
+          >
+            <CornerDownLeft size={16} />
+            Registrar retorno
+          </Button>
+        </div>
+
+        {/* Logo SENA */}
+        <img src={logo} alt="Logo SENA" className="w-16 shrink-0" />
       </div>
-
-      {/* Logo SENA */}
-      <img src={logo} alt="Logo SENA" className="absolute right-0 bottom-0 w-16" />
     </div>
   );
 }

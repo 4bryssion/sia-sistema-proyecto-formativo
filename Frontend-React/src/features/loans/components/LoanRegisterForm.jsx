@@ -107,12 +107,13 @@ export default function LoanRegisterForm() {
   };
 
   return (
-    <div className="flex justify-center">
+    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <form
-        className="grid gap-6 mx-6 md:mx-12 md:grid-cols-2 justify-items-center w-full max-w-4xl"
+        className="grid gap-6 md:grid-cols-2 justify-items-center w-full"
         onSubmit={handleSubmit}
       >
-        <div className="flex flex-col gap-6 w-[320px]">
+        {/* Columna izquierda: datos del préstamo */}
+        <div className="flex flex-col gap-6 w-full sm:w-[320px]">
           <Select
             label="Prestador"
             name="lenderId"
@@ -138,9 +139,6 @@ export default function LoanRegisterForm() {
             onChange={handleChange}
             error={errors.apprenticeGroup}
           />
-        </div>
-
-        <div className="flex flex-col gap-6 w-[320px]">
           <Input
             label="Fecha de devolución"
             name="returnDate"
@@ -159,7 +157,8 @@ export default function LoanRegisterForm() {
           />
         </div>
 
-        <div className="md:col-span-2 w-full max-w-170">
+        {/* Columna derecha: materiales */}
+        <div className="flex flex-col gap-6 w-full sm:w-[320px]">
           <LoanMaterialLines
             lines={materials}
             options={materialOptions}
@@ -171,15 +170,25 @@ export default function LoanRegisterForm() {
           />
         </div>
 
+        {/* Mensajes de error generales */}
         {errors.form && (
           <p className="md:col-span-2 text-error font-secondary text-center">{errors.form}</p>
         )}
 
-        <div className="md:col-span-2 flex items-center justify-center gap-6">
-          <Button variant="secondary" size="sm" onClick={() => navigate(-1)}>
+        {/* Botones de acción */}
+        <div className="md:col-span-2 flex flex-col sm:flex-row sm:justify-between gap-3 mt-8 sm:mt-4 w-full">
+          <Button 
+            variant="secondary" 
+            size="sm" onClick={() => navigate(-1)}
+            className="w-full sm:w-auto sm:self-start">
             Cancelar
           </Button>
-          <Button variant="primary" size="sm" type="submit" disabled={isSubmitting}>
+          <Button 
+            variant="primary" 
+            size="sm" type="submit" 
+            disabled={isSubmitting} 
+            className="w-full sm:w-auto sm:self-end"
+            >
             {isSubmitting ? "Creando..." : "Crear Préstamo"}
           </Button>
         </div>
