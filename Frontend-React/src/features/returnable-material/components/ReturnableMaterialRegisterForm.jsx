@@ -130,7 +130,7 @@ export default function ReturnableMaterialRegisterForm() {
   return (
     <div className="flex justify-center">
       <form
-        className="grid gap-6 mx-6 md:grid-cols-2 md:mx-12 1400:grid-cols-4 1400:mx-0 justify-items-center max-w-max"
+        className="grid gap-6 mx-6 md:grid-cols-2 md:mx-12 1400:grid-cols-4 1400:mx-0 justify-items-center w-full md:max-w-max"
         onSubmit={handleSubmit}
       >
         {errors.form && (
@@ -138,7 +138,7 @@ export default function ReturnableMaterialRegisterForm() {
         )}
 
         {/* Columna 1 — Archivos + ID */}
-        <div className="flex flex-col gap-6 my-0 w-[320px]">
+        <div className="flex flex-col gap-6 my-0 w-full md:w-[320px]">
           <div className="flex ">
             <FileInput
               className="flex-1 h-[232px]"
@@ -164,7 +164,7 @@ export default function ReturnableMaterialRegisterForm() {
         </div>
 
         {/* Columna 2 — Identificación */}
-        <div className="flex flex-col gap-6 my-0 w-[320px]">
+        <div className="flex flex-col gap-6 my-0 w-full md:w-[320px]">
           
           <Input
             label="Nombre del material"
@@ -209,7 +209,7 @@ export default function ReturnableMaterialRegisterForm() {
         </div>
 
         {/* Columna 3 — Datos físicos */}
-        <div className="flex flex-col gap-6 my-0 w-[320px]">
+        <div className="flex flex-col gap-6 my-0 w-full md:w-[320px]">
           
           <Input
             label="Dimensiones (opcional)"
@@ -261,7 +261,7 @@ export default function ReturnableMaterialRegisterForm() {
         </div>
 
         {/* Columna 4 — Valores + descripción */}
-        <div className="flex flex-col gap-6 my-0 w-[320px]">
+        <div className="flex flex-col gap-6 my-0 w-full md:w-[320px]">
           <Input
             label="Valor unitario"
             name="unitPrice"
