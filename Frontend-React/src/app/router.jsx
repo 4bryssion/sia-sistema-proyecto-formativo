@@ -20,9 +20,10 @@ import {
 } from "@/features/home"
 
 // Módulo auth:
-import { 
-    RecoverPasswordForm, 
-    AuthLoginForm
+import {
+    RecoverPasswordForm,
+    AuthLoginForm,
+    ResetPasswordForm
 
 } from "@/features/auth";
 
@@ -39,7 +40,6 @@ import {
 // Módulo tasks:
 import {
     ListTaskPage,
-    CreateTaskPage,
     ViewTaskPage,
     EditTaskPage
 } from "@/features/tasks";
@@ -63,11 +63,12 @@ import {
 } from "@/features/returnable-material";
 
 // Módulo loans:
-import { 
+import {
     ListLoanPage,
     CreateLoanPage,
     ViewLoanPage,
     EditLoanPage,
+    SignLoanPage,
 
 } from "@/features/loans";
 //Modulo loan-returns:
@@ -102,6 +103,13 @@ const router = createBrowserRouter([
         path: "/",
         element: <Navigate to="auth" replace />
     },
+
+    // Firma de préstamos (P40) — pública, sin sesión: llega desde el enlace del correo.
+    // SIN ProtectedRoute NI GuestRoute a propósito: debe funcionar con y sin sesión activa.
+    {
+        path: "/loans/sign",
+        element: <SignLoanPage />,
+    },
     {
         path: "/auth",
         element: <GuestRoute><AuthLayout /></GuestRoute>,
@@ -115,6 +123,12 @@ const router = createBrowserRouter([
             {
                 path: "recover-password",
                 element: <RecoverPasswordForm />,
+            },
+
+            //Ruta de nueva contraseña (P39) — recibe resetTicket por router state
+            {
+                path: "reset-password",
+                element: <ResetPasswordForm />,
             },
       
         ],
@@ -158,10 +172,7 @@ const router = createBrowserRouter([
                 path: "tasks",
                 element: <ListTaskPage />,
             },
-            {
-                path: "tasks/create",
-                element: <CreateTaskPage />,
-            },
+            // crear tarea ahora es un modal (CreateTaskModal) abierto desde ListTaskPage
 
             // Módulo consumable-materials:
             {

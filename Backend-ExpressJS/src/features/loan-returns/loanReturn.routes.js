@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import { loanReturnController } from './loanReturn.controller.js';
 import { validate, createLoanReturnSchema } from './loanReturn.validator.js';
+import { authenticateToken } from '../../middleware/auth.middleware.js';
 
 const router = Router();
 
-router.get('/',             loanReturnController.getAll);
-router.get('/:id',          loanReturnController.getById);
-router.post('/',            validate(createLoanReturnSchema), loanReturnController.create);
-router.patch('/:id/toggle', loanReturnController.toggle);
+router.get('/',             authenticateToken, loanReturnController.getAll);
+router.get('/:id',          authenticateToken, loanReturnController.getById);
+router.post('/',            authenticateToken, validate(createLoanReturnSchema), loanReturnController.create);
+router.patch('/:id/toggle', authenticateToken, loanReturnController.toggle);
 
 router.use((err, req, res, next) => {
   if (err.message && !err.code) {

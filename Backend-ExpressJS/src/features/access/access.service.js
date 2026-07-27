@@ -61,4 +61,11 @@ export const accessService = {
 
     return accessRepository.removePermission(userId, permissionId);
   },
+
+  // Estilo edward: SuperAdmin tiene todos los permisos; el resto por UNION directos+grupos
+  async hasPermission(userId, permissionCode) {
+    if (await accessRepository.isSuperUser(userId)) return true;
+    const permissions = await accessRepository.getUserPermissionCodenames(userId);
+    return permissions.includes(permissionCode);
+  },
 };

@@ -21,6 +21,15 @@ const loanService = {
     const { data } = await api.put(`/loans/${id}`, payload);
     return data;
   },
+  // Rutas públicas de firma (P40) — funcionan sin sesión, el token del enlace es la autenticación.
+  async getSignatureInfo(token) {
+    const { data } = await api.get(`/loans/sign`, { params: { token } });
+    return data;
+  },
+  async sign(token) {
+    const { data } = await api.post(`/loans/sign`, { token });
+    return data;
+  },
 };
 
 export default loanService;

@@ -26,8 +26,12 @@ export const taskService = {
   },
 
   async create(bodyData) {
+    // Joi (date().iso()) ya convirtió endDate a Date en UTC medianoche; se compara
+    // por fecha de calendario (toISOString) contra hoy local para no rechazar el
+    // mismo día por desfase de zona horaria (bug: en UTC-5 "hoy" quedaba < medianoche local)
     const endDate = new Date(bodyData.endDate);
-    if (endDate < startOfToday()) {
+    const todayLocal = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+    if (endDate.toISOString().slice(0, 10) < todayLocal) {
       throw new Error('La fecha de fin no puede ser anterior a hoy.');
     }
     const data = {
@@ -47,10 +51,10 @@ export const taskService = {
     delete data.isActive;
 
     if (data.endDate) {
+      // Misma comparación por fecha de calendario que en create (evita el desfase UTC/local)
       const endDate = new Date(data.endDate);
-      const inicio = new Date(tarea.created_at);
-      inicio.setHours(0, 0, 0, 0);
-      if (endDate < inicio) {
+      const inicioLocal = new Date(tarea.created_at).toLocaleDateString('en-CA');
+      if (endDate.toISOString().slice(0, 10) < inicioLocal) {
         throw new Error('La fecha de fin no puede ser anterior a la fecha de inicio.');
       }
       data.endDate = endDate;

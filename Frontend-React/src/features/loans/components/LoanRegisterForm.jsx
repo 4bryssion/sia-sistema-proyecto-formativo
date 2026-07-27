@@ -113,7 +113,7 @@ export default function LoanRegisterForm() {
         onSubmit={handleSubmit}
       >
         {/* Columna izquierda: datos del préstamo */}
-        <div className="flex flex-col gap-6 w-full sm:w-[320px]">
+        <div className="flex flex-col gap-6 w-full md:w-[320px]">
           <Select
             label="Prestador"
             name="lenderId"
@@ -158,7 +158,7 @@ export default function LoanRegisterForm() {
         </div>
 
         {/* Columna derecha: materiales */}
-        <div className="flex flex-col gap-6 w-full sm:w-[320px]">
+        <div className="flex flex-col gap-6 w-full md:w-[320px]">
           <LoanMaterialLines
             lines={materials}
             options={materialOptions}
@@ -176,17 +176,17 @@ export default function LoanRegisterForm() {
         )}
 
         {/* Botones de acción */}
-        <div className="md:col-span-2 flex flex-col sm:flex-row sm:justify-between gap-3 mt-8 sm:mt-4 w-full">
-          <Button 
-            variant="secondary" 
+        <div className="md:col-span-2 flex flex-col sm:flex-row sm:justify-between gap-3 mt-8 sm:mt-4 lg:px-10 w-full">
+          <Button
+            variant="secondary"
             size="sm" onClick={() => navigate(-1)}
             className="w-full sm:w-auto sm:self-start">
             Cancelar
           </Button>
-          <Button 
-            variant="primary" 
-            size="sm" type="submit" 
-            disabled={isSubmitting} 
+          <Button
+            variant="primary"
+            size="sm" type="submit"
+            disabled={isSubmitting}
             className="w-full sm:w-auto sm:self-end"
             >
             {isSubmitting ? "Creando..." : "Crear Préstamo"}

@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import path from 'path';
 import fs from 'fs';
 import { userRepository } from './user.repository.js';
+import { sendUserCredentials, classifyMailError } from '../../config/mailer.js';
 
 const SALT_ROUNDS = 10;
 
@@ -37,18 +38,44 @@ export const userService = {
     data.documentTypeId = Number(data.documentTypeId);
     if (data.userEndDate) data.userEndDate = new Date(data.userEndDate);
 
+    // '' → null: la columna es única y dos usuarios con '' chocarían (NULL sí se repite)
+    if (data.userEmailInstitutional === '') data.userEmailInstitutional = null;
+
     if (data.userEmailInstitutional && data.userEmailInstitutional === data.userEmail) {
       throw new Error('El correo institucional no puede ser igual al personal.');
     }
 
+    // La contraseña en texto plano solo existe aquí (antes del hash); es la única
+    // oportunidad de enviarla por correo — después es irrecuperable (bcrypt)
+    const plainPassword = data.userPassword;
     data.userPassword = await bcrypt.hash(data.userPassword, SALT_ROUNDS);
 
+    let user;
     try {
-      return await userRepository.createWithGroup(data, groupId);
+      user = await userRepository.createWithGroup(data, groupId);
     } catch (err) {
       deleteFile(data.userPhoto);
       throw err;
     }
+
+    // Envío de credenciales al correo PERSONAL (no institucional). Es síncrono para
+    // poder reportar el resultado en la respuesta, pero un fallo del correo NO
+    // deshace la creación del usuario.
+    let emailSent = false;
+    let emailError = null; // 'invalid_recipient' | 'service_error'
+    try {
+      await sendUserCredentials(user.userEmail, {
+        name: `${user.userFirstName} ${user.userLastName}`,
+        email: user.userEmail,
+        password: plainPassword,
+      });
+      emailSent = true;
+    } catch (err) {
+      emailError = classifyMailError(err);
+      console.error('Error enviando credenciales:', err.message);
+    }
+
+    return { user, emailSent, emailError };
   },
 
   async update(id, bodyData, file) {
@@ -60,6 +87,9 @@ export const userService = {
     if (data.userPassword) data.userPassword = await bcrypt.hash(data.userPassword, SALT_ROUNDS);
     if (data.documentTypeId) data.documentTypeId = Number(data.documentTypeId);
     if (data.userEndDate) data.userEndDate = new Date(data.userEndDate);
+
+    // '' → null: mismo motivo que en create (unique con NULLs repetibles)
+    if (data.userEmailInstitutional === '') data.userEmailInstitutional = null;
 
     const personal = data.userEmail ?? currentUser.userEmail;
     if (data.userEmailInstitutional && data.userEmailInstitutional === personal) {

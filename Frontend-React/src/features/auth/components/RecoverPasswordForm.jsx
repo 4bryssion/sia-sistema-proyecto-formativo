@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { z } from "zod";
 import logo from "@/assets/logos/logo-sena-verde.png";
 import bg from "@/assets/images/background-oscuro.jpg";
 import { Input, Button } from "@/shared";
 import { recoverPasswordSchema } from "../schemas/recoverPasswordSchema.js";
+import { forgotPassword, verifyResetCode } from "../services/authService.js";
 import { Undo2 } from "lucide-react";
 
 export default function RecoverPasswordForm() {
@@ -13,10 +15,23 @@ export default function RecoverPasswordForm() {
     // Estado del formulario
     const [formData, setFormData] = useState({
         userEmail: "",
-        userEmailConfirm: "",
+        userCodeRecover: "",
     });
 
     const [errors, setErrors] = useState({});
+
+    // Anti-spam: segundos restantes antes de permitir otro "Enviar código"
+    const [cooldown, setCooldown] = useState(0);
+
+    // Mensaje que muestra la respuesta del backend tras pulsar "Enviar código"
+    const [sendMessage, setSendMessage] = useState("");
+
+    // Decrementa el cooldown cada segundo hasta llegar a 0
+    useEffect(() => {
+        if (cooldown <= 0) return;
+        const timer = setTimeout(() => setCooldown((prev) => prev - 1), 1000);
+        return () => clearTimeout(timer);
+    }, [cooldown]);
 
     // Handle genérico para inputs
     const handleChange = (e) => {
@@ -25,31 +40,48 @@ export default function RecoverPasswordForm() {
         if (errors.form) setErrors((prev) => ({ ...prev, form: undefined }));
     };
 
-    // Handle submit con validación
+    // Valida solo el email y llama a forgotPassword; arranca el cooldown inmediatamente.
+    // type="button" en el JSX es obligatorio: sin él, un <button> dentro de <form> es submit por
+    // defecto y dispararía handleSubmit (verificar código) en lugar de este handler.
+    const handleSendCode = async () => {
+        const emailResult = z.string().email("Debe ingresar un email válido").safeParse(formData.userEmail);
+        if (!emailResult.success) {
+            setErrors((prev) => ({ ...prev, userEmail: emailResult.error.issues[0].message }));
+            return;
+        }
+        setErrors((prev) => ({ ...prev, userEmail: undefined }));
+        setSendMessage("");
+        setCooldown(30); // arranca antes del await para bloquear doble clic
+        try {
+            const data = await forgotPassword(formData.userEmail);
+            setSendMessage(data.mensaje);
+        } catch (err) {
+            setSendMessage(err.message);
+        }
+    };
+
+    // Valida el formulario completo (email + código) y navega al paso de nueva contraseña
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Validación con Zod
         const result = recoverPasswordSchema.safeParse(formData);
 
         if (!result.success) {
             const fieldErrors = {};
             result.error.issues.forEach((issue) => {
-                const field = issue.path[0];
-                fieldErrors[field] = issue.message;
+                fieldErrors[issue.path[0]] = issue.message;
             });
             setErrors(fieldErrors);
             return;
         }
 
         setErrors({});
+        setSendMessage("");
 
         try {
-            // Aquí irá la llamada al backend para recuperar contraseña
-            console.log("Recuperar contraseña:", result.data);
-            alert("Se ha enviado un correo de restablecimiento.");
-            navigate("/auth");
-
+            const data = await verifyResetCode(result.data);
+            // resetTicket viaja por router state — nunca por URL ni sessionStorage (ver §3, P39)
+            navigate("/auth/reset-password", { state: { resetTicket: data.resetTicket } });
         } catch (error) {
             setErrors({ form: error.message });
         }
@@ -91,8 +123,8 @@ export default function RecoverPasswordForm() {
                     ¡Ingrese su correo registrado para restablecer su contraseña!
                 </p>
 
-                {/* Inputs */}
-                <div className="flex flex-col gap-6 w-[320px]">
+                {/* Inputs y botón de envío de código */}
+                <div className="flex flex-col gap-4 w-[320px]">
                     <Input
                         label="Correo electrónico"
                         name="userEmail"
@@ -100,17 +132,43 @@ export default function RecoverPasswordForm() {
                         type="email"
                         value={formData.userEmail}
                         onChange={handleChange}
-                        error={errors.userEmail || errors.form}
+                        error={errors.userEmail}
                     />
+
+                    {/* type="button" explícito — obligatorio para no disparar handleSubmit */}
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="md"
+                        disabled={cooldown > 0}
+                        onClick={handleSendCode}
+                    >
+                        {cooldown > 0 ? `Reenviar código (${cooldown}s)` : "Enviar código"}
+                    </Button>
+
+                    {sendMessage && (
+                        <p className="font-secondary text-caption text-center text-green-700">
+                            {sendMessage}
+                        </p>
+                    )}
+
                     <Input
-                        label="Confirmación correo"
-                        name="userEmailConfirm"
-                        placeholder="Confirmación correo"
-                        type="email"
-                        value={formData.userEmailConfirm}
+                        label="Código de recuperación"
+                        name="userCodeRecover"
+                        placeholder="Ingrese el código de 6 dígitos"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={formData.userCodeRecover}
                         onChange={handleChange}
-                        error={errors.userEmailConfirm}
+                        error={errors.userCodeRecover}
                     />
+
+                    {errors.form && (
+                        <p className="font-secondary text-caption text-error text-center">
+                            {errors.form}
+                        </p>
+                    )}
                 </div>
 
                 {/* Botón */}

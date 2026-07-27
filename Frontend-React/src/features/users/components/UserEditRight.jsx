@@ -112,14 +112,6 @@ export default function UserEditRight({
             onChange={onChange}
             error={errors.userAddress}
           />
-          <Input
-            label="Nueva contraseña (opcional)"
-            name="userPassword"
-            type="password"
-            value={form.userPassword}
-            onChange={onChange}
-            error={errors.userPassword}
-          />
         </div>
       </div>
 

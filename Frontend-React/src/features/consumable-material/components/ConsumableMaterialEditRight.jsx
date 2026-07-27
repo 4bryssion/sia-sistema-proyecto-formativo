@@ -1,4 +1,4 @@
-import { Input, Button, Select } from "@/shared";
+import { Input, Button, Select, TextArea } from "@/shared";
 import { Save } from "lucide-react";
 import logo from "@/assets/logos/logo-sena-negro.png";
 
@@ -19,9 +19,6 @@ export default function ConsumableMaterialEditRight({
   errors       = {},
   onSubmit,
   saving,
-  isActive,
-  onToggle,
-  toggling,
 }) {
   return (
     <div className="relative">
@@ -117,7 +114,8 @@ export default function ConsumableMaterialEditRight({
             onChange={onChange}
             error={errors.totalPrice}
           />
-          <Input
+          {/* Descripción: TextArea (ancho de input, alto fijo 152px) */}
+          <TextArea
             label="Descripción"
             name="description"
             value={form.description}
@@ -127,17 +125,7 @@ export default function ConsumableMaterialEditRight({
         </div>
       </div>
 
-      <div className="grid gap-6 mt-6 sm:flex sm:w-80 sm:mx-auto sm:justify-between lg:grid lg:grid-cols-2 lg:gap-6 lg:w-full">
-        <div className="lg:w-[320px] lg:justify-self-center">
-          <Button
-            variant="toggle"
-            activeLabel="Activo"
-            inactiveLabel="Inactivo"
-            checked={isActive}
-            onClick={onToggle}
-            disabled={toggling}
-          />
-        </div>
+      <div className="grid gap-6 mt-6 sm:flex sm:w-80 sm:mx-auto sm:justify-end lg:flex lg:w-full">
         <Button
           variant="primary"
           className="gap-2 lg:justify-self-end lg:mr-24"

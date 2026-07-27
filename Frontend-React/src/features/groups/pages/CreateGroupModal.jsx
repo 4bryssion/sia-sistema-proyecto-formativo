@@ -25,10 +25,12 @@ export default function CreateGroupModal({ isOpen, onClose, onSave }) {
     }
     setSaving(true);
     try {
-      await groupService.create(result.data);
+      const res = await groupService.create(result.data);
       setGroupName("");
       setError("");
-      onSave?.();
+      // Se pasa el grupo creado al callback (ej. para autoseleccionarlo en crear usuario);
+      // los consumidores que lo ignoran (refetch) siguen funcionando igual
+      onSave?.(res?.data ?? res);
       onClose?.();
     } catch (err) {
       setError(err.response?.data?.error ?? "Error al crear el grupo");

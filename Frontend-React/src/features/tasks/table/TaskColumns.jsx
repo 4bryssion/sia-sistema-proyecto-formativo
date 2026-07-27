@@ -38,7 +38,7 @@ function StatusCheckboxCell({ task, onChanged }) {
 }
 
 export const TaskColumns = (onChanged) => [
-  { accessorKey: "id", header: "Id" },
+  // { accessorKey: "id", header: "Id" },
   { accessorKey: "taskName", header: "Título" },
   { accessorKey: "description", header: "Descripción" },
   {

@@ -1,10 +1,10 @@
 import GroupRowActions from "../components/GroupRowActions";
 
 export const groupColumns = (onChanged) => [
-  {
-    accessorKey: "id",
-    header: "Id",
-  },
+  // {
+  //   accessorKey: "id",
+  //   header: "Id",
+  // },
   {
     accessorKey: "groupName",
     header: "Nombre del grupo",

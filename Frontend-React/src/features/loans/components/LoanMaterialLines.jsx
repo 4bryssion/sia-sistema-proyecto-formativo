@@ -24,7 +24,7 @@
 
     return (
       <div className="flex flex-col gap-4 w-full">
-        <span className="font-secondary text-caption text-h3">Materiales del préstamo</span>
+        <span className="font-secondary text-h3">Materiales del préstamo</span>
         <div className="flex items-center justify-between">
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full">

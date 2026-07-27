@@ -102,4 +102,19 @@ export const loanRepository = {
       return tx.loan.findUnique({ where: { id }, include: loanInclude });
     });
   },
+
+  // Marca la firma de una parte; si ambas quedan firmadas, el préstamo pasa a Activo.
+  async sign(loanId, party) {
+    return prisma.$transaction(async (tx) => {
+      await tx.loanSignature.update({
+        where: { loanId_party: { loanId, party } },
+        data: { signed: true, signedAt: new Date() },
+      });
+      const pending = await tx.loanSignature.count({ where: { loanId, signed: false } });
+      if (pending === 0) {
+        await tx.loan.update({ where: { id: loanId }, data: { status: 'Activo' } });
+      }
+      return tx.loan.findUnique({ where: { id: loanId }, include: loanInclude });
+    });
+  },
 };

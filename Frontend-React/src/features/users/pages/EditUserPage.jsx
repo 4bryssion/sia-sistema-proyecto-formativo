@@ -34,7 +34,6 @@ export default function EditUserPage() {
           userSecondPhone: u.userSecondPhone ?? "",
           userAddress: u.userAddress ?? "",
           userAccountType: u.userAccountType ?? "",
-          userPassword: "",
         });
       } catch (err) {
         setLoadError(err.response?.data?.error ?? "Error al cargar el usuario");
@@ -68,7 +67,7 @@ export default function EditUserPage() {
     fd.append("userAccountType", form.userAccountType);
     fd.append("userEmailInstitutional", form.userEmailInstitutional ?? "");
     fd.append("userSecondPhone", form.userSecondPhone ?? "");
-    if (form.userPassword) fd.append("userPassword", form.userPassword);
+    // La contraseña no se edita aquí: solo vía recuperar contraseña en el login
     if (image.length) fd.append("image", image[0]);
 
     setSaving(true);

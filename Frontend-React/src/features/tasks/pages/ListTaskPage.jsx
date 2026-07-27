@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { DataTable, Button, IconButton } from "@/shared";
 import { TaskColumns } from "../table/TaskColumns.jsx";
 import { useTasks } from "../hooks/useTasks";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Undo2 } from "lucide-react";
+import CreateTaskModal from "../components/CreateTaskModal.jsx";
 
 export default function ListTaskPage() {
   const navigate = useNavigate();
   const { tasks, loading, error, refetch } = useTasks();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (
     <div className="p-6">
@@ -18,9 +21,9 @@ export default function ListTaskPage() {
           <h1 className="text-xl font-semibold mb-0 text-h3 sm:text-h2">Tareas</h1>
         </div>
 
-        <Link to="/dashboard/tasks/create">
-          <Button variant="primary">Crear Tarea</Button>
-        </Link>
+        <Button variant="primary" onClick={() => setIsCreateOpen(true)}>
+          Crear Tarea
+        </Button>
       </div>
 
       {loading ? (
@@ -30,6 +33,12 @@ export default function ListTaskPage() {
       ) : (
         <DataTable data={tasks} columns={TaskColumns(refetch)} />
       )}
+
+      <CreateTaskModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSave={refetch}
+      />
     </div>
   );
 }

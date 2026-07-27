@@ -19,6 +19,10 @@ export const updateLoanSchema = createLoanSchema.keys({
   status: Joi.string().valid('Activo', 'Finalizado'),
 });
 
+export const signLoanSchema = Joi.object({
+  token: Joi.string().required(),
+});
+
 export const validate = (schema) => (req, res, next) => {
   const { error } = schema.validate(req.body, { abortEarly: false });
   if (error) {

@@ -5,7 +5,7 @@ import userService from "../services/userService";
 import { Link } from "react-router-dom";
 
 export const UserColumns = (onChanged) => [
-  { accessorKey: "id", header: "Id" },
+  // { accessorKey: "id", header: "Id" },
   {
     id: "nombre",
     header: "Nombre",

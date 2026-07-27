@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Input, Button } from "@/shared";
+import { Input, Button, TextArea } from "@/shared";
 import { Pencil } from "lucide-react";
 import logo from "@/assets/logos/logo-sena-negro.png";
 import consumableMaterialService from "../services/consumableMaterialService";
@@ -47,7 +47,8 @@ export default function ConsumableMaterialViewRight({ id }) {
           <Input label="Cantidad"              value={material.quantity ?? "—"}       readOnly />
           <Input label="Valor unitario"        value={material.unitPrice}             readOnly />
           <Input label="Valor total"           value={material.totalPrice}            readOnly />
-          <Input label="Descripción"           value={material.description}           readOnly />
+          {/* Descripción: TextArea (ancho de input, alto fijo 152px) */}
+          <TextArea label="Descripción" value={material.description} readOnly />
         </div>
       </div>
 

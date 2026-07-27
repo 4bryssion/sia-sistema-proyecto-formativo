@@ -18,9 +18,15 @@ export default function AccessPage() {
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [selectedUserId, setSelectedUserId]   = useState(null);
 
-  const [entityPermIds, setEntityPermIds] = useState(new Set());
-  const [userGroupIds, setUserGroupIds]   = useState([]);
+  // entityPermIds: permisos reales guardados en BD (solo directos en modo usuario)
+  const [entityPermIds, setEntityPermIds]       = useState(new Set());
+  // inheritedPermIds: permisos heredados via grupos del usuario (vacío en modo grupo)
+  const [inheritedPermIds, setInheritedPermIds] = useState(new Set());
+  // draftPermIds: copia de trabajo durante edición; fuera de edición refleja entityPermIds
+  const [draftPermIds, setDraftPermIds]         = useState(new Set());
 
+  const [isEditing, setIsEditing]       = useState(false);
+  const [userGroupIds, setUserGroupIds] = useState([]);
   const [loadingPerms, setLoadingPerms] = useState(false);
   const [error, setError]               = useState(null);
 
@@ -42,8 +48,11 @@ export default function AccessPage() {
     setLoadingPerms(true);
     setError(null);
     try {
-      const group = await groupService.getById(groupId);
-      setEntityPermIds(new Set(group.permissions.map((p) => p.permissionId)));
+      const fresh = await groupService.getPermissions(groupId);
+      const freshIds = new Set(fresh.map((p) => p.id));
+      setEntityPermIds(freshIds);
+      setInheritedPermIds(new Set());
+      setDraftPermIds(new Set(freshIds));
     } catch {
       setError("Error cargando permisos del grupo");
     } finally {
@@ -55,12 +64,21 @@ export default function AccessPage() {
     setLoadingPerms(true);
     setError(null);
     try {
-      const [perms, groups] = await Promise.all([
+      const [directPerms, userGroupsList] = await Promise.all([
         accessService.getUserPermissions(userId),
         accessService.getUserGroups(userId),
       ]);
-      setEntityPermIds(new Set(perms.map((p) => p.permissionId)));
-      setUserGroupIds(groups);
+      // Cargar en paralelo los permisos de cada grupo para calcular los heredados
+      const groupPermsArrays = await Promise.all(
+        userGroupsList.map((ug) => groupService.getPermissions(ug.group.id))
+      );
+      const directIds    = new Set(directPerms.map((p) => p.permissionId));
+      const inheritedIds = new Set(groupPermsArrays.flat().map((p) => p.id));
+      setEntityPermIds(directIds);
+      setInheritedPermIds(inheritedIds);
+      setDraftPermIds(new Set(directIds));
+      setUserGroupIds(userGroupsList);
+      setIsEditing(false);
     } catch {
       setError("Error cargando datos del usuario");
     } finally {
@@ -70,42 +88,72 @@ export default function AccessPage() {
 
   const handleGroupChange = (groupId) => {
     const id = groupId ? Number(groupId) : null;
+    setIsEditing(false);
     setSelectedGroupId(id);
     setSelectedUserId(null);
     setEntityPermIds(new Set());
+    setInheritedPermIds(new Set());
+    setDraftPermIds(new Set());
     setUserGroupIds([]);
     if (id) loadGroupPerms(id);
   };
 
   const handleUserChange = (userId) => {
     const id = userId ? Number(userId) : null;
+    setIsEditing(false);
     setSelectedUserId(id);
     setSelectedGroupId(null);
     setEntityPermIds(new Set());
+    setInheritedPermIds(new Set());
+    setDraftPermIds(new Set());
     setUserGroupIds([]);
     if (id) loadUserData(id);
   };
 
-  const handlePermissionToggle = async (permissionId) => {
-    const has = entityPermIds.has(permissionId);
+  const handleEdit = () => {
+    setDraftPermIds(new Set(entityPermIds));
+    setIsEditing(true);
+    setError(null);
+  };
+
+  const handleCancel = () => {
+    setDraftPermIds(new Set(entityPermIds));
+    setIsEditing(false);
+    setError(null);
+  };
+
+  const handleToggle = (permId) => {
+    setDraftPermIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(permId)) next.delete(permId);
+      else next.add(permId);
+      return next;
+    });
+  };
+
+  const handleSave = async () => {
+    setError(null);
     try {
       if (selectedGroupId) {
-        if (has) {
-          await groupService.removePermission(selectedGroupId, permissionId);
-        } else {
-          await groupService.assignPermission(selectedGroupId, permissionId);
-        }
-        await loadGroupPerms(selectedGroupId);
+        // Un solo PUT reemplaza atómicamente todos los permisos del grupo (P36)
+        await groupService.updatePermissions(selectedGroupId, [...draftPermIds]);
+        const fresh = await groupService.getPermissions(selectedGroupId);
+        const freshIds = new Set(fresh.map((p) => p.id));
+        setEntityPermIds(freshIds);
+        setDraftPermIds(new Set(freshIds));
+        setIsEditing(false);
       } else if (selectedUserId) {
-        if (has) {
-          await accessService.removePermission(selectedUserId, permissionId);
-        } else {
-          await accessService.assignPermission(selectedUserId, permissionId);
-        }
-        await loadUserData(selectedUserId);
+        // Diff vs estado real: solo dispara POST/DELETE para los que cambiaron
+        const toAdd    = [...draftPermIds].filter((id) => !entityPermIds.has(id));
+        const toRemove = [...entityPermIds].filter((id) => !draftPermIds.has(id));
+        await Promise.all([
+          ...toAdd.map((id)    => accessService.assignPermission(selectedUserId, id)),
+          ...toRemove.map((id) => accessService.removePermission(selectedUserId, id)),
+        ]);
+        await loadUserData(selectedUserId); // recarga y resetea isEditing=false
       }
     } catch (err) {
-      setError(err.response?.data?.error ?? "Error al actualizar el permiso");
+      setError(err.response?.data?.error ?? "Error al guardar permisos");
     }
   };
 
@@ -128,6 +176,15 @@ export default function AccessPage() {
       setError(err.response?.data?.error ?? "Error al remover el grupo");
     }
   };
+
+  let entityName = null;
+  if (selectedGroupId) {
+    entityName = allGroups.find((g) => g.id === selectedGroupId)?.groupName ?? "";
+  } else if (selectedUserId) {
+    const u = allUsers.find((u) => u.id === selectedUserId);
+    if (u) entityName = `${u.userFirstName} ${u.userLastName ?? ""}`.trim();
+    else entityName = "";
+  }
 
   return (
     <div className="p-2">
@@ -159,10 +216,16 @@ export default function AccessPage() {
         <div className="bg-white p-4 overflow-y-auto">
           <AccessRight
             allPermissions={allPermissions}
-            entityPermIds={entityPermIds}
-            onToggle={handlePermissionToggle}
-            loading={loadingPerms}
+            draftPermIds={draftPermIds}
+            inheritedPermIds={inheritedPermIds}
+            isEditing={isEditing}
             hasSelection={!!(selectedGroupId || selectedUserId)}
+            entityName={entityName}
+            loading={loadingPerms}
+            onToggle={handleToggle}
+            onEdit={handleEdit}
+            onSave={handleSave}
+            onCancel={handleCancel}
           />
         </div>
       </div>

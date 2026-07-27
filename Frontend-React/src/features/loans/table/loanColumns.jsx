@@ -18,30 +18,35 @@ const materialsLabel = (loan) => {
 
 export const loanColumns = (refetch) => [
   // Columna identificador del préstamo
-    {
-        accessorKey: "id",
-        header: "ID",
+  // {
+  //     accessorKey: "id",
+  //     header: "ID",
+  // },    
+  { 
+    id: "receiver", 
+    header: "Usuario solicitante", 
+    cell: ({ row }) => {
+      // Cambio: doble clic en el id navega a visualizar el préstamo
+      // según observación del instructor, para evitar redirecciones accidentales
+      
 
-        // Cambio: doble clic en el id navega a visualizar el préstamo
-        // según observación del instructor, para evitar redirecciones accidentales
-        cell: ({ row }) => {
-            const loan = row.original;
+      const loan = row.original;
 
-            const handleDoubleClick = () => {
-                window.location.href = `/view/loans/${loan.id}`;
-            };
+      const handleDoubleClick = () => {
+          window.location.href = `/view/loans/${loan.id}`;
+      };
 
-            return (
-                <span
-                    onDoubleClick={handleDoubleClick}
-                    className="cursor-pointer hover:underline"
-                >
-                    {loan.id}
-                </span>
-            );
-        },
-    },    
-  { id: "receiver", header: "Usuario solicitante", cell: ({ row }) => partyName(row.original, "Receptor") },
+      return (
+          <span
+              onDoubleClick={handleDoubleClick}
+              className="cursor-pointer hover:underline"
+          >
+              {/* {loan.id} */}
+              {partyName(row.original, "Receptor")}
+          </span>
+      );
+    },
+  },
   { id: "lender",   header: "Aprobado por",        cell: ({ row }) => partyName(row.original, "Prestador") },
   { id: "materials", header: "Materiales",          cell: ({ row }) => materialsLabel(row.original) },
   { accessorKey: "apprenticeGroup", header: "Grupo" },

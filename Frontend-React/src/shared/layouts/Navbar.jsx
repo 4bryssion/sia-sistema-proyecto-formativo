@@ -132,13 +132,13 @@ export default function Navbar(){
                                     {view === "main" ? (
 
                                         <>
-                                            <DropdownItem onClick={handleProfileClick}>
+                                            {/* <DropdownItem onClick={handleProfileClick}>
                                                 Mi perfil
-                                            </DropdownItem>
+                                            </DropdownItem> */}
 
                                             <DropdownItem>
                                                 <Link to="/dashboard/admin" className="block w-full">
-                                                    Admin
+                                                    Administración de permisos
                                                 </Link>
                                             </DropdownItem>
 

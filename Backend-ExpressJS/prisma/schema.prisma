@@ -29,15 +29,28 @@ model Group {
   @@map("groups")
 }
 
+model ContentType {
+  id          Int          @id @default(autoincrement()) @map("content_type_id")
+  appLabel    String       @map("app_label") @db.VarChar(100)
+  model       String       @db.VarChar(100)
+  displayName String       @default("") @map("display_name") @db.VarChar(100)
+  permissions Permission[]
+
+  @@unique([appLabel, model], map: "uq_content_type")
+  @@map("content_type")
+}
+
 model Permission {
-  id             Int               @id(map: "permissions_pkey") @default(autoincrement())
-  permissionName String            @unique @map("permission_name") @db.VarChar(100)
-  description    String?           @db.VarChar(255)
-  isActive       Boolean           @default(true) @map("is_active")
-  created_at     DateTime          @default(now())
-  updated_at     DateTime          @updatedAt
-  groups         GroupPermission[]
-  users          UserPermission[]
+  id                 Int               @id(map: "permissions_pkey") @default(autoincrement())
+  permissionName     String            @unique @map("permission_name") @db.VarChar(150)
+  permissionCodename String            @unique @map("permission_codename") @db.VarChar(100)
+  isActive           Boolean           @default(true) @map("is_active")
+  created_at         DateTime          @default(now())
+  updated_at         DateTime          @updatedAt
+  contentTypeId      Int?              @map("content_type_id")
+  contentType        ContentType?      @relation(fields: [contentTypeId], references: [id], map: "fk_permissions_content_type")
+  groups             GroupPermission[]
+  users              UserPermission[]
 
   @@map("permissions")
 }
@@ -75,6 +88,7 @@ model User {
   tasks               Task[]
   groups              UserGroup[]
   directPermissions   UserPermission[]
+  passwordResetCodes  PasswordResetCode[]
   documentType        DocumentType           @relation(fields: [documentTypeId], references: [id], map: "users_document_type_id_fkey")
 
   @@map("users")
@@ -224,6 +238,20 @@ model Task {
   user        User       @relation(fields: [userId], references: [id], map: "tasks_user_id_fkey")
 
   @@map("tasks")
+}
+
+model PasswordResetCode {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  codeHash  String   @map("code_hash") @db.VarChar(64)
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_codes")
 }
 
 enum AccountType {

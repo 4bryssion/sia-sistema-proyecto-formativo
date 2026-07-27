@@ -11,7 +11,6 @@ export default function EditConsumibleMaterialPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [refreshKey, setRefreshKey]     = useState(0);
   const [material, setMaterial]         = useState(null);
   const [brandOptions, setBrandOptions] = useState([]);
   const [userOptions, setUserOptions]   = useState([]);
@@ -19,7 +18,6 @@ export default function EditConsumibleMaterialPage() {
   const [image, setImage]               = useState([]);
   const [errors, setErrors]             = useState({});
   const [saving, setSaving]             = useState(false);
-  const [toggling, setToggling]         = useState(false);
   const [loadError, setLoadError]       = useState(null);
 
   useEffect(() => {
@@ -60,24 +58,15 @@ export default function EditConsumibleMaterialPage() {
         )
       )
       .catch(() => {});
-  }, [id, refreshKey]);
+  }, [id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleToggle = async () => {
-    setToggling(true);
-    try {
-      await consumableMaterialService.toggle(id);
-      setRefreshKey((k) => k + 1);
-    } catch (err) {
-      console.error("Error al cambiar estado:", err);
-    } finally {
-      setToggling(false);
-    }
-  };
+  // El toggle de activo/inactivo se eliminó de esta pantalla: se gestiona solo
+  // desde el Switch de la tabla de listar materiales
 
   const handleSubmit = async () => {
     const result = consumableMaterialUpdateSchema.safeParse(form);
@@ -133,9 +122,6 @@ export default function EditConsumibleMaterialPage() {
           errors={errors}
           onSubmit={handleSubmit}
           saving={saving}
-          isActive={material?.isActive ?? false}
-          onToggle={handleToggle}
-          toggling={toggling}
         />
       </div>
     </div>

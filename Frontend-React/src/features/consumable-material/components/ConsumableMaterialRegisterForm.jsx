@@ -1,10 +1,31 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Input, Button, Select, FileInput } from "@/shared";
+import { Input, Button, Select, FileInput, TextArea, IconButton } from "@/shared";
+import { Plus } from "lucide-react";
 import { consumableMaterialSchema } from "../schemas/consumableMaterialSchema";
 import consumableMaterialService from "../services/consumableMaterialService";
 import brandService from "@/features/brands/services/brandService";
+import { CreateBrandModal } from "@/features/brands";
 import userService from "@/features/users/services/userService";
+
+// Trigger "Crear y asignar nueva marca": IconButton (+) con texto; abre CreateBrandModal.
+// Las clases de display (flex/hidden por breakpoint) las aporta el consumidor vía className
+function BrandModalTrigger({ onClick, className = "" }) {
+  return (
+    <div className={`items-center gap-2 ${className}`}>
+      <IconButton ariaLabel="Crear y asignar nueva marca" onClick={onClick} hitSize={36} iconSize={20}>
+        <Plus strokeWidth={2.5} />
+      </IconButton>
+      <button
+        type="button"
+        onClick={onClick}
+        className="text-caption text-left cursor-pointer underline-offset-2 hover:underline"
+      >
+        Crear y asignar nueva marca
+      </button>
+    </div>
+  );
+}
 
 const STATUS_OPTIONS = [
   { value: "Disponible",    label: "Disponible" },
@@ -20,8 +41,9 @@ export default function ConsumableMaterialRegisterForm() {
 
   const [brandOptions, setBrandOptions] = useState([]);
   const [userOptions, setUserOptions]   = useState([]);
+  const [isBrandModalOpen, setIsBrandModalOpen] = useState(false);
 
-  useEffect(() => {
+  const fetchBrands = () =>
     brandService.getAll()
       .then((brands) =>
         setBrandOptions(
@@ -29,6 +51,9 @@ export default function ConsumableMaterialRegisterForm() {
         )
       )
       .catch(() => {});
+
+  useEffect(() => {
+    fetchBrands();
 
     userService.getAll()
       .then((users) => {
@@ -64,7 +89,25 @@ export default function ConsumableMaterialRegisterForm() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      // Valor total auto: cantidad × valor unitario; el usuario puede sobrescribirlo
+      // manualmente (solo se recalcula cuando cambia cantidad o valor unitario)
+      if (name === "quantity" || name === "unitPrice") {
+        const q = Number(name === "quantity" ? value : prev.quantity);
+        const u = Number(name === "unitPrice" ? value : prev.unitPrice);
+        if (q > 0 && u > 0) next.totalPrice = String(q * u);
+      }
+      return next;
+    });
+  };
+
+  // Al crear una marca desde el modal se refresca el select y se autoselecciona
+  const handleBrandCreated = async (createdBrand) => {
+    await fetchBrands();
+    if (createdBrand?.id) {
+      setFormData((prev) => ({ ...prev, brandId: String(createdBrand.id) }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -112,8 +155,12 @@ export default function ConsumableMaterialRegisterForm() {
 
   return (
     <div className="flex justify-center">
+      {/* Cuadro blanco que envuelve el formulario sobrepasándolo 32px (p-8) y se ajusta al contenido */}
+      {/* md sin margen lateral: a 768px no caben 2 columnas de 320 + gap + p-8 + mx,
+          y el grid comprimía las columnas comiéndose el gap */}
+      <div className="bg-white rounded-xl shadow-sm p-8 mx-6 w-full md:mx-0 md:w-fit">
       <form
-        className="grid gap-6 mx-6 md:grid-cols-2 md:mx-12 1400:grid-cols-4 1400:mx-0 justify-items-center w-full md:max-w-max"
+        className="grid gap-6 md:grid-cols-2 1400:grid-cols-4 justify-items-center w-full md:max-w-max"
         onSubmit={handleSubmit}
       >
         {errors.form && (
@@ -141,6 +188,12 @@ export default function ConsumableMaterialRegisterForm() {
             value="Automático"
             readOnly
           />
+
+          {/* 1400+: trigger de crear marca al final de la primera columna */}
+          <BrandModalTrigger
+            onClick={() => setIsBrandModalOpen(true)}
+            className="hidden 1400:flex"
+          />
         </div>
 
         {/* Columna 2 */}
@@ -148,7 +201,7 @@ export default function ConsumableMaterialRegisterForm() {
           <Input
             label="Nombre del material"
             name="materialName"
-            placeholder="Ingrese el nombre"
+            placeholder="Ej: Tornillos autoperforantes 1/2''"
             value={formData.materialName}
             onChange={handleChange}
             error={errors.materialName}
@@ -166,7 +219,7 @@ export default function ConsumableMaterialRegisterForm() {
           <Input
             label="Placa SENA (opcional)"
             name="senaPlate"
-            placeholder="Ingrese la placa SENA"
+            placeholder="Ej: 92451234 (solo materiales serializados)"
             value={formData.senaPlate}
             onChange={handleChange}
             error={errors.senaPlate}
@@ -175,7 +228,7 @@ export default function ConsumableMaterialRegisterForm() {
           <Input
             label="Ubicación"
             name="location"
-            placeholder="Ingrese la ubicación"
+            placeholder="Ej: Bodega 2 — Estante A3"
             value={formData.location}
             onChange={handleChange}
             error={errors.location}
@@ -187,7 +240,7 @@ export default function ConsumableMaterialRegisterForm() {
           <Input
             label="Cantidad"
             name="quantity"
-            placeholder="Ingrese la cantidad"
+            placeholder="Ej: 25 (vacío si es serializado)"
             type="number"
             value={formData.quantity}
             onChange={handleChange}
@@ -206,7 +259,7 @@ export default function ConsumableMaterialRegisterForm() {
           <Input
             label="Valor unitario"
             name="unitPrice"
-            placeholder="Ej: 31000"
+            placeholder="Ej: 31000 (COP, sin puntos)"
             type="number"
             value={formData.unitPrice}
             onChange={handleChange}
@@ -216,11 +269,17 @@ export default function ConsumableMaterialRegisterForm() {
           <Input
             label="Valor total"
             name="totalPrice"
-            placeholder="Ej: 4340000"
+            placeholder="Se calcula: cantidad × valor unitario"
             type="number"
             value={formData.totalPrice}
             onChange={handleChange}
             error={errors.totalPrice}
+          />
+
+          {/* md (768-1399): trigger de crear marca debajo de Valor total */}
+          <BrandModalTrigger
+            onClick={() => setIsBrandModalOpen(true)}
+            className="hidden md:flex 1400:hidden"
           />
         </div>
 
@@ -244,22 +303,41 @@ export default function ConsumableMaterialRegisterForm() {
             error={errors.userId}
           />
 
-          <Input
+          {/* Descripción: TextArea (ancho de input, alto fijo 152px) */}
+          <TextArea
             label="Descripción"
             name="description"
-            placeholder="Descripción del material"
+            placeholder="Ej: Caja de tornillos autoperforantes 1/2'' para uso en formación de estructuras metálicas"
             value={formData.description}
             onChange={handleChange}
             error={errors.description}
           />
 
+          {/* base (<640): trigger de crear marca entre la descripción y el botón de crear */}
+          <BrandModalTrigger
+            onClick={() => setIsBrandModalOpen(true)}
+            className="flex sm:hidden"
+          />
+
           <div className="flex items-center justify-center gap-6">
+            {/* sm (640-767): trigger al lado izquierdo del botón, separados por 24px (gap-6) */}
+            <BrandModalTrigger
+              onClick={() => setIsBrandModalOpen(true)}
+              className="hidden sm:flex md:hidden"
+            />
             <Button type="submit" variant="primary" size="sm" disabled={saving}>
               {saving ? "Guardando..." : "Crear Material"}
             </Button>
           </div>
         </div>
       </form>
+
+      <CreateBrandModal
+        isOpen={isBrandModalOpen}
+        onClose={() => setIsBrandModalOpen(false)}
+        onSave={handleBrandCreated}
+      />
+      </div>
     </div>
   );
 }

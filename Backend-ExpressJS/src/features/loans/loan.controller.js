@@ -35,4 +35,23 @@ export const loanController = {
       res.json({ mensaje: 'Préstamo actualizado.', data });
     } catch (err) { next(err); }
   },
+
+  async getSignatureInfo(req, res, next) {
+    try { res.json(await loanService.getSignatureInfo(req.query.token)); }
+    catch (err) { next(err); }
+  },
+
+  async sign(req, res, next) {
+    try {
+      const loan = await loanService.sign(req.body.token);
+      res.json({ mensaje: 'Firma registrada.', status: loan.status });
+    } catch (err) { next(err); }
+  },
+
+  async resendSignatures(req, res, next) {
+    try {
+      await loanService.resendSignatures(Number(req.params.id));
+      res.json({ mensaje: 'Correos de firma reenviados.' });
+    } catch (err) { next(err); }
+  },
 };

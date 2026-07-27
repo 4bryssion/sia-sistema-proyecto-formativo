@@ -7,15 +7,17 @@ export default function ConsumableMaterialEditLeft({ material, image, onImageCha
   return (
     <div className="font-main text-text-inverse space-y-6 grid sm:flex sm:space-y-0 sm:gap-6 sm:items-center sm:justify-evenly 1400:grid 1400:h-full">
       <div className="grid items-center justify-center gap-3 1400:content-between">
-        {material?.image && (
-          <img
-            src={`${IMG_BASE}${material.image}`}
-            alt={material.materialName}
-            className="w-32 h-32 object-cover rounded mx-auto"
-          />
-        )}
+        {/* Imagen y FileInput en fila: el FileInput va a la derecha de la imagen,
+            separados por 24px (gap-6) */}
+        <div className="flex items-center justify-center gap-6">
+          {material?.image && (
+            <img
+              src={`${IMG_BASE}${material.image}`}
+              alt={material.materialName}
+              className="w-32 h-32 object-cover rounded"
+            />
+          )}
 
-        <div className="justify-self-center">
           <FileInput
             className="w-24 h-24"
             accept="image/*"

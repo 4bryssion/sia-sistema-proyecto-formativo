@@ -15,8 +15,10 @@ export const userController = {
 
   async create(req, res, next) {
     try {
-      const data = await userService.create(req.body, req.file);
-      res.status(201).json({ mensaje: 'Usuario creado.', data });
+      const { user, emailSent, emailError } = await userService.create(req.body, req.file);
+      // emailSent/emailError permiten al frontend distinguir: creado + credenciales
+      // enviadas vs creado pero correo fallido (invalid_recipient | service_error)
+      res.status(201).json({ mensaje: 'Usuario creado.', data: user, emailSent, emailError });
     } catch (err) { next(err); }
   },
 

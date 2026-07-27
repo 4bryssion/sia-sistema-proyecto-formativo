@@ -4,10 +4,10 @@ import returnableMaterialService from "../services/returnableMaterialService";
 import { getStatusLabel } from "../utils/statusLabel";
 
 export const returnableMaterialColumns = (refetch) => [
-  {
-    accessorKey: "id",
-    header: "ID",
-  },
+  // {
+  //   accessorKey: "id",
+  //   header: "ID",
+  // },
     {
         id: "materialName",
         header: "Nombre", // Encabezado visible

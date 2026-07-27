@@ -40,4 +40,12 @@ export const accessController = {
       res.json({ mensaje: 'Permiso directo removido del usuario.' });
     } catch (err) { next(err); }
   },
+
+  // Usa req.user.id del token (no un userId de URL) — responde { permissionCode, granted }
+  async checkPermission(req, res, next) {
+    try {
+      const granted = await accessService.hasPermission(Number(req.user.id), req.params.permissionCode);
+      res.json({ permissionCode: req.params.permissionCode, granted });
+    } catch (err) { next(err); }
+  },
 };

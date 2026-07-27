@@ -19,3 +19,46 @@ export async function login(userData) {
 
     return response.json();
 }
+
+// Las tres funciones de recuperación de contraseña usan fetch (igual que login) — ver CLAUDE.md §4.2.
+// No se usan axiosInstance para no acoplar el flujo al interceptor de 401, que redirige a /auth
+// y provocaría bucles de redirección si el backend devolviera algo distinto de 200/400.
+
+export async function forgotPassword(email) {
+    const response = await fetch(`${API_URL}/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "No se pudo enviar el código");
+    }
+    return response.json();
+}
+
+export async function verifyResetCode({ userEmail, userCodeRecover }) {
+    const response = await fetch(`${API_URL}/verify-reset-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: userEmail, code: userCodeRecover }),
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Código inválido");
+    }
+    return response.json(); // { mensaje, resetTicket }
+}
+
+export async function resetPassword({ resetTicket, newPassword }) {
+    const response = await fetch(`${API_URL}/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resetTicket, password: newPassword }),
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "No se pudo actualizar la contraseña");
+    }
+    return response.json();
+}

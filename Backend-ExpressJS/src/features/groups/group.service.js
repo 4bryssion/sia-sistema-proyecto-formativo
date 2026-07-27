@@ -46,4 +46,16 @@ export const groupService = {
 
     return groupRepository.removePermission(groupId, permissionId);
   },
+
+  // Estilo edward: lista los permisos del grupo (incluye permissionCodename)
+  async getPermissions(groupId) {
+    await groupService.getById(groupId);
+    return groupRepository.getPermissionsByGroupId(groupId);
+  },
+
+  // Reemplazo atómico del set de permisos de un grupo
+  async updatePermissions(groupId, permissionIds) {
+    await groupService.getById(groupId);
+    return groupRepository.updatePermissions(groupId, permissionIds);
+  },
 };

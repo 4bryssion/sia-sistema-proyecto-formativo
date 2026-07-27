@@ -15,6 +15,13 @@ const groupService = {
     const { data } = await api.delete(`/groups/${groupId}/permissions/${permissionId}`);
     return data;
   },
+
+  // P36: nuevos endpoints GET/PUT /:id/permissions
+  async getPermissions(id) { const { data } = await api.get(`/groups/${id}/permissions`); return data; },
+  async updatePermissions(id, permissionIds) {
+    const { data } = await api.put(`/groups/${id}/permissions`, { permissionIds });
+    return data;
+  },
 };
 
 export default groupService;

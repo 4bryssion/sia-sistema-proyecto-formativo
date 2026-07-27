@@ -30,6 +30,9 @@ const accessService = {
     const { data } = await api.delete(`/access/${userId}/permissions/${permissionId}`);
     return data;
   },
+
+  // P36: check si el usuario del token tiene un permiso por codename
+  async check(permissionCode) { const { data } = await api.get(`/access/check/${permissionCode}`); return data.granted; },
 };
 
 export default accessService;

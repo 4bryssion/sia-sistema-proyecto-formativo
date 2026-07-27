@@ -4,7 +4,8 @@ export const createLoanReturnSchema = Joi.object({
   loanId: Joi.number().integer().positive().required(),
   materialId: Joi.number().integer().positive().required(),
   remainingQuantity: Joi.number().integer().min(0).optional().allow(null),
-  observations: Joi.string().max(255).required(),
+  materialStatus: Joi.string().valid('Disponible', 'Mantenimiento', 'Baja').optional(),
+  observations: Joi.string().max(255).optional().allow('', null),
 });
 
 export const validate = (schema) => (req, res, next) => {

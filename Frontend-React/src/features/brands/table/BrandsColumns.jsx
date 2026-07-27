@@ -1,10 +1,10 @@
 import BrandRowActions from "../components/BrandRowActions";
 
 export const brandColumns = (onChanged) => [
-    {
-        accessorKey: "id",
-        header: "Id",
-    },
+    // {
+    //     accessorKey: "id",
+    //     header: "Id",
+    // },
     {
         accessorKey: "brandName",
         header: "Nombre",
