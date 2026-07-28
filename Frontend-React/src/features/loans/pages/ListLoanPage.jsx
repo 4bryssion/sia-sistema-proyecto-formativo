@@ -1,4 +1,4 @@
-import { Button, DataTable, IconButton } from "@/shared";
+import { Button, DataTable, IconButton, usePermissions } from "@/shared";
 import { Link, useNavigate } from "react-router-dom";
 import { Undo2 } from "lucide-react";
 import { useState } from "react";
@@ -7,11 +7,18 @@ import { loanColumns } from "../table/loanColumns";
 import ReportConfigModal from "../reports/components/ReportConfigModal.jsx";
 
 export default function ListLoanPage() {
+  const { can } = usePermissions();
   const navigate = useNavigate();
   const [status, setStatus] = useState("active");
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   const { loans, loading, error, refetch } = useLoans(status);
+
+  // Sin permiso para listar todos los préstamos, solo se ven aquellos donde participa
+  const ownId = JSON.parse(sessionStorage.getItem("user") ?? "null")?.id ?? null;
+  const visibleLoans = can("list_loans")
+    ? loans
+    : loans.filter((l) => l.signatures?.some((sig) => Number(sig.userId ?? sig.user?.id) === Number(ownId)));
 
   return (
     <div className="p-6">
@@ -38,9 +45,11 @@ export default function ListLoanPage() {
             Generar Reporte
           </Button>
 
-          <Link to="/dashboard/loans/create">
-            <Button variant="primary">Crear Préstamo</Button>
-          </Link>
+          {can("create_loan") && (
+            <Link to="/dashboard/loans/create">
+              <Button variant="primary">Crear Préstamo</Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -49,13 +58,13 @@ export default function ListLoanPage() {
       ) : error ? (
         <p className="text-error">{error}</p>
       ) : (
-        <DataTable data={loans} columns={loanColumns(refetch)} />
+        <DataTable data={visibleLoans} columns={loanColumns(refetch, can)} />
       )}
 
       <ReportConfigModal
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
-        loans={loans}
+        loans={visibleLoans}
       />
     </div>
   );

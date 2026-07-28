@@ -1,4 +1,5 @@
-import { DataTable, Button, IconButton } from "@/shared";
+import { DataTable, Button, IconButton, usePermissions } from "@/shared";
+import { getTopGroupName } from "../utils/topGroup";
 import { UserColumns } from "../table/UserColumns";
 import { useUsers } from "../hooks/useUsers";
 import ReportConfigModal from "../reports/components/ReportConfigModal";
@@ -7,10 +8,13 @@ import { Undo2 } from "lucide-react";
 import { useState } from "react";
 
 export default function ListUserPage() {
+  const { can } = usePermissions();
   const navigate = useNavigate();
   const [status, setStatus] = useState("active");
   const [isReportOpen, setIsReportOpen] = useState(false);
   const { users, loading, error, refetch } = useUsers(status);
+  // El SuperAdmin no aparece como dato en ningún listado ni reporte
+  const visibleUsers = users.filter((u) => getTopGroupName(u) !== "SuperAdmin");
 
   return (
     <div className="p-6">
@@ -37,9 +41,11 @@ export default function ListUserPage() {
             Generar Reporte
           </Button>
 
-          <Link to="/dashboard/users/create">
-            <Button variant="primary">Crear Usuario</Button>
-          </Link>
+          {can("create_user") && (
+            <Link to="/dashboard/users/create">
+              <Button variant="primary">Crear Usuario</Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -48,10 +54,10 @@ export default function ListUserPage() {
       ) : error ? (
         <p className="text-error">{error}</p>
       ) : (
-        <DataTable data={users} columns={UserColumns(refetch)} />
+        <DataTable data={visibleUsers} columns={UserColumns(refetch, can)} />
       )}
 
-      <ReportConfigModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} users={users} />
+      <ReportConfigModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} users={visibleUsers} />
     </div>
   );
 }

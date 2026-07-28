@@ -3,14 +3,23 @@ import multer from 'multer';
 import { userController } from './user.controller.js';
 import { validate, validateUpdate, createUserSchema, updateUserSchema } from './user.validator.js';
 import { uploadImage } from '../../middleware/multerConfig.js';
+import { authenticateToken } from '../../middleware/auth.middleware.js';
+import { requirePermission } from '../../middleware/permission.middleware.js';
+
+// Cualquier usuario puede ver SU propio perfil ("Mi perfil" del navbar) aunque no
+// tenga list_users (Instructor/Invitado no lo tienen). Para otros perfiles, sí se exige.
+const ownProfileOrListAll = (req, res, next) => {
+  if (Number(req.params.id) === Number(req.user.id)) return next();
+  return requirePermission('list_users')(req, res, next);
+};
 
 const router = Router();
 
-router.get('/',             userController.getAll);
-router.get('/:id',          userController.getById);
-router.post('/',            uploadImage.single('image'), validate(createUserSchema), userController.create);
-router.put('/:id',          uploadImage.single('image'), validateUpdate(updateUserSchema), userController.update);
-router.patch('/:id/toggle', userController.toggle);
+router.get('/', authenticateToken, requirePermission('list_users'),             userController.getAll);
+router.get('/:id', authenticateToken, ownProfileOrListAll,          userController.getById);
+router.post('/', authenticateToken, requirePermission('create_user'),            uploadImage.single('image'), validate(createUserSchema), userController.create);
+router.put('/:id', authenticateToken, requirePermission('edit_user'),          uploadImage.single('image'), validateUpdate(updateUserSchema), userController.update);
+router.patch('/:id/toggle', authenticateToken, requirePermission('toggle_user'), userController.toggle);
 
 router.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {

@@ -9,7 +9,7 @@ export default function ConsumableMaterialEditLeft({ material, image, onImageCha
       <div className="grid items-center justify-center gap-3 1400:content-between">
         {/* Imagen y FileInput en fila: el FileInput va a la derecha de la imagen,
             separados por 24px (gap-6) */}
-        <div className="flex items-center justify-center gap-6">
+        <div className="grid items-center justify-center gap-6">
           {material?.image && (
             <img
               src={`${IMG_BASE}${material.image}`}
@@ -19,7 +19,7 @@ export default function ConsumableMaterialEditLeft({ material, image, onImageCha
           )}
 
           <FileInput
-            className="w-24 h-24"
+            className="w-24 h-24 place-self-center"
             accept="image/*"
             multiple={false}
             value={image}

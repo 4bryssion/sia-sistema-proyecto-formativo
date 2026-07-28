@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "@/assets/logos/logo-sena-verde.png";
 import bg from "@/assets/images/background-oscuro.jpg";
-import { Input, Button } from "@/shared";
+import { Input, Button, Alert } from "@/shared";
 import { resetPasswordSchema } from "../schemas/resetPasswordSchema.js";
 import { resetPassword } from "../services/authService.js";
 import { Undo2 } from "lucide-react";
@@ -62,9 +62,15 @@ export default function ResetPasswordForm() {
         setErrors({});
 
         try {
+            Alert.loading("Actualizando contraseña...");
             const data = await resetPassword({ resetTicket, newPassword: result.data.newPassword });
-            setSuccessMessage(data.mensaje ?? "Contraseña actualizada correctamente.");
+            Alert.close();
+            const msg = data.mensaje ?? "Contraseña actualizada correctamente.";
+            Alert.success("Contraseña actualizada", msg);
+            setSuccessMessage(msg);
         } catch (error) {
+            Alert.close();
+            Alert.error("Error al actualizar la contraseña", error.message);
             setErrors({ form: error.message });
         }
     };

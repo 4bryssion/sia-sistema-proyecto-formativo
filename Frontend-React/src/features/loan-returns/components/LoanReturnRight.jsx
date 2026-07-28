@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Input, Button, Select, Checkbox } from "@/shared";
+import { Input, Button, Select, Checkbox, Alert } from "@/shared";
 import { CornerDownLeft } from "lucide-react";
 import logo from "@/assets/logos/logo-sena-negro.png";
 import loanReturnService from "../services/loanReturnService";
@@ -119,6 +119,7 @@ export default function LoanReturnRight({ loan }) {
 
     if (failedLines.length > 0) {
       setSubmitting(false);
+      Alert.error("Error al registrar el retorno", failedLines.join(" · "));
       setFormError(failedLines.join(" · "));
       return;
     }
@@ -134,9 +135,10 @@ export default function LoanReturnRight({ loan }) {
     }
     setSubmitting(false);
 
-    alert(
+await Alert.success(
+      "Retorno registrado",
       finalized
-        ? "Retorno(s) registrado(s). Todos los materiales fueron devueltos: el préstamo quedó Finalizado."
+        ? "Todos los materiales fueron devueltos: el préstamo quedó Finalizado."
         : "Retorno(s) registrado(s) correctamente."
     );
     navigate("/dashboard/loans");

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Button, Input } from "@/shared";
+import { Button, Input, Alert } from "@/shared";
 import { groupSchema } from "../schemas/groupSchema.js";
 import groupService from "../services/groupService.js";
 
@@ -28,10 +28,13 @@ export default function EditGroupModal({ group, isOpen, onClose, onSave }) {
     setSaving(true);
     try {
       await groupService.update(group.id, result.data);
+      Alert.success("Grupo actualizado");
       onSave?.();
       onClose?.();
     } catch (err) {
-      setError(err.response?.data?.error ?? "Error al actualizar el grupo");
+      const msg = err.response?.data?.error ?? "Error al actualizar el grupo";
+      Alert.error("Error al actualizar el grupo", msg);
+      setError(msg);
     } finally {
       setSaving(false);
     }

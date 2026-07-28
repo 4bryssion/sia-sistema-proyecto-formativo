@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+import { getTopGroupName } from "@/features/users/utils/topGroup";
 import { useNavigate } from "react-router-dom";
-import { Input, Button, Select } from "@/shared";
-import { loanSchema } from "../schemas/loanSchema.js";
+import { Input, Button, Select, Alert } from "@/shared";
+import { loanSchema, todayLocalISO } from "../schemas/loanSchema.js";
 import loanService from "../services/loanService";
 import userService from "@/features/users/services/userService";
 import consumableMaterialService from "@/features/consumable-material/services/consumableMaterialService";
@@ -35,7 +36,7 @@ export default function LoanRegisterForm() {
           returnableMaterialService.getAll("active").catch(() => []),
         ]);
         setUserOptions(
-          users.map((u) => ({ value: u.id, label: `${u.userFirstName} ${u.userLastName}` }))
+          users.filter((u) => getTopGroupName(u) !== "SuperAdmin").map((u) => ({ value: u.id, label: `${u.userFirstName} ${u.userLastName}` }))
         );
         setMaterialOptions(buildMaterialOptions(consumables, returnables));
       } catch {
@@ -95,12 +96,16 @@ export default function LoanRegisterForm() {
           borrowedQuantity: Number(m.borrowedQuantity),
         })),
       });
+      Alert.success(
+        "Préstamo creado",
+        "Se enviaron los correos de firma al prestador y al receptor."
+      );
       navigate("/dashboard/loans");
     } catch (error) {
       const detalles = error.response?.data?.detalles;
-      setErrors({
-        form: detalles?.join(" · ") ?? error.response?.data?.error ?? "Error al crear el préstamo.",
-      });
+      const msg = detalles?.join(" · ") ?? error.response?.data?.error ?? "Error al crear el préstamo.";
+      Alert.error("Error al crear el préstamo", msg);
+      setErrors({ form: msg });
     } finally {
       setIsSubmitting(false);
     }
@@ -108,6 +113,9 @@ export default function LoanRegisterForm() {
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Cuadro blanco que envuelve el formulario sobrepasándolo 32px (p-8),
+          igual que en los módulos de materiales */}
+      <div className="bg-white rounded-xl shadow-sm p-8 w-full">
       <form
         className="grid gap-6 md:grid-cols-2 justify-items-center w-full"
         onSubmit={handleSubmit}
@@ -115,16 +123,18 @@ export default function LoanRegisterForm() {
         {/* Columna izquierda: datos del préstamo */}
         <div className="flex flex-col gap-6 w-full md:w-[320px]">
           <Select
-            label="Prestador"
+            label="Prestador" variant="search"
             name="lenderId"
+            required
             options={userOptions}
             value={formData.lenderId}
             onChange={handleChange}
             error={errors.lenderId}
           />
           <Select
-            label="Receptor"
+            label="Receptor" variant="search"
             name="receiverId"
+            required
             options={userOptions}
             value={formData.receiverId}
             onChange={handleChange}
@@ -133,6 +143,7 @@ export default function LoanRegisterForm() {
           <Input
             label="Grupo de aprendices"
             name="apprenticeGroup"
+            required
             type="number"
             placeholder="Ingrese el número del grupo"
             value={formData.apprenticeGroup}
@@ -142,7 +153,9 @@ export default function LoanRegisterForm() {
           <Input
             label="Fecha de devolución"
             name="returnDate"
+            required
             type="date"
+            min={todayLocalISO()}
             value={formData.returnDate}
             onChange={handleChange}
             error={errors.returnDate}
@@ -150,6 +163,7 @@ export default function LoanRegisterForm() {
           <Input
             label="Justificación de uso"
             name="useJustification"
+            required
             placeholder="Escriba aquí la justificación"
             value={formData.useJustification}
             onChange={handleChange}
@@ -193,6 +207,7 @@ export default function LoanRegisterForm() {
           </Button>
         </div>
       </form>
+      </div>
     </div>
   );
 }

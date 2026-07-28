@@ -34,7 +34,7 @@ export default function ViewLoanPage() {
         <LoanViewLeft loan={loan} />
       </div>
       <div className="bg-white p-4">
-        <LoanViewRight loan={loan} onToggled={fetchLoan} />
+        <LoanViewRight loan={loan} />
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Button, Input } from "@/shared";
+import { Button, Input, Alert } from "@/shared";
 import { groupSchema } from "../schemas/groupSchema.js";
 import groupService from "../services/groupService.js";
 
@@ -30,10 +30,13 @@ export default function CreateGroupModal({ isOpen, onClose, onSave }) {
       setError("");
       // Se pasa el grupo creado al callback (ej. para autoseleccionarlo en crear usuario);
       // los consumidores que lo ignoran (refetch) siguen funcionando igual
+      Alert.success("Grupo creado");
       onSave?.(res?.data ?? res);
       onClose?.();
     } catch (err) {
-      setError(err.response?.data?.error ?? "Error al crear el grupo");
+      const msg = err.response?.data?.error ?? "Error al crear el grupo";
+      Alert.error("Error al crear el grupo", msg);
+      setError(msg);
     } finally {
       setSaving(false);
     }

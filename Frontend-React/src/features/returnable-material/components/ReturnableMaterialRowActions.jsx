@@ -2,17 +2,13 @@ import { Pencil, EllipsisVertical } from "lucide-react";
 // Hook de React Router para navegar programáticamente entre rutas
 import { useNavigate } from "react-router-dom";
 
-import {
-    Dropdown,
-    DropdownTrigger,
-    DropdownItem,
-    DropdownContent
-} from "@/shared";
+import { Dropdown, DropdownTrigger, DropdownItem, DropdownContent, usePermissions } from "@/shared";
 
 
 // Componente que renderiza las acciones de cada fila de material consumible
 // Recibe como prop el objeto returnableMaterial
 export default function ReturnableMaterialRowActions({ returnableMaterial }) {
+  const { can } = usePermissions();
 
     // Hook que permite redirigir a otra ruta desde código
     const navigate = useNavigate();
@@ -32,13 +28,15 @@ export default function ReturnableMaterialRowActions({ returnableMaterial }) {
         // Contenedor de los botones de acciones
         <div className="flex gap-2">
 
-            {/* Botón editar */}
+            {/* Botón editar — oculto para roles de solo lectura (INV y nuevos) */}
+            {can("edit_returnable_material") && (
             <button
                 onClick={handleEdit}
                 className="p-1 rounded hover:bg-gray-900"
             >
                 <Pencil size={16} />
             </button>
+            )}
 
             {/* Botón option */}
             <Dropdown>

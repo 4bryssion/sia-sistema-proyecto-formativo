@@ -1,4 +1,4 @@
-import { DataTable, Button, IconButton } from "@/shared";
+import { DataTable, Button, IconButton, usePermissions } from "@/shared";
 import { Link, useNavigate } from "react-router-dom";
 import { Undo2 } from "lucide-react";
 import { useState } from "react";
@@ -7,6 +7,7 @@ import { returnableMaterialColumns } from "../table/returnableMaterialColumns";
 import ReportConfigModal from "../reports/components/ReportConfigModal";
 
 export default function ListReturnableMaterialPage() {
+  const { can } = usePermissions();
   const navigate = useNavigate();
   const [status, setStatus]                       = useState("active");
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -39,9 +40,11 @@ export default function ListReturnableMaterialPage() {
           <Button variant="secondary" onClick={() => setIsReportModalOpen(true)}>
             Generar Reporte
           </Button>
+          {can("create_returnable_material") && (
           <Link to="/dashboard/returnable-materials/create">
             <Button variant="primary">Crear Material</Button>
           </Link>
+          )}
         </div>
       </div>
 
@@ -50,7 +53,7 @@ export default function ListReturnableMaterialPage() {
       ) : error ? (
         <p className="text-error">{error}</p>
       ) : (
-        <DataTable data={materials} columns={returnableMaterialColumns(refetch)} />
+        <DataTable data={materials} columns={returnableMaterialColumns(refetch, can)} />
       )}
 
       <ReportConfigModal

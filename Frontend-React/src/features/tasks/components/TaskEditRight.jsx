@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Input, Select, Button } from "@/shared";
+import { Input, Select, Button, Alert } from "@/shared";
 import { Save } from "lucide-react";
 import logo from "@/assets/logos/logo-sena-negro.png";
 import { useNavigate } from "react-router-dom";
@@ -59,9 +59,12 @@ export default function TaskEditRight({ task }) {
         status: form.status,
       });
       setErrors({});
+      Alert.success("Tarea actualizada");
       navigate(`/view/tasks/${task.id}`);
     } catch (err) {
-      setErrors({ form: err.response?.data?.error ?? "Error al actualizar la tarea" });
+      const msg = err.response?.data?.error ?? "Error al actualizar la tarea";
+      Alert.error("Error al actualizar la tarea", msg);
+      setErrors({ form: msg });
     } finally {
       setSaving(false);
     }

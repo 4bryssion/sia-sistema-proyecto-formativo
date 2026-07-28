@@ -20,10 +20,10 @@ export default function ReturnableMaterialViewLeft({ id, refreshKey = 0 }) {
           <img
             src={`${IMG_BASE}${cm.image}`}
             alt={cm.materialName}
-            className="w-32 h-32 object-cover rounded"
+            className="w-32 h-32 object-cover rounded justify-self-center"
           />
         ) : (
-          <div className="w-32 h-32 bg-white/20 rounded flex items-center justify-center">
+          <div className="w-32 h-32 bg-white/20 rounded flex items-center justify-center justify-self-center">
             <span className="text-xs text-white/60">Sin imagen</span>
           </div>
         )}

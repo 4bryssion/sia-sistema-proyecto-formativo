@@ -23,7 +23,7 @@ export default function ReturnableMaterialEditLeft({ material, image, onImageCha
             value={image}
             onChange={onImageChange}
           >
-            Cambiar imagen
+            Cargar imagen
           </FileInput>
         </div>
         <h3 className="text-h3 text-center">@{cm?.materialName ?? "—"}</h3>

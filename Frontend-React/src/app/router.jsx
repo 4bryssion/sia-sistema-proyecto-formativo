@@ -1,14 +1,16 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
+import RequirePermission from "@/shared/components/auth/RequirePermission.jsx";
 
 // Import componentes:
 
-import {
-    AuthLayout,
+import {    AuthLayout,
     DashboardLayout,
     ViewLayout,
     ProtectedRoute,
     GuestRoute
 
+,
+    PermissionsProvider
 } from "@/shared"
 
 // Import pages
@@ -95,6 +97,11 @@ import {
      AccessPage
 } from "@/features/access";
 
+// Módulo notifications (P43):
+import {
+    ListNotificationPage
+} from "@/features/notifications";
+
 
 
 const router = createBrowserRouter([
@@ -136,12 +143,12 @@ const router = createBrowserRouter([
 
     {
         path: "/dashboard",
-        element: <ProtectedRoute><DashboardLayout /></ProtectedRoute>,
+        element: <ProtectedRoute><PermissionsProvider><DashboardLayout /></PermissionsProvider></ProtectedRoute>,
         children: [
-            // Este modulo de alert-history aún estamos en duda de si realizarlo o no.
+            // Notificaciones / logs del sistema (P43)
             {
                 path: "alert-history",
-                element: <h1>Historial de alertas del sistema en general</h1>
+                element: <RequirePermission codename="list_notifications"><ListNotificationPage /></RequirePermission>,
             },
 
             // Módulo home:
@@ -153,11 +160,11 @@ const router = createBrowserRouter([
             // Módulo users:
             {
                 path: "users",
-                element: <ListUserPage />
+                element: <RequirePermission codename={["create_user", "edit_user"]}><ListUserPage /></RequirePermission>
             },
             {
                 path: "users/create",
-                element: <CreateUserPage />,
+                element: <RequirePermission codename="create_user"><CreateUserPage /></RequirePermission>,
             },
             {
                 path: "users/view",
@@ -165,65 +172,65 @@ const router = createBrowserRouter([
             },
             {
                 path: "users/edit",
-                element: <EditUserPage />,
+                element: <RequirePermission codename="edit_user"><EditUserPage /></RequirePermission>,
             },
             // Módulo tasks:
             {
                 path: "tasks",
-                element: <ListTaskPage />,
+                element: <RequirePermission codename="list_tasks"><ListTaskPage /></RequirePermission>,
             },
             // crear tarea ahora es un modal (CreateTaskModal) abierto desde ListTaskPage
 
             // Módulo consumable-materials:
             {
                 path: "consumable-materials",
-                element: <ListConsumableMaterialPage />,
+                element: <RequirePermission codename="list_consumable_materials"><ListConsumableMaterialPage /></RequirePermission>,
             },
             {
                 path: "consumable-materials/create",
-                element: <CreateConsumablesMaterialPage />,
+                element: <RequirePermission codename="create_consumable_material"><CreateConsumablesMaterialPage /></RequirePermission>,
             },
             // Módulo returnable-materials:
             {
                 path: "returnable-materials",
-                element: <ListReturnableMaterialPage />
+                element: <RequirePermission codename="list_returnable_materials"><ListReturnableMaterialPage /></RequirePermission>
             },
             {
                 path: "returnable-materials/create",
-                element: <CreateReturnableMaterialPage />,
+                element: <RequirePermission codename="create_returnable_material"><CreateReturnableMaterialPage /></RequirePermission>,
             },
             
 
             // Módulo loans:
             {
                 path: "loans",
-                element:  <ListLoanPage />,
+                element: <RequirePermission codename="list_loans"><ListLoanPage /></RequirePermission>,
             },
             {
                 path: "loans/create",
-                element:  <CreateLoanPage />,
+                element: <RequirePermission codename="create_loan"><CreateLoanPage /></RequirePermission>,
             },
 
             // Módulo brands:
             {
                 path: "brands",
-                element: <ListBrandPage />,
+                element: <RequirePermission codename="list_brands"><ListBrandPage /></RequirePermission>,
             },
             {
                 path: "brands/create",
-                element: <CreateBrandPage />,
+                element: <RequirePermission codename="create_brand"><CreateBrandPage /></RequirePermission>,
             },
 
             // Módulo groups:
             {
                 path: "groups",
-                element: <ListGroupPage />
+                element: <RequirePermission codename="list_groups"><ListGroupPage /></RequirePermission>
             },
 
          // Módulo access:
             {
                 path: "admin",
-                element: <AccessPage />,
+                element: <RequirePermission codename="list_permissions"><AccessPage /></RequirePermission>,
             },
             
         ],
@@ -238,7 +245,7 @@ const router = createBrowserRouter([
     // Queda más limpio y legible
     {
         path: "/view",
-        element: <ProtectedRoute><ViewLayout /></ProtectedRoute>,
+        element: <ProtectedRoute><PermissionsProvider><ViewLayout /></PermissionsProvider></ProtectedRoute>,
         children: [
             // Módulo users:
             {
@@ -248,51 +255,51 @@ const router = createBrowserRouter([
             },
             {
                 path: "users/:id/edit",
-                element: <EditUserPage />,
+                element: <RequirePermission codename="edit_user"><EditUserPage /></RequirePermission>,
             },
             // Módulo tasks:
             {
                 path: "tasks/:id",
-                element: <ViewTaskPage />,
+                element: <RequirePermission codename="list_tasks"><ViewTaskPage /></RequirePermission>,
             },
             {
                 path: "tasks/:id/edit",
-                element: <EditTaskPage />,
+                element: <RequirePermission codename="edit_task"><EditTaskPage /></RequirePermission>,
             },
 
             // Módulo consumable-materials:
             {
                 path: "consumable-materials/:id",
-                element: <ViewConsumableMaterialPage />,
+                element: <RequirePermission codename="list_consumable_materials"><ViewConsumableMaterialPage /></RequirePermission>,
             },
             {
                 path: "consumable-materials/:id/edit",
-                element:<EditConsumibleMaterialPage />,
+                element: <RequirePermission codename="edit_consumable_material"><EditConsumibleMaterialPage /></RequirePermission>,
             },
 
             // Módulo returnable-materials:
             {
                 path: "returnable-materials/:id",
-                element: <ViewReturnableMaterialPage />,
+                element: <RequirePermission codename="list_returnable_materials"><ViewReturnableMaterialPage /></RequirePermission>,
             },
             {
                 path: "returnable-materials/:id/edit",
-                element: <EditReturnableMaterialPage/>,
+                element: <RequirePermission codename="edit_returnable_material"><EditReturnableMaterialPage/></RequirePermission>,
             },
 
             // Módulo loans:
             {
                 path: "loans/:id",
-                element: <ViewLoanPage/>,
+                element: <RequirePermission codename="list_loans"><ViewLoanPage/></RequirePermission>,
             },
             {
                 path: "loans/:id/edit",
-                element: <EditLoanPage/>,
+                element: <RequirePermission codename="update_loan"><EditLoanPage/></RequirePermission>,
             },
             // Módulo loan-returns:
 {
                 path: "loans/:id/return",
-                element: <CreateLoanReturnPage />,
+                element: <RequirePermission codename="create_loan_return"><CreateLoanReturnPage /></RequirePermission>,
             },
 
             // Módulo groups:

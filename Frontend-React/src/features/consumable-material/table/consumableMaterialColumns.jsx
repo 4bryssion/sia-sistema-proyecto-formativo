@@ -1,4 +1,4 @@
-import { Switch, Dropdown, DropdownTrigger, DropdownContent, DropdownItem } from "@/shared";
+import { Switch, Dropdown, DropdownTrigger, DropdownContent, DropdownItem, Alert } from "@/shared";
 import { ListFilter } from "lucide-react";
 import ConsumableMaterialRowActions from "../components/ConsumableMaterialRowActions";
 import consumableMaterialService from "../services/consumableMaterialService";
@@ -55,7 +55,7 @@ function StatusFilterHeader({ column }) {
   );
 }
 
-export const consumableMaterialColumns = (refetch) => [
+export const consumableMaterialColumns = (refetch, can = () => true) => [
   // {
   //   accessorKey: "id",
   //   header: "ID",
@@ -116,13 +116,22 @@ export const consumableMaterialColumns = (refetch) => [
     cell: ({ row }) => {
       const m = row.original;
       const handleToggle = async () => {
+        // Confirmación obligatoria antes de activar/desactivar (soft-delete)
+        const result = await Alert.warning(
+          `¿${m.isActive ? "Desactivar" : "Activar"} material?`,
+          `"${m.materialName}" quedará ${m.isActive ? "inactivo" : "activo nuevamente"}.`
+        );
+        if (!result.isConfirmed) return;
         try {
           await consumableMaterialService.toggle(m.id);
+          Alert.success(`Material ${m.isActive ? "desactivado" : "activado"}`);
           refetch();
         } catch (err) {
-          console.error("Error al cambiar estado:", err);
+          Alert.error("Error al cambiar estado", err.response?.data?.error ?? "");
         }
       };
+      // Sin permiso de toggle: solo lectura
+      if (!can("toggle_consumable_material")) return m.isActive ? "Activo" : "Inactivo";
       return <Switch checked={m.isActive} onChange={handleToggle} className="inline-flex" />;
     },
   },

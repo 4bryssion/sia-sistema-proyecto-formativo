@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Alert } from "@/shared";
 import { useParams, useNavigate } from "react-router-dom";
 import consumableMaterialService from "../services/consumableMaterialService";
 import brandService from "@/features/brands/services/brandService";
@@ -30,7 +31,8 @@ export default function EditConsumibleMaterialPage() {
           brandId:      String(m.brandId ?? ""),
           senaPlate:    m.senaPlate ?? "",
           location:     m.location ?? "",
-          quantity:     m.quantity != null ? String(m.quantity) : "",
+          // Con placa SENA (serializado, quantity null en BD) se muestra 1 fijo
+          quantity:     m.quantity != null ? String(m.quantity) : (m.senaPlate ? "1" : ""),
           status:       m.status ?? "",
           unitPrice:    String(m.unitPrice ?? ""),
           totalPrice:   String(m.totalPrice ?? ""),
@@ -62,7 +64,23 @@ export default function EditConsumibleMaterialPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [name]: value };
+      // Placa SENA ⇒ cantidad fija en 1 (visual) y bloqueada; sin placa se vacía.
+      // Al guardar, la cantidad de serializados no se envía (queda null en BD)
+      if (name === "senaPlate") {
+        next.quantity = value ? "1" : "";
+      }
+      // Valor total auto: cantidad × valor unitario (cantidad vacía ⇒ 1);
+      // el usuario puede sobrescribirlo manualmente
+      if (name === "quantity" || name === "unitPrice" || name === "senaPlate") {
+        const rawQ = next.quantity;
+        const q = rawQ === "" ? 1 : Number(rawQ);
+        const u = Number(name === "unitPrice" ? value : prev.unitPrice);
+        if (q > 0 && u > 0) next.totalPrice = String(q * u);
+      }
+      return next;
+    });
   };
 
   // El toggle de activo/inactivo se eliminó de esta pantalla: se gestiona solo
@@ -82,14 +100,21 @@ export default function EditConsumibleMaterialPage() {
 
     const fd = new FormData();
     Object.entries(result.data).forEach(([key, val]) => {
+      // Con placa SENA la cantidad NO se envía (el "1" del input es solo visual)
+      if (key === "quantity" && result.data.senaPlate) return;
       if (val !== undefined && val !== "") fd.append(key, val);
     });
     if (image.length) fd.append("image", image[0]);
 
     try {
+      Alert.loading("Actualizando material...");
       await consumableMaterialService.update(id, fd);
+      Alert.close();
+      Alert.success("Material actualizado");
       navigate(`/view/consumable-materials/${id}`);
     } catch (err) {
+      Alert.close();
+      Alert.error("Error al actualizar el material", err.response?.data?.detalles?.join(" · ") ?? err.response?.data?.error ?? "");
       const det = err.response?.data?.detalles;
       setErrors({
         form: det?.length

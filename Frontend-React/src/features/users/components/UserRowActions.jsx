@@ -2,17 +2,13 @@ import { Pencil, EllipsisVertical } from "lucide-react";
 // Hook de React Router para navegar programáticamente entre rutas
 import { useNavigate } from "react-router-dom";
 
-import {
-    Dropdown,
-    DropdownTrigger,
-    DropdownItem,
-    DropdownContent
-} from "@/shared";
+import { Dropdown, DropdownTrigger, DropdownItem, DropdownContent, usePermissions } from "@/shared";
 
 
 // Componente que renderiza las acciones de cada fila de usuarios
 // Recibe como prop el objeto users
 export default function UserRowActions({ users }) {
+  const { can } = usePermissions();
 
     // Hook que permite redirigir a otra ruta desde código
     const navigate = useNavigate();
@@ -36,12 +32,14 @@ export default function UserRowActions({ users }) {
         <div className="flex gap-2">
 
             {/* Botón editar */}
+            {can("edit_user") && (
             <button
                 onClick={handleEdit} // Ejecuta la navegación a la página de edición
                 className="p-1 rounded hover:bg-gray-900"
             >
                 <Pencil size={16} /> {/* Icono de editar */}
             </button>
+            )}
 
             {/* Botón option */}
             <Dropdown>

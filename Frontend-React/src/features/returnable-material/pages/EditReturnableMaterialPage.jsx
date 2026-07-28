@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Alert } from "@/shared";
 import { useParams, useNavigate } from "react-router-dom";
 import returnableMaterialService from "../services/returnableMaterialService";
 import categoryService from "../services/categoryService";
@@ -12,7 +13,6 @@ export default function EditReturnableMaterialPage() {
   const { id }   = useParams();
   const navigate = useNavigate();
 
-  const [refreshKey, setRefreshKey]           = useState(0);
   const [material, setMaterial]               = useState(null);
   const [brandOptions, setBrandOptions]       = useState([]);
   const [categoryOptions, setCategoryOptions] = useState([]);
@@ -22,7 +22,6 @@ export default function EditReturnableMaterialPage() {
   const [techSheetFile, setTechSheetFile]     = useState([]);
   const [errors, setErrors]                   = useState({});
   const [saving, setSaving]                   = useState(false);
-  const [toggling, setToggling]               = useState(false);
   const [loadError, setLoadError]             = useState(null);
 
   useEffect(() => {
@@ -37,7 +36,8 @@ export default function EditReturnableMaterialPage() {
           categoryId:   String(m.categoryId ?? ""),
           userId:       String(cm.userId ?? ""),
           senaPlate:    cm.senaPlate ?? "",
-          quantity:     cm.quantity !== null && cm.quantity !== undefined ? String(cm.quantity) : "",
+          // Con placa SENA (serializado, quantity null en BD) se muestra 1 fijo
+          quantity:     cm.quantity !== null && cm.quantity !== undefined ? String(cm.quantity) : (cm.senaPlate ? "1" : ""),
           location:     cm.location ?? "",
           status:       cm.status ?? "",
           unitPrice:    String(cm.unitPrice ?? ""),
@@ -52,7 +52,7 @@ export default function EditReturnableMaterialPage() {
         setLoadError(err.response?.data?.error ?? "Error al cargar el material");
       }
     })();
-  }, [id, refreshKey]);
+  }, [id]);
 
   useEffect(() => {
     brandService.getAll()
@@ -76,20 +76,27 @@ export default function EditReturnableMaterialPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [name]: value };
+      // Placa SENA ⇒ cantidad fija en 1 (visual) y bloqueada; sin placa se vacía.
+      // Al guardar, la cantidad de serializados no se envía (queda null en BD)
+      if (name === "senaPlate") {
+        next.quantity = value ? "1" : "";
+      }
+      // Valor total auto: cantidad × valor unitario (cantidad vacía ⇒ 1);
+      // el usuario puede sobrescribirlo manualmente
+      if (name === "quantity" || name === "unitPrice" || name === "senaPlate") {
+        const rawQ = next.quantity;
+        const q = rawQ === "" ? 1 : Number(rawQ);
+        const u = Number(name === "unitPrice" ? value : prev.unitPrice);
+        if (q > 0 && u > 0) next.totalPrice = String(q * u);
+      }
+      return next;
+    });
   };
 
-  const handleToggle = async () => {
-    setToggling(true);
-    try {
-      await returnableMaterialService.toggle(id);
-      setRefreshKey((k) => k + 1);
-    } catch (err) {
-      console.error("Error al cambiar estado:", err);
-    } finally {
-      setToggling(false);
-    }
-  };
+  // El toggle de activo/inactivo se eliminó de esta pantalla: se gestiona solo
+  // desde el Switch de la tabla de listar materiales
 
   const handleSubmit = async () => {
     const result = returnableMaterialUpdateSchema.safeParse(form);
@@ -105,15 +112,22 @@ export default function EditReturnableMaterialPage() {
 
     const fd = new FormData();
     Object.entries(result.data).forEach(([key, val]) => {
+      // Con placa SENA la cantidad NO se envía (el "1" del input es solo visual)
+      if (key === "quantity" && result.data.senaPlate) return;
       if (val !== undefined && val !== "") fd.append(key, val);
     });
     if (image.length)         fd.append("image", image[0]);
     if (techSheetFile.length) fd.append("technical_sheet", techSheetFile[0]);
 
     try {
+      Alert.loading("Actualizando material...");
       await returnableMaterialService.update(id, fd);
+      Alert.close();
+      Alert.success("Material actualizado");
       navigate(`/view/returnable-materials/${id}`);
     } catch (err) {
+      Alert.close();
+      Alert.error("Error al actualizar el material", err.response?.data?.detalles?.join(" · ") ?? err.response?.data?.error ?? "");
       const det = err.response?.data?.detalles;
       setErrors({
         form: det?.length
@@ -147,9 +161,6 @@ export default function EditReturnableMaterialPage() {
           errors={errors}
           onSubmit={handleSubmit}
           saving={saving}
-          isActive={material?.consumableMaterial?.isActive ?? false}
-          onToggle={handleToggle}
-          toggling={toggling}
           technicalSheet={material?.technicalSheet}
           techSheetFile={techSheetFile}
           onTechSheetChange={setTechSheetFile}

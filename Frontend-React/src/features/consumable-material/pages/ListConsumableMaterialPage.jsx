@@ -1,4 +1,4 @@
-import { Button, DataTable, IconButton } from "@/shared";
+import { Button, DataTable, IconButton, usePermissions } from "@/shared";
 import { Link, useNavigate } from "react-router-dom";
 import { Undo2 } from "lucide-react";
 import { useState } from "react";
@@ -7,6 +7,7 @@ import { consumableMaterialColumns } from "../table/consumableMaterialColumns";
 import ReportConfigModal from "../reports/components/ReportConfigModal";
 
 export default function ListConsumableMaterialPage() {
+  const { can } = usePermissions();
   const navigate = useNavigate();
   const [status, setStatus]                       = useState("active");
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -39,9 +40,11 @@ export default function ListConsumableMaterialPage() {
           <Button variant="secondary" onClick={() => setIsReportModalOpen(true)}>
             Generar Reporte
           </Button>
+          {can("create_consumable_material") && (
           <Link to="/dashboard/consumable-materials/create">
             <Button variant="primary">Crear Material</Button>
           </Link>
+          )}
         </div>
       </div>
 
@@ -50,7 +53,7 @@ export default function ListConsumableMaterialPage() {
       ) : error ? (
         <p className="text-error">{error}</p>
       ) : (
-        <DataTable data={materials} columns={consumableMaterialColumns(refetch)} />
+        <DataTable data={materials} columns={consumableMaterialColumns(refetch, can)} />
       )}
 
       <ReportConfigModal

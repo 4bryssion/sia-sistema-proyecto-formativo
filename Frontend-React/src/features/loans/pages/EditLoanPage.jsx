@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Alert } from "@/shared";
 import { useParams, useNavigate } from "react-router-dom";
 import loanService from "../services/loanService";
 import userService from "@/features/users/services/userService";
@@ -124,12 +125,13 @@ export default function EditLoanPage() {
           borrowedQuantity: Number(m.borrowedQuantity),
         })),
       });
+      Alert.success("Préstamo actualizado");
       navigate(`/view/loans/${id}`);
     } catch (err) {
       const det = err.response?.data?.detalles;
-      setErrors({
-        form: det?.length ? det.join(" · ") : (err.response?.data?.error ?? "Error al actualizar"),
-      });
+      const msg = det?.length ? det.join(" · ") : (err.response?.data?.error ?? "Error al actualizar el préstamo.");
+      Alert.error("Error al actualizar el préstamo", msg);
+      setErrors({ form: msg });
     } finally {
       setSaving(false);
     }

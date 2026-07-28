@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Alert } from "@/shared";
 import { useParams, useNavigate } from "react-router-dom";
 import userService from "../services/userService";
 import documentTypeService from "../services/documentTypeService";
@@ -72,12 +73,18 @@ export default function EditUserPage() {
 
     setSaving(true);
     try {
+      Alert.loading("Actualizando usuario...");
       await userService.update(id, fd);
+      Alert.close();
       setErrors({});
+      Alert.success("Usuario actualizado");
       navigate(`/view/users/${id}`);
     } catch (err) {
+      Alert.close();
       const det = err.response?.data?.detalles;
-      setErrors({ form: det?.length ? det.join(" · ") : (err.response?.data?.error ?? "Error al actualizar el usuario") });
+      const msg = det?.length ? det.join(" · ") : (err.response?.data?.error ?? "Error al actualizar el usuario");
+      Alert.error("Error al actualizar el usuario", msg);
+      setErrors({ form: msg });
     } finally {
       setSaving(false);
     }

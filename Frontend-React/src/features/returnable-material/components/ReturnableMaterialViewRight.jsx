@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Input, Button, IconButton } from "@/shared";
+import { Input, Button, IconButton, TextArea } from "@/shared";
 import { Pencil, FileText } from "lucide-react";
 import logo from "@/assets/logos/logo-sena-negro.png";
 import returnableMaterialService from "../services/returnableMaterialService";
@@ -55,10 +55,11 @@ export default function ReturnableMaterialViewRight({ id }) {
           <Input label="Categoría"             value={material.category?.categoryName ?? "—"} readOnly />
           <Input label="Ubicación"             value={cm.location}                      readOnly />
           <Input label="Dimensiones"           value={material.dimensions ?? "—"}       readOnly />
-          <Input label="Valor unitario"        value={cm.unitPrice}                     readOnly />
-          <Input label="Valor total"           value={cm.totalPrice}                    readOnly />
+          <Input label="Valor unitario"        value={cm.unitPrice}                     prefix="$" readOnly />
+          <Input label="Valor total"           value={cm.totalPrice}                    prefix="$" readOnly />
           <Input label="Fecha de compra"       value={dateFormatted}                    readOnly />
-          <Input label="Descripción"           value={cm.description}                   readOnly />
+          {/* Descripción: TextArea (ancho de input, alto fijo) */}
+          <TextArea label="Descripción"        value={cm.description}                   readOnly />
         </div>
       </div>
 

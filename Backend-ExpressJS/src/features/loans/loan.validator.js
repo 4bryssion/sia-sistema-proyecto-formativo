@@ -8,8 +8,13 @@ const materialLine = Joi.object({
 export const createLoanSchema = Joi.object({
   apprenticeGroup: Joi.number().integer().positive().required(),
   useJustification: Joi.string().max(255).required(),
-  returnDate: Joi.date().iso().greater('now').required()
-    .messages({ 'date.greater': 'La fecha de devolución debe ser futura.' }),
+  // Se permite HOY: comparación por fecha de calendario (Joi parsea "YYYY-MM-DD"
+  // en UTC medianoche y greater('now') rechazaba el mismo día por desfase de TZ)
+  returnDate: Joi.date().iso().required().custom((value, helpers) => {
+    const todayLocal = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+    if (value.toISOString().slice(0, 10) < todayLocal) return helpers.error('date.greater');
+    return value;
+  }).messages({ 'date.greater': 'La fecha de devolución no puede ser anterior a hoy.' }),
   lenderId: Joi.number().integer().positive().required(),
   receiverId: Joi.number().integer().positive().invalid(Joi.ref('lenderId')).required(),
   materials: Joi.array().items(materialLine).min(1).required(),

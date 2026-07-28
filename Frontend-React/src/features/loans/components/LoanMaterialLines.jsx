@@ -60,6 +60,7 @@
                 // Cambio: se ajustó la grid para que el select ocupe más espacio que el input
                 <div key={idx} className="grid grid-cols-[2fr_1fr_auto] gap-3 items-center w-full">
                   <Select
+                    variant="search"
                     name={`materialId-${idx}`}
                     value={line.materialId}
                     onChange={(e) => onChange(idx, "materialId", e.target.value)}

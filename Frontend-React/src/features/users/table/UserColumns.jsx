@@ -1,10 +1,10 @@
-import { Switch } from "@/shared";
+import { Switch, Alert } from "@/shared";
 import UserRowActions from "../components/UserRowActions";
 import { getTopGroupName } from "../utils/topGroup";
 import userService from "../services/userService";
 import { Link } from "react-router-dom";
 
-export const UserColumns = (onChanged) => [
+export const UserColumns = (onChanged, can = () => true) => [
   // { accessorKey: "id", header: "Id" },
   {
     id: "nombre",
@@ -46,8 +46,21 @@ export const UserColumns = (onChanged) => [
     cell: ({ row }) => {
       const u = row.original;
       const handleToggle = async () => {
-        try { await userService.toggle(u.id); } finally { onChanged?.(); }
+        // Confirmación obligatoria antes de activar/desactivar (soft-delete)
+        const result = await Alert.warning(
+          `¿${u.isActive ? "Desactivar" : "Activar"} usuario?`,
+          `${u.userFirstName} ${u.userLastName} quedará ${u.isActive ? "inactivo y no podrá iniciar sesión" : "activo nuevamente"}.`
+        );
+        if (!result.isConfirmed) return;
+        try {
+          await userService.toggle(u.id);
+          Alert.success(`Usuario ${u.isActive ? "desactivado" : "activado"}`);
+        } catch (err) {
+          Alert.error("Error al cambiar estado", err.response?.data?.error ?? "");
+        } finally { onChanged?.(); }
       };
+      // Sin permiso de toggle: solo lectura
+      if (!can("toggle_user")) return u.isActive ? "Activo" : "Inactivo";
       return( <div className="flex items-center h-full"><Switch checked={u.isActive} onChange={handleToggle} size="sm" className="inline-flex" />
       </div> 
       );

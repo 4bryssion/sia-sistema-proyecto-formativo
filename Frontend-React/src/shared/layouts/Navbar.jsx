@@ -11,24 +11,20 @@ import {
 
 } from "lucide-react";
 
-import {
-    IconButton,
-    Dropdown,
-    DropdownTrigger,
-    DropdownItem,
-    DropdownContent,
-    getCurrentUser
-
-} from "@/shared";
+import { IconButton, Dropdown, DropdownTrigger, DropdownItem, DropdownContent, getCurrentUser, Alert, usePermissions } from "@/shared";
 
 import logo from "@/assets/logos/logo-sena-negro.png";
 
 export default function Navbar(){
+    const { can } = usePermissions();
 
     const [view, setView] = useState("main");
     const navigate = useNavigate();
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        // Confirmación de cierre de sesión (el usuario decide sí o sí)
+        const result = await Alert.confirm("Cierre de sesión", "¿Está seguro que desea cerrar sesión?");
+        if (!result.isConfirmed) return;
         logout();
         navigate("/auth", { replace: true });
     };
@@ -81,7 +77,7 @@ export default function Navbar(){
                                 text-h1 hidden sm:flex
                             `}
                         >
-                            S.I.T.
+                            S.I.I
                         </h1>
                     </Link>
 
@@ -92,6 +88,7 @@ export default function Navbar(){
                         `}
                     >
                         {/* Icono de notificaciones de historial general */}
+                        {can("list_notifications") && (
                         <Link to="/dashboard/alert-history">
                             <IconButton
                                 ariaLabel = "Notificaciones de historial general"
@@ -99,6 +96,7 @@ export default function Navbar(){
                                 <Bell strokeWidth={2.8} />
                             </IconButton>
                         </Link>
+                        )}
 
                         {/* Icono de usuario autenticado: ver el propio perfil (reusa ViewUserPage) */}
                         <IconButton
@@ -136,42 +134,55 @@ export default function Navbar(){
                                                 Mi perfil
                                             </DropdownItem> */}
 
+                                            {can("list_permissions") && (
                                             <DropdownItem>
                                                 <Link to="/dashboard/admin" className="block w-full">
                                                     Administración de permisos
                                                 </Link>
                                             </DropdownItem>
+                                            )}
 
+                                            {can(["create_user", "edit_user"]) && (
                                             <DropdownItem>
                                                 <Link to="/dashboard/users" className="block w-full">
                                                     Usuarios
                                                 </Link>
                                             </DropdownItem>
+                                            )}
 
+                                            {can("list_consumable_materials") && (
                                             <DropdownItem>
                                                 <Link to="/dashboard/consumable-materials" className="block w-full">
                                                     Materiales consumibles
                                                 </Link>
                                             </DropdownItem>
+                                            )}
 
+                                            {can("list_returnable_materials") && (
                                             <DropdownItem>
                                                 <Link to="/dashboard/returnable-materials" className="block w-full">
                                                     Materiales devolutivos
                                                 </Link>
                                             </DropdownItem>
+                                            )}
 
+                                            {can("list_loans") && (
                                             <DropdownItem>
                                                 <Link to="/dashboard/loans" className="block w-full">
                                                     Prestamos
                                                 </Link>
                                             </DropdownItem>
+                                            )}
 
+                                            {can("list_tasks") && (
                                             <DropdownItem>
                                                 <Link to="/dashboard/tasks" className="block w-full">
                                                     Tareas
                                                 </Link>
                                             </DropdownItem>
+                                            )}
 
+                                            {(can("list_brands") || can("list_groups")) && (
                                             <DropdownItem
                                                 className="block w-full"
                                                 keepOpen={true}
@@ -179,6 +190,7 @@ export default function Navbar(){
                                             >
                                                 Configuración                                  
                                             </DropdownItem>
+                                            )}
 
                                             <DropdownItem onClick={handleLogout}>
                                                 Cerrar sesión
@@ -200,17 +212,21 @@ export default function Navbar(){
                                                 </IconButton>
                                             </DropdownItem>
 
+                                            {can("list_brands") && (
                                             <DropdownItem>
                                                 <Link to="/dashboard/brands" className="block w-full">
                                                     Marcas
                                                 </Link>
                                             </DropdownItem>
+                                            )}
                                             
+                                            {can("list_groups") && (
                                             <DropdownItem>
                                                 <Link to="/dashboard/groups" className="block w-full">
                                                     Grupos
                                                 </Link>
                                             </DropdownItem>
+                                            )}
                                         </>
 
                                     )}

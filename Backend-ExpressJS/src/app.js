@@ -32,6 +32,8 @@ import loanRoutes from './features/loans/loan.routes.js';
 import loanReturnRoutes from './features/loan-returns/loanReturn.routes.js';
 
 import taskRoutes from './features/tasks/task.routes.js';
+// (P43) Notificaciones / logs del sistema
+import notificationRoutes from './features/notifications/notification.routes.js';
 
 // ===============================================
 
@@ -76,6 +78,7 @@ app.use('/api/loans', loanRoutes);
 app.use('/api/loan-returns',         loanReturnRoutes);
 
 app.use('/api/tasks', taskRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // ===============================================
 

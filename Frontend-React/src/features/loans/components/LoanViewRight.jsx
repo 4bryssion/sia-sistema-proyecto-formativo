@@ -1,13 +1,12 @@
 import { Pencil } from "lucide-react";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Input } from "@/shared";
-import loanService from "../services/loanService";
 import logo from "@/assets/logos/logo-sena-negro.png";
 
-export default function LoanViewRight({ loan, onToggled }) {
+// El toggle de activo/inactivo se eliminó de esta pantalla: se gestiona solo
+// desde el Switch de la tabla de listar préstamos
+export default function LoanViewRight({ loan }) {
   const navigate = useNavigate();
-  const [toggling, setToggling] = useState(false);
   const canEdit = loan?.status === "Activo";
   const lender = loan?.signatures?.find((s) => s.party === "Prestador");
   const receiver = loan?.signatures?.find((s) => s.party === "Receptor");
@@ -16,18 +15,6 @@ export default function LoanViewRight({ loan, onToggled }) {
     sig?.user
       ? `${sig.user.userFirstName} ${sig.user.userLastName} — ${sig.signed ? "Firmado" : "Sin firmar"}`
       : "—";
-
-  const handleToggle = async () => {
-    setToggling(true);
-    try {
-      await loanService.toggle(loan.id);
-      onToggled?.();
-    } catch (err) {
-      alert(err.response?.data?.error ?? "Error al cambiar estado");
-    } finally {
-      setToggling(false);
-    }
-  };
 
   return (
     <div className="relative">
@@ -88,15 +75,6 @@ export default function LoanViewRight({ loan, onToggled }) {
       {/* Acciones + Logo */}
       <div className="flex flex-wrap items-center justify-end gap-6 mt-6">
         <div className="flex flex-wrap justify-end gap-3 flex-1 min-w-0">
-          <Button
-            variant="toggle"
-            activeLabel="Activo"
-            inactiveLabel="Desactivado"
-            checked={loan?.isActive}
-            disabled={toggling}
-            onClick={handleToggle}
-          />
-
           <Button
             variant="primary"
             className="gap-2"

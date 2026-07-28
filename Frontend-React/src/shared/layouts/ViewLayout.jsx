@@ -5,7 +5,7 @@ import {
     IconButton 
 } from "@/shared";
 
-import bg from "@/assets/images/background-oscuro.jpg"
+// import bg from "@/assets/images/background-claro.jpg"
 
 
 export default function ViewLayout(){
@@ -21,13 +21,13 @@ export default function ViewLayout(){
             {/* Fondo con imagen */}
             <div
                 className="
-                    fixed inset-0 -z-10 bg-cover bg-center
+                    absolute inset-0 -z-10 bg-cover bg-center bg-(--color-cuaternario-400)
                 "
-                style={{ backgroundImage: `url(${bg})` }}
+                // style={{ backgroundImage: `url(${bg})` }}
             />
 
             <IconButton
-                variant="primary"
+                variant="secondary"
                 ariaLabel = "Devolverse"
                 onClick={() => navigate(-1)}
             >

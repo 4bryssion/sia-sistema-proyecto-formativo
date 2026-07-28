@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import logo from "@/assets/logos/logo-sena-verde.png";
 import bg from "@/assets/images/background-oscuro.jpg";
-import { Button } from "@/shared";
+import { Button, Alert } from "@/shared";
 import loanService from "../services/loanService";
 import { getLoanStatusLabel } from "../utils/loanStatusLabel";
 
@@ -42,10 +42,16 @@ export default function SignLoanPage() {
     setSigning(true);
     setSignError(null);
     try {
+      Alert.loading("Registrando firma...");
       const result = await loanService.sign(token);
+      Alert.close();
+      Alert.success("Préstamo firmado", "Tu firma quedó registrada correctamente.");
       setSignResult(result);
     } catch (err) {
-      setSignError(err.response?.data?.error ?? "Error al firmar el préstamo.");
+      Alert.close();
+      const msg = err.response?.data?.error ?? "Error al firmar el préstamo.";
+      Alert.error("No se pudo firmar", msg);
+      setSignError(msg);
     } finally {
       setSigning(false);
     }

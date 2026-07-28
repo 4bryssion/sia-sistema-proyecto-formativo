@@ -24,7 +24,7 @@ export default function AccessLeft({
   }, [selectedUserId]);
 
   const groupOptions = [
-    { value: "", label: "— Selecciona un grupo —" },
+    // { value: "", label: "— Selecciona un grupo —" },
     ...groups.map((g) => ({ value: String(g.id), label: g.groupName })),
   ];
 
@@ -41,7 +41,7 @@ export default function AccessLeft({
   const availableGroups = groups.filter((g) => !assignedGroupIds.has(g.id));
 
   const assignOptions = [
-    { value: "", label: "— Selecciona un grupo —" },
+    // { value: "", label: "— Selecciona un grupo —" },
     ...availableGroups.map((g) => ({ value: String(g.id), label: g.groupName })),
   ];
 
@@ -58,7 +58,7 @@ export default function AccessLeft({
       {/* Sección Grupos */}
       <div className="justify-items-center w-full max-w-[320px] justify-self-center min-w-0">
 
-        <h3 className="text-h3 text-text-inverse text-center">
+        <h3 className="text-h3 text-text-inverse text-center font-main">
           Grupos usuarios
         </h3>
 
@@ -67,7 +67,7 @@ export default function AccessLeft({
           value={selectedGroupId ? String(selectedGroupId) : ""}
           onChange={(e) => onGroupChange(e.target.value)}
           options={groupOptions}
-          className="bg-white rounded-md h-12 w-full"
+          className="w-full min-w-0"
         />
 
       </div>
@@ -75,16 +75,17 @@ export default function AccessLeft({
       {/* Sección Usuario individual */}
       <div className="grid gap-2 justify-items-center w-full max-w-[320px] justify-self-center min-w-0">
 
-        <h3 className="text-h3 text-text-inverse text-center">
+        <h3 className="text-h3 text-text-inverse text-center font-main">
           Usuario individual
         </h3>
 
         <Select
+          variant="search"
           name="userId"
           value={selectedUserId ? String(selectedUserId) : ""}
           onChange={(e) => onUserChange(e.target.value)}
           options={userOptions}
-          className="bg-white rounded-md justify-self-center w-full"
+          className="w-full min-w-0 justify-self-center"
         />
 
         {selectedUserId && (
@@ -96,7 +97,7 @@ export default function AccessLeft({
                     key={ug.groupId}
                     className="flex items-center justify-between bg-white rounded px-2 py-1 w-full min-w-0 box-border"
                   >
-                    <span className="bg-white rounded-md w-full min-w-0 truncate">
+                    <span className="bg-white rounded-md w-full min-w-0 truncate font-secondary">
                       {ug.group.groupName}
                     </span>
                     <button
@@ -122,7 +123,7 @@ export default function AccessLeft({
                   value={groupToAssign}
                   onChange={(e) => setGroupToAssign(e.target.value)}
                   options={assignOptions}
-                  className="bg-white rounded-md justify-self-center w-full"
+                  className="w-full min-w-0 justify-self-center"
                 />
                 <Button
                   variant="primary"

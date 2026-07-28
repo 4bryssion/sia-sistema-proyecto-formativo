@@ -1,6 +1,9 @@
 import { z } from "zod";
 
-const today = () => new Date().toISOString().slice(0, 10);
+// Fecha de hoy LOCAL en YYYY-MM-DD ("en-CA" produce ese formato). Se compara como
+// string contra el input type="date" para evitar el bug de zona horaria de
+// toISOString()/new Date("YYYY-MM-DD"), que parsean en UTC (en UTC-5 rechazaba hoy)
+export const todayLocalISO = () => new Date().toLocaleDateString("en-CA");
 
 const materialLineSchema = z.object({
   materialId: z
@@ -24,7 +27,8 @@ export const loanSchema = z
     returnDate: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Formato inválido (YYYY-MM-DD)")
-      .refine((v) => v > today(), "La fecha de devolución debe ser futura"),
+      // Hoy es válido; anteriores no (comparación de strings YYYY-MM-DD, segura ante TZ)
+      .refine((v) => v >= todayLocalISO(), "La fecha de devolución no puede ser anterior a hoy"),
     lenderId: z.string().min(1, "Seleccione el prestador"),
     receiverId: z.string().min(1, "Seleccione el receptor"),
     materials: z
@@ -48,7 +52,8 @@ export const loanUpdateSchema = z
     returnDate: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Formato inválido (YYYY-MM-DD)")
-      .refine((v) => v > today(), "La fecha de devolución debe ser futura"),
+      // Hoy es válido; anteriores no (comparación de strings YYYY-MM-DD, segura ante TZ)
+      .refine((v) => v >= todayLocalISO(), "La fecha de devolución no puede ser anterior a hoy"),
     lenderId: z.string().min(1, "Seleccione el prestador"),
     receiverId: z.string().min(1, "Seleccione el receptor"),
     status: z.enum(["Activo", "Finalizado"]).optional(),

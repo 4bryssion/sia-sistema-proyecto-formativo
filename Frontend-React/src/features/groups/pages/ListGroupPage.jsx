@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DataTable, Button, IconButton } from "@/shared";
+import { DataTable, Button, IconButton, usePermissions } from "@/shared";
 import { groupColumns } from "../table/groupColumns";
 import { useGroups } from "../hooks/useGroups";
 import { useNavigate } from "react-router-dom";
@@ -7,8 +7,11 @@ import { Undo2 } from "lucide-react";
 import CreateGroupModal from "./CreateGroupModal.jsx";
 
 export default function ListGroupPage() {
+  const { can } = usePermissions();
   const navigate = useNavigate();
   const { groups, loading, error, refetch } = useGroups();
+  // El grupo SuperAdmin no aparece como dato en ningún panel
+  const visibleGroups = groups.filter((g) => g.groupName !== "SuperAdmin");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (
@@ -34,7 +37,7 @@ export default function ListGroupPage() {
       ) : error ? (
         <p className="text-error">{error}</p>
       ) : (
-        <DataTable data={groups} columns={groupColumns(refetch)} />
+        <DataTable data={visibleGroups} columns={groupColumns(refetch)} />
       )}
 
       <CreateGroupModal

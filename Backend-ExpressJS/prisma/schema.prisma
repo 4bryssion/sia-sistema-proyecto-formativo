@@ -89,6 +89,7 @@ model User {
   groups              UserGroup[]
   directPermissions   UserPermission[]
   passwordResetCodes  PasswordResetCode[]
+  notifications       Notification[]
   documentType        DocumentType           @relation(fields: [documentTypeId], references: [id], map: "users_document_type_id_fkey")
 
   @@map("users")
@@ -283,4 +284,25 @@ enum TaskStatus {
   en_progreso
   completada
   no_completada
+}
+
+// (P43) Notificaciones / logs del sistema — criticidad separada por severidad
+enum NotificationSeverity {
+  Critica
+  Advertencia
+  Informativa
+}
+
+model Notification {
+  id          Int                  @id @default(autoincrement())
+  title       String               @db.VarChar(100)
+  description String               @db.VarChar(255)
+  severity    NotificationSeverity
+  module      String               @db.VarChar(50)
+  userId      Int?                 @map("user_id")
+  user        User?                @relation(fields: [userId], references: [id])
+  isActive    Boolean              @default(true) @map("is_active")
+  created_at  DateTime             @default(now())
+
+  @@map("notifications")
 }

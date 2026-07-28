@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Button, Input } from "@/shared";
+import { Button, Input, Alert } from "@/shared";
 import { brandSchema } from "../schemas/brandSchema.js";
 import brandService from "../services/brandService.js";
 
@@ -30,10 +30,13 @@ export default function CreateBrandModal({ isOpen, onClose, onSave }) {
       const res = await brandService.create(result.data);
       setBrandName("");
       setError("");
+      Alert.success("Marca creada");
       onSave?.(res?.data ?? res);
       onClose?.();
     } catch (err) {
-      setError(err.response?.data?.error ?? "Error al crear la marca");
+      const msg = err.response?.data?.error ?? "Error al crear la marca";
+      Alert.error("Error al crear la marca", msg);
+      setError(msg);
     } finally {
       setSaving(false);
     }

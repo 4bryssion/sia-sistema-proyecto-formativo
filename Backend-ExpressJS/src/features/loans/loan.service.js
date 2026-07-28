@@ -3,6 +3,7 @@ import { loanRepository } from './loan.repository.js';
 import prisma from '../../config/prisma.js';
 import { checkAvailability } from './loan.stock.js';
 import { sendLoanSignatureRequest } from '../../config/mailer.js';
+import { notify } from '../notifications/notification.service.js';
 
 const SIGN_TOKEN_TTL = '7d';
 
@@ -69,6 +70,14 @@ export const loanService = {
       parties: { lenderId: data.lenderId, receiverId: data.receiverId },
     });
     sendSignatureEmails(loan); // fire-and-forget: no bloquea la respuesta de creación
+    // (P43) Log del sistema
+    notify({
+      title: 'Préstamo creado',
+      description: `Préstamo #${loan.id} creado para el grupo ${loan.apprenticeGroup} (pendiente de firmas).`,
+      severity: 'Informativa',
+      module: 'loans',
+      userId: data.lenderId,
+    });
     return loan;
   },
 

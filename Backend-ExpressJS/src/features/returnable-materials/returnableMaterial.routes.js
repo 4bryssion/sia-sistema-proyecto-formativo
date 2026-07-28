@@ -3,6 +3,8 @@ import multer from 'multer';
 import { returnableMaterialController } from './returnableMaterial.controller.js';
 import { validate, createReturnableMaterialSchema, updateReturnableMaterialSchema } from './returnableMaterial.validator.js';
 import { uploadFiles } from '../../middleware/multerConfig.js';
+import { authenticateToken } from '../../middleware/auth.middleware.js';
+import { requirePermission } from '../../middleware/permission.middleware.js';
 
 const router = Router();
 
@@ -11,11 +13,11 @@ const uploadFields = uploadFiles.fields([
   { name: 'technical_sheet', maxCount: 1 },
 ]);
 
-router.get('/',       returnableMaterialController.getAll);
-router.get('/:id',    returnableMaterialController.getById);
-router.post('/',      uploadFields, validate(createReturnableMaterialSchema), returnableMaterialController.create);
-router.put('/:id',          uploadFields, validate(updateReturnableMaterialSchema),  returnableMaterialController.update);
-router.patch('/:id/toggle', returnableMaterialController.toggle);
+router.get('/', authenticateToken, requirePermission('list_returnable_materials'),       returnableMaterialController.getAll);
+router.get('/:id', authenticateToken, requirePermission('list_returnable_materials'),    returnableMaterialController.getById);
+router.post('/', authenticateToken, requirePermission('create_returnable_material'),      uploadFields, validate(createReturnableMaterialSchema), returnableMaterialController.create);
+router.put('/:id', authenticateToken, requirePermission('edit_returnable_material'),          uploadFields, validate(updateReturnableMaterialSchema),  returnableMaterialController.update);
+router.patch('/:id/toggle', authenticateToken, requirePermission('toggle_returnable_material'), returnableMaterialController.toggle);
 
 router.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {

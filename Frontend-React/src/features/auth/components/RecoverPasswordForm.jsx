@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import logo from "@/assets/logos/logo-sena-verde.png";
 import bg from "@/assets/images/background-oscuro.jpg";
-import { Input, Button } from "@/shared";
+import { Input, Button, Alert } from "@/shared";
 import { recoverPasswordSchema } from "../schemas/recoverPasswordSchema.js";
 import { forgotPassword, verifyResetCode } from "../services/authService.js";
 import { Undo2 } from "lucide-react";
@@ -53,9 +53,14 @@ export default function RecoverPasswordForm() {
         setSendMessage("");
         setCooldown(30); // arranca antes del await para bloquear doble clic
         try {
+            Alert.loading("Enviando código...", "Revisa tu correo electrónico");
             const data = await forgotPassword(formData.userEmail);
+            Alert.close();
+            Alert.success("Código enviado", data.mensaje);
             setSendMessage(data.mensaje);
         } catch (err) {
+            Alert.close();
+            Alert.error("No se pudo enviar el código", err.message);
             setSendMessage(err.message);
         }
     };
@@ -79,10 +84,14 @@ export default function RecoverPasswordForm() {
         setSendMessage("");
 
         try {
+            Alert.loading("Verificando código...");
             const data = await verifyResetCode(result.data);
+            Alert.close();
             // resetTicket viaja por router state — nunca por URL ni sessionStorage (ver §3, P39)
             navigate("/auth/reset-password", { state: { resetTicket: data.resetTicket } });
         } catch (error) {
+            Alert.close();
+            Alert.error("Código inválido", error.message);
             setErrors({ form: error.message });
         }
     };

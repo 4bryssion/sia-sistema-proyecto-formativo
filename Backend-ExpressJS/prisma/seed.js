@@ -18,6 +18,7 @@ const contentTypes = [
   { appLabel: 'loans',                model: 'loan',               displayName: 'Préstamos' },
   { appLabel: 'loan-returns',         model: 'loanReturn',         displayName: 'Retornos de préstamo' },
   { appLabel: 'tasks',                model: 'task',               displayName: 'Tareas' },
+  { appLabel: 'notifications',        model: 'notification',       displayName: 'Notificaciones' },
 ];
 
 // ---- Catálogo de permisos realineado a los endpoints reales ----
@@ -98,6 +99,9 @@ const initialPermissions = [
   { permissionName: 'Crear nueva tarea',                            permissionCodename: 'create_task',                  appLabel: 'tasks' },
   { permissionName: 'Editar tarea existente',                       permissionCodename: 'edit_task',                    appLabel: 'tasks' },
   { permissionName: 'Habilitar/Deshabilitar tarea',                 permissionCodename: 'toggle_task',                  appLabel: 'tasks' },
+
+  // notifications (P43) — logs del sistema, solo lectura
+  { permissionName: 'Ver listado de notificaciones del sistema',    permissionCodename: 'list_notifications',           appLabel: 'notifications' },
 ];
 
 // ---- Catálogos base exigidos por los requerimientos ----
@@ -123,6 +127,8 @@ const roleMatrix = {
   Administrador: [
     // lectura para selects
     'list_document_types', 'list_categories',
+    // notificaciones del sistema (P43)
+    'list_notifications',
     // marcas (CRUD)
     'list_brands', 'create_brand', 'edit_brand', 'toggle_brand',
     // usuarios
@@ -147,8 +153,11 @@ const roleMatrix = {
   ],
 
   Instructor: [
-    // lectura para selects
-    'list_brands', 'list_categories',
+    // lectura para selects (usuarios: necesario para prestador/receptor de préstamos,
+    // cuentadante de materiales y asignación de tareas — NO incluye crear/editar usuarios)
+    'list_brands', 'list_categories', 'list_users',
+    // tareas: el instructor asigna y gestiona tareas
+    'list_tasks', 'create_task', 'edit_task', 'toggle_task',
     // materiales de consumo
     'list_consumable_materials', 'create_consumable_material', 'edit_consumable_material',
     'toggle_consumable_material', 'report_consumable_materials',

@@ -1,4 +1,4 @@
-import { Input, Button, Select } from "@/shared";
+import { Input, Button, Select, CancelButton } from "@/shared";
 import { Save } from "lucide-react";
 import logo from "@/assets/logos/logo-sena-negro.png";
 
@@ -119,7 +119,8 @@ export default function UserEditRight({
         <p className="text-error text-caption mt-4">{errors.form}</p>
       )}
       
-      <div className="grid gap-4 mt-4 sm:flex sm:w-80 sm:mx-auto sm:justify-end lg:flex lg:w-full">
+      <div className="grid gap-4 mt-4 sm:flex sm:w-80 sm:mx-auto sm:justify-end lg:flex lg:w-full lg:justify-end">
+        <CancelButton disabled={saving} />
         <Button
           variant="primary"
           className="gap-2 lg:justify-self-end lg:mr-24"

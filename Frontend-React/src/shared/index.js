@@ -1,6 +1,10 @@
 // Shared - Components
 
 export { default as Button } from "./components/Button";
+export { default as CancelButton } from "./components/CancelButton";
+export { Alert } from "./components/utils/alert.js";
+export { PermissionsProvider, usePermissions } from "./context/PermissionsContext.jsx";
+export { default as RequirePermission } from "./components/auth/RequirePermission.jsx";
 export { default as Card } from "./components/Card";
 export { default as Checkbox } from "./components/Checkbox";
 export { default as DataTable } from "./components/DataTable";

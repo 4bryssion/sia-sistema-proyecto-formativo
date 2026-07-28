@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { IconButton } from "@/shared";
+import { getTopGroupName } from "@/features/users/utils/topGroup";
+import { IconButton, Alert } from "@/shared";
 import { Undo2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "@/shared/services/axiosInstance";
@@ -37,8 +38,9 @@ export default function AccessPage() {
       api.get("/permissions").then((r) => r.data),
     ])
       .then(([groups, users, permissions]) => {
-        setAllGroups(groups);
-        setAllUsers(users);
+        // El SuperAdmin (grupo y usuarios) no aparece en el panel de administración
+        setAllGroups(groups.filter((g) => g.groupName !== "SuperAdmin"));
+        setAllUsers(users.filter((u) => getTopGroupName(u) !== "SuperAdmin"));
         setAllPermissions(permissions);
       })
       .catch(() => setError("Error cargando catálogos"));
@@ -142,6 +144,7 @@ export default function AccessPage() {
         setEntityPermIds(freshIds);
         setDraftPermIds(new Set(freshIds));
         setIsEditing(false);
+        Alert.success("Permisos actualizados", "Los cambios se aplicaron al grupo.");
       } else if (selectedUserId) {
         // Diff vs estado real: solo dispara POST/DELETE para los que cambiaron
         const toAdd    = [...draftPermIds].filter((id) => !entityPermIds.has(id));
@@ -154,6 +157,7 @@ export default function AccessPage() {
       }
     } catch (err) {
       setError(err.response?.data?.error ?? "Error al guardar permisos");
+      Alert.error("Error al guardar los permisos", err.response?.data?.error ?? "");
     }
   };
 

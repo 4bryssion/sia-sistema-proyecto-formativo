@@ -12,6 +12,8 @@ export default function TextArea({
     label,
     error,
     className = "",
+    // required: pinta el asterisco de campo obligatorio junto al label
+    required = false,
     ...props
 }){
     // Cuerpo de la función
@@ -33,6 +35,7 @@ export default function TextArea({
                     `}
                 >
                     {label}
+                    {required && <span className="text-error ml-0.5" aria-hidden="true">*</span>}
                 </label>
             )}
 

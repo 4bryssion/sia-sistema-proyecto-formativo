@@ -5,10 +5,8 @@ import logo from "@/assets/logos/logo-sena-verde.png";
 
 
 
-import { 
-    Input, 
-    Button, 
-} from "@/shared";
+import { Input, 
+    Button, Alert } from "@/shared";
 
 import { authSchema } from "../schemas/authSchema.js";
 import { login } from "../services/authService.js";
@@ -85,13 +83,18 @@ export default function AuthRegisterForm(){
         setErrors({});
 
         try {
+            Alert.loading("Iniciando sesión...");
             const data =  await login(result.data)
 
             sessionStorage.setItem("token", data.token); // Clave
             sessionStorage.setItem("user", JSON.stringify(data.user)); // { id, email } — usado por Navbar para "Mi perfil"
 
+
+            Alert.close();
             navigate("/dashboard");
         } catch (error) {
+            Alert.close();
+            Alert.error("Error al iniciar sesión", error.message);
             setErrors({ form: error.message });
         }
     };

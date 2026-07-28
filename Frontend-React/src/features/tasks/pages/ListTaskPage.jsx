@@ -1,14 +1,21 @@
 import { useState } from "react";
-import { DataTable, Button, IconButton } from "@/shared";
+import { DataTable, Button, IconButton, usePermissions } from "@/shared";
 import { TaskColumns } from "../table/TaskColumns.jsx";
 import { useTasks } from "../hooks/useTasks";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Undo2 } from "lucide-react";
 import CreateTaskModal from "../components/CreateTaskModal.jsx";
 
 export default function ListTaskPage() {
+  const { can } = usePermissions();
   const navigate = useNavigate();
-  const { tasks, loading, error, refetch } = useTasks();
+  // ?userId=X ("Ver mis tareas" desde Mi Perfil): filtra a las tareas de ese usuario
+  const [searchParams] = useSearchParams();
+  const userId = searchParams.get("userId");
+  // Sin permiso para listar todas las tareas, el usuario solo ve las suyas
+  const ownId = JSON.parse(sessionStorage.getItem("user") ?? "null")?.id ?? null;
+  const effectiveUserId = can("list_tasks") ? userId : ownId;
+  const { tasks, loading, error, refetch } = useTasks(effectiveUserId);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (
@@ -18,12 +25,16 @@ export default function ListTaskPage() {
           <IconButton ariaLabel="Devolverse" onClick={() => navigate(-1)}>
             <Undo2 strokeWidth={2.8} />
           </IconButton>
-          <h1 className="text-xl font-semibold mb-0 text-h3 sm:text-h2">Tareas</h1>
+          <h1 className="text-xl font-semibold mb-0 text-h3 sm:text-h2">
+            {effectiveUserId ? "Mis Tareas" : "Tareas"}
+          </h1>
         </div>
 
-        <Button variant="primary" onClick={() => setIsCreateOpen(true)}>
-          Crear Tarea
-        </Button>
+        {can("create_task") && (
+          <Button variant="primary" onClick={() => setIsCreateOpen(true)}>
+            Crear Tarea
+          </Button>
+        )}
       </div>
 
       {loading ? (

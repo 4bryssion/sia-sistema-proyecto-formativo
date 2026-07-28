@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { userRepository } from './user.repository.js';
 import { sendUserCredentials, classifyMailError } from '../../config/mailer.js';
+import { notify } from '../notifications/notification.service.js';
 
 const SALT_ROUNDS = 10;
 
@@ -74,6 +75,15 @@ export const userService = {
       emailError = classifyMailError(err);
       console.error('Error enviando credenciales:', err.message);
     }
+
+    // (P43) Log del sistema: creación de usuario (+ resultado del correo de credenciales)
+    notify({
+      title: 'Usuario creado',
+      description: `Se creó el usuario ${user.userFirstName} ${user.userLastName} (${user.userEmail}). Correo de credenciales: ${emailSent ? 'enviado' : `falló (${emailError})`}.`,
+      severity: emailSent ? 'Informativa' : 'Advertencia',
+      module: 'users',
+      userId: user.id,
+    });
 
     return { user, emailSent, emailError };
   },

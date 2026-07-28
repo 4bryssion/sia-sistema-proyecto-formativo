@@ -1,4 +1,5 @@
 import { loanReturnRepository } from './loanReturn.repository.js';
+import { notify } from '../notifications/notification.service.js';
 import prisma from '../../config/prisma.js';
 
 export const loanReturnService = {
@@ -72,7 +73,15 @@ export const loanReturnService = {
       observations: bodyData.observations || '',
     };
 
-    return loanReturnRepository.createWithRestore(data, restore);
+    const created = await loanReturnRepository.createWithRestore(data, restore);
+    // (P43) Log del sistema
+    notify({
+      title: 'Retorno de préstamo registrado',
+      description: `Retorno del material ${data.materialId} del préstamo #${data.loanId}.`,
+      severity: 'Informativa',
+      module: 'loan-returns',
+    });
+    return created;
   },
 
   async toggle(id) {

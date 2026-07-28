@@ -1,4 +1,4 @@
-import { Input, Button, Select, TextArea } from "@/shared";
+import { Input, Button, Select, TextArea, CancelButton } from "@/shared";
 import { Save } from "lucide-react";
 import logo from "@/assets/logos/logo-sena-negro.png";
 
@@ -58,7 +58,7 @@ export default function ConsumableMaterialEditRight({
             error={errors.status}
           />
           <Select
-            label="Cuentadante"
+            label="Cuentadante" variant="search"
             name="userId"
             options={userOptions}
             value={form.userId}
@@ -97,10 +97,12 @@ export default function ConsumableMaterialEditRight({
             value={form.quantity}
             onChange={onChange}
             error={errors.quantity}
+            disabled={!!form.senaPlate}
           />
           <Input
             label="Valor unitario"
             name="unitPrice"
+            prefix="$"
             type="number"
             value={form.unitPrice}
             onChange={onChange}
@@ -109,6 +111,7 @@ export default function ConsumableMaterialEditRight({
           <Input
             label="Valor total"
             name="totalPrice"
+            prefix="$"
             type="number"
             value={form.totalPrice}
             onChange={onChange}
@@ -125,7 +128,8 @@ export default function ConsumableMaterialEditRight({
         </div>
       </div>
 
-      <div className="grid gap-6 mt-6 sm:flex sm:w-80 sm:mx-auto sm:justify-end lg:flex lg:w-full">
+      <div className="grid gap-6 mt-6 sm:flex sm:w-80 sm:mx-auto sm:justify-end lg:flex lg:w-full lg:justify-end">
+        <CancelButton disabled={saving} />
         <Button
           variant="primary"
           className="gap-2 lg:justify-self-end lg:mr-24"

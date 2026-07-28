@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Button, Input, Select } from "@/shared";
+import { getTopGroupName } from "@/features/users/utils/topGroup";
+import { Button, Input, Select, Alert } from "@/shared";
 import { taskSchema, todayLocalISO } from "../schemas/taskSchema.js";
 import taskService from "../services/taskService.js";
 import { useUsers } from "@/features/users/hooks/useUsers";
@@ -41,7 +42,8 @@ export default function CreateTaskModal({ isOpen, onClose, onSave, assignedUser 
 
   if (!isOpen) return null;
 
-  const userOptions = (users ?? []).map((u) => ({
+  // El SuperAdmin no aparece como asignable
+  const userOptions = (users ?? []).filter((u) => getTopGroupName(u) !== "SuperAdmin").map((u) => ({
     id: u.id,
     value: String(u.id),
     label: `${u.userFirstName} ${u.userLastName}`,
@@ -72,10 +74,13 @@ export default function CreateTaskModal({ isOpen, onClose, onSave, assignedUser 
         endDate: result.data.endDate,
       });
       setErrors({});
+      Alert.success("Tarea creada", "La tarea fue asignada exitosamente.");
       onSave?.();
       onClose?.();
     } catch (error) {
-      setErrors({ form: error.response?.data?.error ?? "Error al crear la tarea" });
+      const msg = error.response?.data?.error ?? "Error al crear la tarea";
+      Alert.error("Error al crear la tarea", msg);
+      setErrors({ form: msg });
     } finally {
       setSaving(false);
     }
@@ -99,6 +104,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSave, assignedUser 
           <Input
             label="Título de la tarea"
             name="taskName"
+            required
             placeholder="Ej: Revisar inventario de marcas"
             value={formData.taskName}
             onChange={handleChange}
@@ -110,6 +116,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSave, assignedUser 
             <Select
               label="Usuario asignado"
               name="userId"
+              required
               value={formData.userId}
               onChange={handleChange}
               options={userOptions}
@@ -119,6 +126,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSave, assignedUser 
           <Input
             label="Descripción de la tarea"
             name="description"
+            required
             placeholder="Ej: Verificar que las marcas activas coincidan con el catálogo"
             value={formData.description}
             onChange={handleChange}
@@ -127,6 +135,7 @@ export default function CreateTaskModal({ isOpen, onClose, onSave, assignedUser 
           <Input
             label="Fecha de fin"
             name="endDate"
+            required
             type="date"
             min={todayLocalISO()}
             value={formData.endDate}

@@ -3,7 +3,7 @@ import { brandSchema } from "../schemas/brandSchema.js";
 import brandService from "../services/brandService.js";
 
 import logo from "@/assets/logos/logo-sena-verde.png";
-import { Input, Button } from "@/shared";
+import { Input, Button, Alert } from "@/shared";
 
 export default function BrandRegisterForm({ onSuccess }) {
 
@@ -32,9 +32,12 @@ export default function BrandRegisterForm({ onSuccess }) {
             await brandService.create(result.data);
             setFormData({ brandName: "" });
             setErrors({});
+            Alert.success("Marca creada");
             onSuccess?.();
         } catch (error) {
-            setErrors({ form: error.response?.data?.error ?? "Error al crear la marca" });
+            const msg = error.response?.data?.error ?? "Error al crear la marca";
+            Alert.error("Error al crear la marca", msg);
+            setErrors({ form: msg });
         }
     };
 

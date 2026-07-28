@@ -38,7 +38,7 @@ export default function Checkbox({
             />
             {/* Texto del checkbox */}
 
-            <span>{label}</span>
+            <span className="font-secondary">{label}</span>
 
         </label>
     );

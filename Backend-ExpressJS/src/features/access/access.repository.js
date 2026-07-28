@@ -77,6 +77,13 @@ export const accessRepository = {
     return rows.length > 0;
   },
 
+  // Catálogo completo de codenames (usado para SuperAdmin: tiene acceso total)
+  async getAllPermissionCodenames() {
+    const rows = await prisma.$queryRaw`
+      SELECT p.permission_codename AS "permissionCodename" FROM permissions p;`;
+    return rows.map((r) => r.permissionCodename);
+  },
+
   // Devuelve todos los codenames de permisos del usuario (directos + via grupos)
   async getUserPermissionCodenames(userId) {
     const rows = await prisma.$queryRaw`

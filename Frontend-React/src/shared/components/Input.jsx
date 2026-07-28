@@ -3,6 +3,11 @@ export default function Input({
     type = "text",
     error,
     className = "",
+    // required: pinta el asterisco de campo obligatorio junto al label
+    required = false,
+    // Prefijo visual fijo (ej. "$" para precios): se superpone dentro del campo y
+    // desplaza el texto; NO forma parte del value (el dato sigue siendo numérico puro)
+    prefix,
     ...props
 }){
     // Cuerpo de la función
@@ -24,6 +29,7 @@ export default function Input({
                     `}
                 >
                     {label}
+                    {required && <span className="text-error ml-0.5" aria-hidden="true">*</span>}
                 </label>
             )}
 
@@ -53,7 +59,7 @@ export default function Input({
                 />
 
                 {/* Área visual del input */}
-                <input 
+                <input
                     type={type}
                     className={`
                         relative
@@ -62,7 +68,7 @@ export default function Input({
                         rounded-md
                         border
                         border-border
-                        px-4
+                        ${prefix ? "pl-8 pr-4" : "px-4"}
                         text-base
                         font-secondary
                         
@@ -77,6 +83,26 @@ export default function Input({
                     `}
                         {...props}
                 />
+
+                {/* Prefijo visual (no editable ni eliminable; fuera del value).
+                    Va DESPUÉS del input para no romper el nextSibling.focus() del
+                    overlay; al ser absoluto, el orden no afecta lo visual */}
+                {prefix && (
+                    <span
+                        className="
+                            absolute
+                            left-4
+                            z-10
+                            text-base
+                            font-secondary
+                            text-text-primary
+                            pointer-events-none
+                            select-none
+                        "
+                    >
+                        {prefix}
+                    </span>
+                )}
 
             </div>
 

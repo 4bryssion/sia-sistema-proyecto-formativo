@@ -1,4 +1,4 @@
-import { Input, Button, Select, IconButton, FileInput } from "@/shared";
+import { Input, Button, Select, IconButton, FileInput, TextArea, CancelButton } from "@/shared";
 import { Save, FileText } from "lucide-react";
 import logo from "@/assets/logos/logo-sena-negro.png";
 
@@ -22,9 +22,6 @@ export default function ReturnableMaterialEditRight({
   errors          = {},
   onSubmit,
   saving,
-  isActive,
-  onToggle,
-  toggling,
   technicalSheet,
   techSheetFile,
   onTechSheetChange,
@@ -51,44 +48,38 @@ export default function ReturnableMaterialEditRight({
           <Input label="Modelo"      name="model"      value={form.model}      onChange={onChange} error={errors.model} />
           <Input label="Serial"      name="serial"     value={form.serial}     onChange={onChange} error={errors.serial} />
           <Input label="Placa SENA (opcional)" name="senaPlate" value={form.senaPlate} onChange={onChange} error={errors.senaPlate} />
-          <Input label="Cantidad" name="quantity" type="number" value={form.quantity} onChange={onChange} error={errors.quantity} />
+          <Input label="Cantidad" name="quantity" type="number" value={form.quantity} onChange={onChange} error={errors.quantity} disabled={!!form.senaPlate} />
           <Input label="Dimensiones (opcional)" name="dimensions" value={form.dimensions} onChange={onChange} error={errors.dimensions} />
         </div>
 
         <div className="grid gap-2 justify-items-center lg:h-max">
           <Select label="Estado"      name="status"  options={STATUS_OPTIONS} value={form.status}  onChange={onChange} error={errors.status} />
-          <Select label="Cuentadante" name="userId"  options={userOptions}    value={form.userId}  onChange={onChange} error={errors.userId} />
+          <Select label="Cuentadante" variant="search" name="userId"  options={userOptions}    value={form.userId}  onChange={onChange} error={errors.userId} />
           <Input label="Ubicación"    name="location"     value={form.location}     onChange={onChange} error={errors.location} />
-          <Input label="Valor unitario" name="unitPrice"  type="number" value={form.unitPrice}  onChange={onChange} error={errors.unitPrice} />
-          <Input label="Valor total"    name="totalPrice" type="number" value={form.totalPrice} onChange={onChange} error={errors.totalPrice} />
+          <Input label="Valor unitario" name="unitPrice"  prefix="$" type="number" value={form.unitPrice}  onChange={onChange} error={errors.unitPrice} />
+          <Input label="Valor total"    name="totalPrice" prefix="$" type="number" value={form.totalPrice} onChange={onChange} error={errors.totalPrice} />
           <Input label="Fecha de compra" name="purchaseDate" type="date" value={form.purchaseDate} onChange={onChange} error={errors.purchaseDate} />
-          <Input label="Descripción"  name="description" value={form.description} onChange={onChange} error={errors.description} />
+          {/* Descripción: TextArea (ancho de input, alto fijo) */}
+          <TextArea label="Descripción" name="description" value={form.description} onChange={onChange} error={errors.description} />
 
           <div className="flex items-center justify-center gap-4 mt-4 w-full">
             <IconButton className="items-center shrink-0" ariaLabel="Ver ficha técnica" onClick={openSheet}>
               <FileText size={48} className="sm:w-20 sm:h-20" />
             </IconButton>
             <FileInput
-              className="h-24 w-24 sm:h-28 sm:w-28 shrink-0"
+              className="w-24 h-24"
               accept="application/pdf,.pdf,application/vnd.ms-excel,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx"
               multiple={false}
               value={techSheetFile}
               onChange={onTechSheetChange}
             >
-              Cargar
+              Cargar ficha
             </FileInput>
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-between mt-6 gap-4 sm:pl-24 pr-20 sm:pr-24">
-        <Button
-          variant="toggle"
-          activeLabel="Activo"
-          inactiveLabel="Inactivo"
-          checked={isActive}
-          onClick={onToggle}
-          disabled={toggling}
-        />
+      <div className="flex items-center justify-end mt-6 gap-4 pr-20 sm:pr-24">
+        <CancelButton disabled={saving} />
         <Button
           variant="primary"
           className="gap-2 shrink-0"

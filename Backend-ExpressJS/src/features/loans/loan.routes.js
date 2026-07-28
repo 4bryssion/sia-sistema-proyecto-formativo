@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { loanController } from './loan.controller.js';
 import { validate, createLoanSchema, updateLoanSchema, signLoanSchema } from './loan.validator.js';
 import { authenticateToken } from '../../middleware/auth.middleware.js';
+import { requirePermission } from '../../middleware/permission.middleware.js';
 
 const router = Router();
 
@@ -10,12 +11,12 @@ const router = Router();
 router.get('/sign',  loanController.getSignatureInfo);
 router.post('/sign', validate(signLoanSchema), loanController.sign);
 
-router.get('/',                     authenticateToken, loanController.getAll);
-router.get('/:id',                  authenticateToken, loanController.getById);
-router.post('/',                    authenticateToken, validate(createLoanSchema), loanController.create);
-router.put('/:id',                  authenticateToken, validate(updateLoanSchema), loanController.update);
-router.patch('/:id/toggle',         authenticateToken, loanController.toggle);
-router.post('/:id/resend-signatures', authenticateToken, loanController.resendSignatures);
+router.get('/',                     authenticateToken, requirePermission('list_loans'), loanController.getAll);
+router.get('/:id',                  authenticateToken, requirePermission('list_loans'), loanController.getById);
+router.post('/',                    authenticateToken, requirePermission('create_loan'), validate(createLoanSchema), loanController.create);
+router.put('/:id',                  authenticateToken, requirePermission('update_loan'), validate(updateLoanSchema), loanController.update);
+router.patch('/:id/toggle',         authenticateToken, requirePermission('toggle_loan'), loanController.toggle);
+router.post('/:id/resend-signatures', authenticateToken, requirePermission('update_loan'), loanController.resendSignatures);
 
 router.use((err, req, res, next) => {
   if (err.message && !err.code) {

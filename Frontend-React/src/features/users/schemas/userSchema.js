@@ -14,12 +14,16 @@ export const userSchema = z
 
     userDocumentNumber: z.string().min(5, "Número inválido").max(20, "Demasiado largo"),
 
+    // Instructor de planta / administrador: la fecha de finalización es OPCIONAL.
+    // La obligatoriedad se valida en el refine final según isStaffInstructor.
+    isStaffInstructor: z.boolean().optional(),
+
     userEndDate: z
       .string()
-      .min(1, "La fecha es obligatoria")
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Formato YYYY-MM-DD")
       // Hoy es válido; anteriores no
-      .refine((v) => v >= todayLocalISO(), "La fecha de finalización no puede ser anterior a hoy"),
+      .refine((v) => v >= todayLocalISO(), "La fecha de finalización no puede ser anterior a hoy")
+      .or(z.literal("")),
 
     userEmail: z.string().email("Correo personal inválido"),
 
@@ -45,4 +49,9 @@ export const userSchema = z
   .refine(
     (d) => !d.userEmailInstitutional || d.userEmailInstitutional !== d.userEmail,
     { message: "El correo institucional no puede ser igual al personal", path: ["userEmailInstitutional"] }
-  );
+  )
+  // Solo es obligatoria si NO es instructor de planta
+  .refine((d) => d.isStaffInstructor || (d.userEndDate && d.userEndDate !== ""), {
+    message: "La fecha es obligatoria",
+    path: ["userEndDate"],
+  });

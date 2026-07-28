@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Button, Input } from "@/shared";
+import { Button, Input, Alert } from "@/shared";
 import { brandSchema } from "../schemas/brandSchema.js";
 import brandService from "../services/brandService.js";
 
@@ -28,10 +28,13 @@ export default function EditBrandPage({ brand, isOpen, onClose, onSave }) {
     setSaving(true);
     try {
       await brandService.update(brand.id, result.data);
+      Alert.success("Marca actualizada");
       onSave?.();
       onClose?.();
     } catch (err) {
-      setError(err.response?.data?.error ?? "Error al actualizar la marca");
+      const msg = err.response?.data?.error ?? "Error al actualizar la marca";
+      Alert.error("Error al actualizar la marca", msg);
+      setError(msg);
     } finally {
       setSaving(false);
     }

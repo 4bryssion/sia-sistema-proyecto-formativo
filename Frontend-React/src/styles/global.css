@@ -60,6 +60,76 @@
 
 }
 
+/* ESTILOS DE SWEETALERT (Alert de shared/components/utils/alert.js) */
+/* !important: se priorizan los estilos propios sobre los default de sweetalert
+   (evitar !important en general, pero para librerías de terceros es adecuado) */
+@layer utilities {
+    .swal-popup {
+        background: var(--semantic-background) !important;
+        border-radius: 1rem !important;
+        font-family: var(--main-font);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1) !important;
+    }
+    .swal-title {
+        color: var(--semantic-text-primary) !important;
+        font-size: var(--semantic-font-size-h3) !important;
+        font-weight: var(--semantic-font-weight-heading) !important;
+    }
+    .swal-content {
+        color: var(--semantic-text-secondary) !important;
+        font-size: var(--semantic-font-size-body) !important;
+    }
+    .swal-btn-confirm {
+        background: var(--semantic-button-primary) !important;
+        color: var(--semantic-text-inverse) !important;
+        border-radius: 2rem !important;
+        padding: 0.5rem 2rem !important;
+        font-size: var(--semantic-font-size-body) !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+        border: 2px solid transparent !important;
+    }
+    .swal-btn-confirm:hover {
+        background: var(--semantic-button-primary-hover) !important;
+    }
+    .swal-btn-cancel {
+        background: var(--semantic-button-secundary) !important;
+        color: var(--semantic-text-inverse) !important;
+        border-radius: 2rem !important;
+        padding: 0.5rem 2rem !important;
+        font-size: var(--semantic-font-size-body) !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+        border: 2px solid transparent !important;
+    }
+    .swal-btn-cancel:hover {
+        background: var(--semantic-button-secundary-hover) !important;
+    }
+    .swal-actions {
+        gap: 2rem !important;
+    }
+    /* Icono custom (triángulo de warning): sin borde circular default de swal */
+    .swal-icon-plain {
+        border: none !important;
+        background: transparent !important;
+    }
+    /* Barra de progreso del auto-cierre (visual de que se está cerrando).
+       overflow-hidden + border-radius en el contenedor: sin esto la barra se
+       desbordaba por las esquinas inferiores redondeadas del popup */
+    .swal-popup {
+        overflow: hidden !important;
+    }
+    .swal2-timer-progress-bar-container {
+        border-bottom-left-radius: 1rem !important;
+        border-bottom-right-radius: 1rem !important;
+        overflow: hidden !important;
+        height: 0.25rem !important;
+    }
+    .swal2-timer-progress-bar {
+        background: var(--semantic-button-primary) !important;
+    }
+}
+
 /* Control de pseudo elementos nativos del navegador */
 @layer base {
     input[type="search"]::-webkit-search-decoration,

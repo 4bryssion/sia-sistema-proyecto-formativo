@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared";
 import { getTopGroupName } from "../utils/topGroup";
 import { CreateTaskModal } from "@/features/tasks";
@@ -8,8 +9,14 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("es-CO") : "—");
 const fmtDateOnly = (d) => (d ? new Date(d).toLocaleDateString("es-CO", { timeZone: "UTC" }) : "—");
 
 export default function UserViewLeft({ user }) {
+  const navigate = useNavigate();
   const fullName = `${user?.userFirstName ?? ""} ${user?.userLastName ?? ""}`.trim();
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+
+  // Perfil propio (llegada vía "Mi perfil" del Navbar): en vez de asignar tarea,
+  // se ofrece ver las tareas propias. El user autenticado viene de sessionStorage
+  const ownId = JSON.parse(sessionStorage.getItem("user") ?? "null")?.id;
+  const isOwnProfile = ownId != null && Number(user?.id) === Number(ownId);
 
   return (
     <div className="font-main text-text-inverse space-y-6 grid sm:flex sm:space-y-0 sm:gap-6 sm:items-center sm:justify-evenly 1400:grid 1400:h-full">
@@ -38,9 +45,18 @@ export default function UserViewLeft({ user }) {
       </div>
 
       <div className="lg:justify-self-center pl-4">
-        <Button variant="primary" onClick={() => setIsTaskModalOpen(true)}>
-          Asignar Tarea
-        </Button>
+        {isOwnProfile ? (
+          <Button
+            variant="primary"
+            onClick={() => navigate(`/dashboard/tasks?userId=${user.id}`)}
+          >
+            Ver mis tareas
+          </Button>
+        ) : (
+          <Button variant="primary" onClick={() => setIsTaskModalOpen(true)}>
+            Asignar Tarea
+          </Button>
+        )}
       </div>
 
       {/* Modal de crear tarea con el usuario visualizado preseleccionado y bloqueado */}

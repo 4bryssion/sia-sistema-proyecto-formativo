@@ -42,6 +42,14 @@ export const accessController = {
   },
 
   // Usa req.user.id del token (no un userId de URL) — responde { permissionCode, granted }
+  // Permisos efectivos del usuario autenticado (para el Permission Gate del frontend)
+  async myPermissions(req, res, next) {
+    try {
+      const permissions = await accessService.getEffectivePermissions(Number(req.user.id));
+      res.json({ permissions });
+    } catch (err) { next(err); }
+  },
+
   async checkPermission(req, res, next) {
     try {
       const granted = await accessService.hasPermission(Number(req.user.id), req.params.permissionCode);

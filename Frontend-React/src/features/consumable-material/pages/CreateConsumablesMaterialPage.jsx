@@ -18,6 +18,7 @@ export default function CreateConsumablesMaterialPage(){
             className="
                 1400:min-h-[calc(100vh-4rem)]
                 1400:flex 1400:flex-col 1400:justify-center 1400:relative pb-4
+                1400:pt-16
             "
         >
             {/* Fondo con imagen */}

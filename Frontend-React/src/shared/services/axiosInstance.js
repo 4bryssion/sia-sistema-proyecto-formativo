@@ -3,6 +3,7 @@
 // Auth usa fetch nativo — no importar este archivo desde authService.js.
 
 import axios from "axios";
+import { Alert } from "../components/utils/alert.js";
 import { logout } from "@/features/auth/services/logoutService";
 
 const api = axios.create({
@@ -21,6 +22,14 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // 403: el backend rechazó por falta de permisos (autorización real del servidor)
+    if (error.response?.status === 403) {
+      Alert.error(
+        "Acción no permitida",
+        error.response?.data?.error ?? "No tienes permisos para realizar esta acción."
+      );
+    }
+
     if (error.response?.status === 401) {
       logout();                        // Limpia sessionStorage["token"]
       window.location.href = "/auth"; // Redirige y recarga (limpia estado React)

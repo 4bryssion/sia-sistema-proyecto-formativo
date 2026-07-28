@@ -45,8 +45,8 @@ export default function ConsumableMaterialViewRight({ id }) {
         <div className="grid gap-6 justify-items-center lg:h-max">
           <Input label="Placa SENA"            value={material.senaPlate ?? "—"}      readOnly />
           <Input label="Cantidad"              value={material.quantity ?? "—"}       readOnly />
-          <Input label="Valor unitario"        value={material.unitPrice}             readOnly />
-          <Input label="Valor total"           value={material.totalPrice}            readOnly />
+          <Input label="Valor unitario"        value={material.unitPrice}             prefix="$" readOnly />
+          <Input label="Valor total"           value={material.totalPrice}            prefix="$" readOnly />
           {/* Descripción: TextArea (ancho de input, alto fijo 152px) */}
           <TextArea label="Descripción" value={material.description} readOnly />
         </div>
