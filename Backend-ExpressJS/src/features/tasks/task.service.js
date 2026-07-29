@@ -1,4 +1,5 @@
 import { taskRepository } from './task.repository.js';
+import { notify } from '../notifications/notification.service.js';
 
 // Medianoche de hoy (para comparar fechas sin hora)
 const startOfToday = () => {
@@ -39,7 +40,13 @@ export const taskService = {
       userId: Number(bodyData.userId),
       endDate,
     };
-    return taskRepository.create(data);
+    const created = await taskRepository.create(data);
+    notify({
+      title: 'Tarea asignada',
+      description: `Se asignó la tarea "${created.taskName}" al usuario #${created.userId}.`,
+      module: 'tasks',
+    });
+    return created;
   },
 
   async update(id, bodyData) {
@@ -60,11 +67,24 @@ export const taskService = {
       data.endDate = endDate;
     }
 
-    return taskRepository.update(id, data);
+    const updated = await taskRepository.update(id, data);
+    notify({
+      title: 'Tarea modificada',
+      description: `Se actualizó la tarea "${updated.taskName}" (estado: ${updated.status}).`,
+      module: 'tasks',
+    });
+    return updated;
   },
 
   async toggle(id) {
     const record = await taskService.getById(id);
-    return taskRepository.toggle(id, !record.isActive);
+    const updated = await taskRepository.toggle(id, !record.isActive);
+    notify({
+      title: updated.isActive ? 'Tarea activada' : 'Tarea desactivada',
+      description: `"${updated.taskName}" quedó ${updated.isActive ? 'activa' : 'inactiva'}.`,
+      severity: updated.isActive ? 'Informativa' : 'Advertencia',
+      module: 'tasks',
+    });
+    return updated;
   },
 };

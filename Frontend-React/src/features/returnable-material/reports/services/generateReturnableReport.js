@@ -1,6 +1,9 @@
+// Orquesta el reporte de materiales devolutivos. La generación del archivo (y su
+// encabezado con sistema, fecha/hora, usuario y totales) la hace el generador
+// compartido: ver shared/reports/generateReport.
+
 import { buildReportDataset } from "../utils/buildReportDataset";
-import { generateExcelReport } from "./generateExcelReport";
-import { generatePdfReport } from "./generatePdfReport";
+import { generateReport } from "@/shared/reports/generateReport";
 
 export function generateReturnableReport({
   materials,
@@ -8,6 +11,7 @@ export function generateReturnableReport({
   selectedFields,
   scope,
   documentNumber,
+  statusLabel,
 }) {
   const { headers, rows } = buildReportDataset({
     returnableMaterials: materials,
@@ -16,26 +20,21 @@ export function generateReturnableReport({
     placa_sena: documentNumber,
   });
 
-  if (!rows.length) {
-    alert("No hay datos para generar el reporte.");
-    return;
-  }
-
-  const timestamp = new Date().toISOString().slice(0, 10);
-
-  if (format === "excel") {
-    generateExcelReport({
-      headers,
-      rows,
-      fileName: `returnableMaterials-report-${timestamp}.xlsx`,
-    });
-  }
-
-  if (format === "pdf") {
-    generatePdfReport({
-      headers,
-      rows,
-      fileName: `returnableMaterials-report-${timestamp}.pdf`,
-    });
-  }
+  return generateReport({
+    format,
+    title: "Reporte de materiales devolutivos",
+    fileBase: "materiales-devolutivos",
+    sheetName: "Devolutivos",
+    headers,
+    rows,
+    filters: [
+      { label: "Estado del registro", value: statusLabel },
+      {
+        label: "Alcance",
+        value: scope === "placa_sena" && documentNumber
+          ? `Material con placa SENA ${documentNumber}`
+          : "Todos los materiales listados",
+      },
+    ],
+  });
 }

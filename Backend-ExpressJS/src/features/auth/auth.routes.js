@@ -45,11 +45,13 @@ router.post('/verify-reset-code', verifyCodeLimiter, validate(verifyResetCodeSch
 // No lleva limiter: el resetTicket firmado ya no es adivinable por fuerza bruta
 router.post('/reset-password', validate(resetPasswordSchema), authController.resetPassword);
 
-// Handler local: intercepta errores 401 de authService antes del handler global.
-// Errores de Prisma u otros sin statusCode 401 pasan al handler global con next(err).
+// Handler local: intercepta los errores con statusCode propio de authService
+// (401 credenciales, 409 sesión ya iniciada) antes del handler global, que
+// respondería 400 para todos. Los errores de Prisma u otros sin statusCode
+// pasan al handler global con next(err).
 router.use((err, req, res, next) => {
-  if (err.statusCode === 401) {
-    return res.status(401).json({ error: err.message });
+  if (err.statusCode) {
+    return res.status(err.statusCode).json({ error: err.message });
   }
   next(err);
 });

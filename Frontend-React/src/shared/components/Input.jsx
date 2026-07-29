@@ -1,3 +1,7 @@
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { IconButton } from "./IconButton";
+
 export default function Input({
     label,
     type = "text",
@@ -8,12 +12,30 @@ export default function Input({
     // Prefijo visual fijo (ej. "$" para precios): se superpone dentro del campo y
     // desplaza el texto; NO forma parte del value (el dato sigue siendo numérico puro)
     prefix,
+    // revealable: en type="password" agrega el IconButton de ojo para mostrar/ocultar.
+    // Se puede apagar (revealable={false}) donde no se quiera dar esa opción.
+    revealable = true,
+    // Ancho del campo. Es una prop y no algo que se sobrescriba con className
+    // porque dos utilidades de max-width en el mismo elemento tienen la misma
+    // especificidad: cuál gana lo decide el orden del CSS generado, no el del
+    // atributo. El tope de 320px arranca en md porque la mayoría de formularios
+    // pasa a varias columnas ahí; los que reparten más tarde (crear usuario, que
+    // lo hace en lg) pasan su propio valor.
+    widthClass = "w-full md:max-w-[320px]",
     ...props
 }){
+    // Solo aplica al campo censurado; `type` sigue siendo la fuente de verdad
+    const isPassword = type === "password";
+    const canReveal = isPassword && revealable && !props.disabled && !props.readOnly;
+    const [revealed, setRevealed] = useState(false);
+
+    // El type efectivo cambia a "text" mientras el usuario decide ver la contraseña
+    const inputType = isPassword && revealed ? "text" : type;
+
     // Cuerpo de la función
     return(
         // Contenedor del input que se exporta con label, cuerpo y feedback meesage
-        <div className={`w-full md:max-w-[320px] ${className}`}>
+        <div className={`${widthClass} ${className}`}>
 
             {/* Label */}
             {label && (
@@ -25,11 +47,12 @@ export default function Input({
                         place-self-start
                         font-secondary
                         
-                        ${error ? "text-red-800" : "text-text-primary"}
+                        ${error ? "text-error" : "text-text-primary"}
                     `}
                 >
                     {label}
-                    {required && <span className="text-error ml-0.5" aria-hidden="true">*</span>}
+                    {/* Asterisco de obligatorio en verde primario (token --color-required) */}
+                    {required && <span className="text-required font-bold ml-0.5" aria-hidden="true">*</span>}
                 </label>
             )}
 
@@ -60,7 +83,7 @@ export default function Input({
 
                 {/* Área visual del input */}
                 <input
-                    type={type}
+                    type={inputType}
                     className={`
                         relative
                         w-full
@@ -68,7 +91,8 @@ export default function Input({
                         rounded-md
                         border
                         border-border
-                        ${prefix ? "pl-8 pr-4" : "px-4"}
+                        ${prefix ? "pl-8" : "pl-4"}
+                        ${canReveal ? "pr-12" : "pr-4"}
                         text-base
                         font-secondary
                         
@@ -79,7 +103,7 @@ export default function Input({
                         focus:ring-1
                         focus:ring-focus-ring
 
-                        ${error ? "border-red-800" : "border border-border"}
+                        ${error ? "border-error" : "border border-border"}
                     `}
                         {...props}
                 />
@@ -102,6 +126,22 @@ export default function Input({
                     >
                         {prefix}
                     </span>
+                )}
+
+                {/* Mostrar/ocultar contraseña. z-20 para quedar por encima del overlay
+                    invisible de foco (que es el primer hijo y ocupa todo el contenedor);
+                    sin eso el clic nunca llegaría al botón */}
+                {canReveal && (
+                    <IconButton
+                        className="absolute right-2 z-20 text-text-primary"
+                        hitSize={40}
+                        iconSize={20}
+                        ariaLabel={revealed ? "Ocultar contraseña" : "Mostrar contraseña"}
+                        onClick={() => setRevealed((prev) => !prev)}
+                        tabIndex={-1}
+                    >
+                        {revealed ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </IconButton>
                 )}
 
             </div>

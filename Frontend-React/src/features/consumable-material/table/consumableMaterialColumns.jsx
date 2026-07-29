@@ -1,65 +1,13 @@
-import { Switch, Dropdown, DropdownTrigger, DropdownContent, DropdownItem, Alert } from "@/shared";
-import { ListFilter } from "lucide-react";
+import { Switch, Alert } from "@/shared";
 import ConsumableMaterialRowActions from "../components/ConsumableMaterialRowActions";
 import consumableMaterialService from "../services/consumableMaterialService";
 import { getStatusLabel } from "../utils/statusLabel";
 
-// Estados disponibles para el filtro del header (mismo catálogo que statusLabel)
-const STATUS_OPTIONS = [
-  "Disponible",
-  "No_disponible",
-  "Mantenimiento",
-  "En_prestamo",
-  "Traslado",
-  "Baja",
-];
-
-// Header de "Estado" con icono de filtro: usa el Dropdown compartido (mismo de
-// row-actions y navbar). Su DropdownContent se renderiza en portal con position
-// fixed, por lo que se superpone a la tabla sin romperla al abrirse.
-function StatusFilterHeader({ column }) {
-  const current = column.getFilterValue();
-
-  return (
-    <Dropdown>
-      <DropdownTrigger>
-        <button
-          type="button"
-          className="flex items-center gap-1 cursor-pointer hover:opacity-70"
-          aria-label="Filtrar por estado"
-        >
-          Estado
-          <ListFilter size={16} className={current ? "text-primary" : ""} />
-        </button>
-      </DropdownTrigger>
-
-      {/* w-48 fijo: sin él, el menú del portal se estiraba demasiado dentro del header */}
-      <DropdownContent className="w-48">
-        <DropdownItem
-          onClick={() => column.setFilterValue(undefined)}
-          className={!current ? "font-semibold" : ""}
-        >
-          Todos
-        </DropdownItem>
-        {STATUS_OPTIONS.map((s) => (
-          <DropdownItem
-            key={s}
-            onClick={() => column.setFilterValue(s)}
-            className={current === s ? "font-semibold" : ""}
-          >
-            {getStatusLabel(s)}
-          </DropdownItem>
-        ))}
-      </DropdownContent>
-    </Dropdown>
-  );
-}
-
-export const consumableMaterialColumns = (refetch, can = () => true) => [
-  // {
-  //   accessorKey: "id",
-  //   header: "ID",
-  // },
+// onView / onEdit: abren los modales de ListConsumableMaterialPage. Antes
+// estas acciones navegaban a /view/consumable-materials/:id, rutas que ya no existen.
+export const consumableMaterialColumns = (refetch, can = () => true, onView, onEdit) => [
+  // Sin columna de ID: el registro se identifica por su nombre; el id solo
+  // viaja internamente para abrir el modal o llamar al servicio.
   {
     accessorKey: "materialName",
     header: "Nombre",
@@ -69,13 +17,9 @@ export const consumableMaterialColumns = (refetch, can = () => true) => [
     cell: ({ row }) => {
       const consumable = row.original;
 
-      const handleDoubleClick = () => {
-        window.location.href = `/view/consumable-materials/${consumable.materialName}`;
-      };
-
       return (
         <span
-          onDoubleClick={handleDoubleClick}
+          onDoubleClick={() => onView?.(consumable.id)}
           className="cursor-pointer hover:underline"
         >
           {consumable.materialName}
@@ -104,10 +48,10 @@ export const consumableMaterialColumns = (refetch, can = () => true) => [
   },
   {
     id: "status",
-    // accessorFn + filterFn "equals" habilitan el filtro por columna del header
+    // El filtro por estado vive ahora en la barra de la tabla (FilterMenu),
+    // no en la cabecera: ver ListConsumableMaterialPage
     accessorFn: (row) => row.status,
-    filterFn: "equals",
-    header: ({ column }) => <StatusFilterHeader column={column} />,
+    header: "Estado",
     cell: ({ row }) => getStatusLabel(row.original.status),
   },
   {
@@ -138,7 +82,7 @@ export const consumableMaterialColumns = (refetch, can = () => true) => [
   {
     id: "actions",
     cell: ({ row }) => (
-      <ConsumableMaterialRowActions consumableMaterial={row.original} />
+      <ConsumableMaterialRowActions consumableMaterial={row.original} onView={onView} onEdit={onEdit} />
     ),
   },
 ];

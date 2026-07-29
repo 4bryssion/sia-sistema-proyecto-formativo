@@ -65,7 +65,7 @@ const SearchField = forwardRef(
                     fullWidth && "w-full",
                     disabled && "opacity-60 pointer-events-none",
                     error
-                        ? "border-red-500 focus-within:ring-2 focus-within:ring-red-500"
+                        ? "border-error focus-within:ring-2 focus-within:ring-error"
                         : "focus-within:ring-2 focus-within:ring-text-primary",
                     className,
                 )}

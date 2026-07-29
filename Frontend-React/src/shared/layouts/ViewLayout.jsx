@@ -5,8 +5,6 @@ import {
     IconButton 
 } from "@/shared";
 
-// import bg from "@/assets/images/background-claro.jpg"
-
 
 export default function ViewLayout(){
 

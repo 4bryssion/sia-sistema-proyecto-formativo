@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DataTable, Button, IconButton, usePermissions } from "@/shared";
+import { DataTable, Button, IconButton } from "@/shared";
 import { groupColumns } from "../table/groupColumns";
 import { useGroups } from "../hooks/useGroups";
 import { useNavigate } from "react-router-dom";
@@ -7,11 +7,10 @@ import { Undo2 } from "lucide-react";
 import CreateGroupModal from "./CreateGroupModal.jsx";
 
 export default function ListGroupPage() {
-  const { can } = usePermissions();
   const navigate = useNavigate();
   const { groups, loading, error, refetch } = useGroups();
-  // El grupo SuperAdmin no aparece como dato en ningún panel
-  const visibleGroups = groups.filter((g) => g.groupName !== "SuperAdmin");
+  // El grupo SuperAdmin ya viene excluido por el backend (systemIdentities.js)
+  const visibleGroups = groups;
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (

@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { getTopGroupName } from "@/features/users/utils/topGroup";
 import { IconButton, Alert } from "@/shared";
 import { Undo2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -38,9 +37,10 @@ export default function AccessPage() {
       api.get("/permissions").then((r) => r.data),
     ])
       .then(([groups, users, permissions]) => {
-        // El SuperAdmin (grupo y usuarios) no aparece en el panel de administración
-        setAllGroups(groups.filter((g) => g.groupName !== "SuperAdmin"));
-        setAllUsers(users.filter((u) => getTopGroupName(u) !== "SuperAdmin"));
+        // El SuperAdmin (grupo y usuarios) ya viene excluido por el backend
+        // (systemIdentities.js): no hace falta filtrarlo aquí
+        setAllGroups(groups);
+        setAllUsers(users);
         setAllPermissions(permissions);
       })
       .catch(() => setError("Error cargando catálogos"));
@@ -199,7 +199,7 @@ export default function AccessPage() {
       </div>
 
       {error && (
-        <p className="mb-2 text-sm text-red-600 px-4">{error}</p>
+        <p className="mb-2 text-sm text-error px-4">{error}</p>
       )}
 
       <div className="p-6 grid 1400:grid-cols-[380px_1fr] 1400:h-[calc(100vh-160px)]">

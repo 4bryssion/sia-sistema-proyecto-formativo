@@ -1,11 +1,12 @@
+// Paso 3 de 3 del flujo de recuperación: establecer la nueva contraseña.
+// Comparte el marco visual con los pasos 1 y 2 a través de AuthCard.
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import logo from "@/assets/logos/logo-sena-verde.png";
-import bg from "@/assets/images/background-oscuro.jpg";
 import { Input, Button, Alert } from "@/shared";
 import { resetPasswordSchema } from "../schemas/resetPasswordSchema.js";
 import { resetPassword } from "../services/authService.js";
-import { Undo2 } from "lucide-react";
+import AuthCard from "./AuthCard.jsx";
 
 export default function ResetPasswordForm() {
 
@@ -76,83 +77,54 @@ export default function ResetPasswordForm() {
     };
 
     return (
-        // Mismo layout que RecoverPasswordForm — fondo, logo, botón volver, tarjeta blanca
-        <div
-            className="relative flex min-h-screen items-center justify-center"
+        <AuthCard
+            title="Nueva Contraseña"
+            description="¡Ingrese su nueva contraseña para finalizar la recuperación!"
+            backTo="/auth/recover-password"
+            onSubmit={handleSubmit}
         >
-            {/* Fondo con imagen */}
-            <div
-                className="absolute inset-0 -z-10 bg-cover bg-center"
-                style={{ backgroundImage: `url(${bg})` }}
-            />
+            {/* Inputs — el ojo de mostrar/ocultar lo aporta el propio Input al ser type="password" */}
+            <div className="flex flex-col gap-6 w-[320px]">
+                <Input
+                    label="Nueva contraseña"
+                    name="newPassword"
+                    placeholder="Nueva contraseña"
+                    type="password"
+                    required
+                    value={formData.newPassword}
+                    onChange={handleChange}
+                    error={errors.newPassword}
+                />
+                <Input
+                    label="Confirmar contraseña"
+                    name="confirmPassword"
+                    placeholder="Confirmar contraseña"
+                    type="password"
+                    required
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    error={errors.confirmPassword}
+                />
 
-            {/* Botón volver */}
-            <button
-                onClick={() => navigate("/auth/recover-password")}
-                className="absolute top-6 left-6 flex items-center gap-2 text-white hover:opacity-80"
-            >
-                <Undo2 strokeWidth={2.8} />
-            </button>
+                {errors.form && (
+                    <p className="font-secondary text-caption text-error text-center">
+                        {errors.form}
+                    </p>
+                )}
 
-            <form
-                className="grid gap-4 mx-6 p-8 sm:p-12 justify-items-center max-w-max bg-white border rounded-md my-8"
-                onSubmit={handleSubmit}
-            >
-                {/* Logo SENA */}
-                <img src={logo} alt="logo" className="h-24" />
+                {successMessage && (
+                    <p className="font-secondary text-caption text-center text-(--color-primary-950)">
+                        {successMessage}
+                    </p>
+                )}
+            </div>
 
-                {/* Título */}
-                <h1 className="text-h3 font-main font-bold">
-                    Nueva Contraseña
-                </h1>
-
-                {/* Descripción */}
-                <p className="font-secondary text-body text-center max-w-xs">
-                    Ingresa tu nueva contraseña para finalizar la recuperación.
-                </p>
-
-                {/* Inputs */}
-                <div className="flex flex-col gap-6 w-[320px]">
-                    <Input
-                        label="Nueva contraseña"
-                        name="newPassword"
-                        placeholder="Nueva contraseña"
-                        type="password"
-                        value={formData.newPassword}
-                        onChange={handleChange}
-                        error={errors.newPassword}
-                    />
-                    <Input
-                        label="Confirmar contraseña"
-                        name="confirmPassword"
-                        placeholder="Confirmar contraseña"
-                        type="password"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        error={errors.confirmPassword}
-                    />
-
-                    {errors.form && (
-                        <p className="font-secondary text-caption text-error text-center">
-                            {errors.form}
-                        </p>
-                    )}
-
-                    {successMessage && (
-                        <p className="font-secondary text-caption text-center text-green-700">
-                            {successMessage}
-                        </p>
-                    )}
-                </div>
-
-                {/* Botón */}
-                <div className="flex items-center justify-center gap-6">
-                    <Button variant="primary" size="md" type="submit">
-                        Confirmar
-                    </Button>
-                </div>
-
-            </form>
-        </div>
+            {/* Botón */}
+            <div className="flex items-center justify-center gap-6">
+                <Button variant="primary" size="md" type="submit">
+                    Confirmar
+                </Button>
+            </div>
+        </AuthCard>
     );
 }

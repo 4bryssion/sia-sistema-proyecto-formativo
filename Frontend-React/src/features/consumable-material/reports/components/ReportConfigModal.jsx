@@ -21,7 +21,7 @@ import {
 
 
 // Componente modal para configuración de reportes de materiales consumibles
-export default function ReportConfigModal({ isOpen, onClose, materials = [] }) {
+export default function ReportConfigModal({ isOpen, onClose, materials = [], statusLabel }) {
     // Estado del formato de salida
     const [format, setFormat] = useState("pdf");
 
@@ -69,6 +69,7 @@ export default function ReportConfigModal({ isOpen, onClose, materials = [] }) {
             selectedFields,
             scope,
             documentNumber,
+            statusLabel,
         });
 
 

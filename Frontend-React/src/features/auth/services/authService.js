@@ -14,7 +14,12 @@ export async function login(userData) {
 
     if (!response.ok){
         const error = await response.json();
-        throw new Error(error.error || "Error login");
+        const err = new Error(error.error || "Error login");
+        // 409 = credenciales correctas pero ya hay una sesión abierta en otro
+        // navegador (sesión única, p45). El formulario lo distingue del 401 para
+        // mostrar una alerta distinta.
+        err.status = response.status;
+        throw err;
     }
 
     return response.json();

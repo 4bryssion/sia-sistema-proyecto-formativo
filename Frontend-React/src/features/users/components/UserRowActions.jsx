@@ -1,31 +1,14 @@
 import { Pencil, EllipsisVertical } from "lucide-react";
-// Hook de React Router para navegar programáticamente entre rutas
-import { useNavigate } from "react-router-dom";
 
 import { Dropdown, DropdownTrigger, DropdownItem, DropdownContent, usePermissions } from "@/shared";
 
-
-// Componente que renderiza las acciones de cada fila de usuarios
-// Recibe como prop el objeto users
-export default function UserRowActions({ users }) {
+// Acciones de cada fila de usuarios.
+//
+// Ver y editar ya no navegan a una página: abren los modales que ListUserPage
+// mantiene en una sola instancia. Por eso este componente recibe onView/onEdit
+// y ya no usa useNavigate.
+export default function UserRowActions({ users, onView, onEdit }) {
   const { can } = usePermissions();
-
-    // Hook que permite redirigir a otra ruta desde código
-    const navigate = useNavigate();
-
-
-    // Acción para editar los ususarios
-    // Redirige a la página de edición usando el id los usuarios
-    
-
-    const handleView = () => {
-        navigate(`/view/users/${users.id}`)
-    };
-
-    const handleEdit = () => {
-        navigate(`/view/users/${users.id}/edit`)
-    };
-
 
     return (
         // Contenedor de los botones de acciones
@@ -34,8 +17,9 @@ export default function UserRowActions({ users }) {
             {/* Botón editar */}
             {can("edit_user") && (
             <button
-                onClick={handleEdit} // Ejecuta la navegación a la página de edición
-                className="p-1 rounded hover:bg-gray-900"
+                onClick={() => onEdit?.(users.id)}
+                aria-label="Editar usuario"
+                className="p-1 rounded hover:bg-gray-900 cursor-pointer"
             >
                 <Pencil size={16} /> {/* Icono de editar */}
             </button>
@@ -45,19 +29,15 @@ export default function UserRowActions({ users }) {
             <Dropdown>
 
             <DropdownTrigger>
-                <button className="p-1 rounded hover:bg-gray-900">
+                <button className="p-1 rounded hover:bg-gray-900 cursor-pointer" aria-label="Más opciones">
                     <EllipsisVertical size={16} /> {/* Icono de opciones */}
                 </button>
             </DropdownTrigger>
 
             <DropdownContent className="right-0">
-                <DropdownItem>
-                    <button onClick={handleView}>
-                        Visualizar Usuario
-                    </button>
+                <DropdownItem onClick={() => onView?.(users.id)}>
+                    Visualizar Usuario
                 </DropdownItem>
-                {/* <DropdownItem>Opción 2</DropdownItem>
-                <DropdownItem>Opción 3</DropdownItem> */}
             </DropdownContent>
 
             </Dropdown>
@@ -65,4 +45,3 @@ export default function UserRowActions({ users }) {
         </div>
     );
 }
-

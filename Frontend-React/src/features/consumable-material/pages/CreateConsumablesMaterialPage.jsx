@@ -5,8 +5,6 @@ import { IconButton } from "@/shared";
 import ConsumableMaterialRegisterForm 
 from "../components/ConsumableMaterialRegisterForm";
 
-// import formBg from "@/assets/images/background-claro.jpg"
-
 import { Undo2 } from "lucide-react";
 
 export default function CreateConsumablesMaterialPage(){

@@ -2,8 +2,7 @@ export { default as CreateConsumablesMaterialPage } from "./pages/CreateConsumab
 
 export { default as ListConsumableMaterialPage } from "./pages/ListConsumableMaterialPage";
 
-export { default as ViewConsumableMaterialPage } from "./pages/ViewConsumableMaterialPage";
+// Visualizar y editar dejaron de ser páginas: ahora son modales (jul-2026)
+export { default as ViewConsumableMaterialModal } from "./components/ViewConsumableMaterialModal";
 
-export { default as EditConsumibleMaterialPage } from "./pages/EditConsumibleMaterialPage";
-
-
+export { default as EditConsumableMaterialModal } from "./components/EditConsumableMaterialModal";

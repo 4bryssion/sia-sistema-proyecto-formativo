@@ -34,6 +34,8 @@ import loanReturnRoutes from './features/loan-returns/loanReturn.routes.js';
 import taskRoutes from './features/tasks/task.routes.js';
 // (P43) Notificaciones / logs del sistema
 import notificationRoutes from './features/notifications/notification.routes.js';
+// (P43) Contexto de petición: expone el id del usuario autor para las notificaciones
+import { requestContextMiddleware } from './middleware/requestContext.js';
 
 // ===============================================
 
@@ -52,6 +54,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
 
 // ===============================================
+
+app.use(requestContextMiddleware);
 
 app.use('/api/users', userRoutes);
 

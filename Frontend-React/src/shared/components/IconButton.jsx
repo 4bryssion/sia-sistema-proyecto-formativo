@@ -41,9 +41,20 @@ export const IconButton = React.forwardRef(function IconButton (
         `,
 
         primary: `
-            text-white 
-            hover:bg-blue-700 
+            text-white
+            hover:bg-blue-700
             focus-visible:ring-blue-500
+        `,
+
+        // Para superficies oscuras o de color (navbar): icono blanco y hover con
+        // velo translúcido, que funciona sobre cualquier punto del gradiente.
+        // Va como variante y no como className del consumidor porque dos
+        // utilidades de color de Tailwind con la misma especificidad se resuelven
+        // por el orden del CSS generado, no por el orden en el atributo class.
+        onColor: `
+            text-[var(--color-gray-900)]
+            hover:bg-white/20
+            focus-visible:ring-white
         `,
     }
 

@@ -11,14 +11,24 @@ import {
 // Hook de React para manejar estado
 import { useState } from "react"
 
-// Botón reutilizable del sistema de componentes
-import { Button } from "@/shared"
+// Botón y buscador reutilizables del sistema de componentes
+import { Button, SearchField } from "@/shared"
+
+// Gradiente de la cabecera: el mismo del Navbar pero con el azul (cuaternario)
+// predominando ~14% más (parada del color pasa de 49% a 63%).
+// Se declara como constante para que Navbar y tabla no se desincronicen por accidente.
+const HEADER_GRADIENT =
+  "linear-gradient(to right, var(--color-cuaternario-950) 63%, var(--color-quintinary-600) 100%)"
 
 // Componente reutilizable de tabla
 // Recibe:
 // - data: datos que se mostrarán
 // - columns: configuración de columnas
-export default function DataTable({ data, columns, className = "" }) {
+// toolbarExtra: contenido opcional que se coloca a la DERECHA del buscador
+// (filtros de la tabla). Es un slot y no una lista de filtros configurable
+// porque cada módulo filtra por campos distintos; así DataTable no necesita
+// saber nada del dominio.
+export default function DataTable({ data, columns, className = "", toolbarExtra }) {
 
   // ================== ESTADO DE PAGINACIÓN 
   // pageIndex → página actual
@@ -70,24 +80,36 @@ export default function DataTable({ data, columns, className = "" }) {
       {/* ================== TOOLBAR  */}
       {/* Barra superior con buscador y selector de filas */}
 
-      <div className="flex items-center justify-between gap-4">
+      {/* En pantallas pequeñas (360px) el buscador de 256px + el filtro + el
+          selector de filas no caben en una línea y desbordaban la tarjeta.
+          Se apilan hasta sm y solo desde ahí se reparten en una fila. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
 
         {/* ================== BUSCADOR  */}
-        {/* Filtra todas las columnas de la tabla */}
-        <input
-          type="text"
-          placeholder="Buscar..."
-          value={globalFilter ?? ""}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="border rounded px-3 py-2 w-64 font-secondary hover:bg-(--color-cuaternario-600)"
-        />
+        {/* Filtra todas las columnas de la tabla.
+            Se usa el componente SearchField del proyecto en vez de un <input> suelto.
+            SearchField emite el valor directo (no el evento), por eso setGlobalFilter
+            recibe `value` y no `e.target.value`: el filtro global de TanStack sigue
+            funcionando igual, incluido el botón de limpiar (que emite ""). */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
+          <SearchField
+            value={globalFilter ?? ""}
+            placeholder="Buscar..."
+            onChange={(value) => setGlobalFilter(value)}
+            onClear={() => setGlobalFilter("")}
+            className="w-full sm:w-64 font-secondary"
+          />
+
+          {/* Filtros propios del módulo, a la derecha del buscador */}
+          {toolbarExtra}
+        </div>
 
         {/* =============== SELECTOR DE FILAS  */}
         {/* Permite cambiar cuántas filas se muestran por página */}
         <select
           value={table.getState().pagination.pageSize}
           onChange={(e) => table.setPageSize(Number(e.target.value))}
-          className="border rounded px-2 py-2 font-secondary hover:bg-(--color-cuaternario-600) cursor-pointer"
+          className="w-full sm:w-auto shrink-0 border rounded px-2 py-2 font-secondary hover:bg-(--color-cuaternario-600) cursor-pointer"
         >
           {[5, 7, 10, 20, 50].map(size => (
             <option key={size} value={size}>
@@ -103,7 +125,7 @@ export default function DataTable({ data, columns, className = "" }) {
         <table className="w-full">
 
           {/* ================== CABECERA  */}
-          <thead className="bg-(--color-cuaternario-950) font-main">
+          <thead className="font-main" style={{ background: HEADER_GRADIENT }}>
 
             {/* TanStack agrupa cabeceras automáticamente */}
             {table.getHeaderGroups().map(headerGroup => (

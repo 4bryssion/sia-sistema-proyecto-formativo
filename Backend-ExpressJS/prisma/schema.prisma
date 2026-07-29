@@ -71,7 +71,11 @@ model User {
   userFirstName       String                 @map("user_first_name") @db.VarChar(100)
   userLastName        String                 @map("user_last_name") @db.VarChar(100)
   userDocumentNumber  String                 @unique @map("user_document_number") @db.VarChar(20)
-  userEndDate         DateTime               @map("user_end_date") @db.Date
+  // Opcional: los instructores de planta / administradores no tienen fecha de
+  // finalización de vínculo. Joi ya la aceptaba opcional y el frontend no la
+  // envía cuando se marca "Es instructor de planta"; la columna era la única
+  // que seguía exigiéndola (migración p44_user_end_date_nullable).
+  userEndDate         DateTime?              @map("user_end_date") @db.Date
   userEmail               String              @unique @map("user_email") @db.VarChar(150)
   userEmailInstitutional String?              @unique @map("user_email_institutional") @db.VarChar(150)
   userPhone           String                 @map("user_phone") @db.VarChar(15)
@@ -83,6 +87,14 @@ model User {
   userAccountType     AccountType            @default(Solidario) @map("user_account_type")
   createdAt           DateTime               @default(now()) @map("created_at")
   updatedAt           DateTime               @updatedAt @map("updated_at")
+  // Sesión única (p45): identificador (jti) del ÚNICO token válido del usuario.
+  // El JWT sigue siendo stateless en su firma, pero el jti se contrasta contra
+  // esta columna en cada petición: así una sesión abierta en otro navegador se
+  // detecta al iniciar sesión y una sesión reemplazada muere al instante.
+  // `activeSessionExpiresAt` evita el bloqueo permanente si el usuario cierra el
+  // navegador sin hacer logout: pasada esa fecha la sesión se considera libre.
+  activeSessionJti       String?             @map("active_session_jti") @db.VarChar(64)
+  activeSessionExpiresAt DateTime?           @map("active_session_expires_at")
   consumableMaterials ConsumableMaterial[]
   loanSignatures      LoanSignature[]
   tasks               Task[]
@@ -165,12 +177,30 @@ model ReturnableMaterial {
   categoryId         Int                @map("category_id")
   model              String             @db.VarChar(100)
   serial             String             @unique @db.VarChar(20)
-  technicalSheet     String             @map("technical_sheet")
+  // dimensions solo lo pide la categoría "Muebles y enseres"; para el resto
+  // queda null y no interfiere en la creación
   dimensions         String?            @db.VarChar(100)
   category           Category           @relation(fields: [categoryId], references: [id], map: "returnable_materials_category_id_fkey")
   consumableMaterial ConsumableMaterial @relation(fields: [id], references: [id], onDelete: Cascade, map: "returnable_materials_id_fkey")
+  // La ficha técnica dejó de ser una columna: son hasta 3 archivos (p46)
+  technicalSheets    ReturnableMaterialFile[]
 
   @@map("returnable_materials")
+}
+
+model ReturnableMaterialFile {
+  id         Int                @id @default(autoincrement())
+  materialId Int                @map("material_id")
+  fileUrl    String             @map("file_url") @db.VarChar(255)
+  fileName   String             @map("file_name") @db.VarChar(255)
+  mimeType   String             @map("mime_type") @db.VarChar(100)
+  // Orden elegido al arrastrar las previsualizaciones en el formulario
+  sortOrder  Int                @default(0) @map("sort_order")
+  created_at DateTime           @default(now())
+  material   ReturnableMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@index([materialId])
+  @@map("returnable_material_files")
 }
 
 model Loan {

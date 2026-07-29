@@ -36,6 +36,19 @@
     --color-focus-ring: var(--semantic-focus-ring);
     --color-focus-border: var(--semantic-focus-border);
 
+    /* =============== STATE / FORMULARIOS =============== */
+    /* Asterisco de campo obligatorio (Input, Select, TextArea, FileInput).
+       Se declara aquí porque sin la entrada en @theme la clase de Tailwind
+       no existe y el asterisco heredaba el color del label (negro). */
+    --color-required: var(--semantic-required);
+
+    /* Error de formulario. OJO: esta entrada faltaba, así que todas las clases
+       `text-error` del proyecto no existían en el CSS compilado y el mensaje de
+       error se mostraba con el color heredado (negro). */
+    --color-error: var(--semantic-error);
+    --color-warning: var(--semantic-warning);
+    --color-success: var(--semantic-succes);
+
     /* ============ TYPOGRAPHY ============== */
     --text-display: var(--semantic-font-size-display);
     --text-h1: var(--semantic-font-size-h1);

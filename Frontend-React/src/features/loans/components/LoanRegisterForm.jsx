@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { getTopGroupName } from "@/features/users/utils/topGroup";
 import { useNavigate } from "react-router-dom";
 import { Input, Button, Select, Alert } from "@/shared";
 import { loanSchema, todayLocalISO } from "../schemas/loanSchema.js";
@@ -35,8 +34,9 @@ export default function LoanRegisterForm() {
           consumableMaterialService.getAll("active"),
           returnableMaterialService.getAll("active").catch(() => []),
         ]);
+        // El SADMIN ya viene excluido por el backend (systemIdentities.js)
         setUserOptions(
-          users.filter((u) => getTopGroupName(u) !== "SuperAdmin").map((u) => ({ value: u.id, label: `${u.userFirstName} ${u.userLastName}` }))
+          users.map((u) => ({ value: u.id, label: `${u.userFirstName} ${u.userLastName}` }))
         );
         setMaterialOptions(buildMaterialOptions(consumables, returnables));
       } catch {

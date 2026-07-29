@@ -77,7 +77,10 @@ export const loanReturnService = {
     // (P43) Log del sistema
     notify({
       title: 'Retorno de préstamo registrado',
-      description: `Retorno del material ${data.materialId} del préstamo #${data.loanId}.`,
+      description: `Préstamo #${data.loanId}: material #${data.materialId} retornado`
+        + (data.remainingQuantity !== undefined && data.remainingQuantity !== null
+            ? ` (cantidad devuelta: ${data.remainingQuantity}).`
+            : (bodyData.materialStatus ? ` (estado del material: ${bodyData.materialStatus}).` : '.')),
       severity: 'Informativa',
       module: 'loan-returns',
     });
@@ -86,6 +89,13 @@ export const loanReturnService = {
 
   async toggle(id) {
     const record = await loanReturnService.getById(id);
-    return loanReturnRepository.toggle(id, !record.isActive);
+    const updated = await loanReturnRepository.toggle(id, !record.isActive);
+    notify({
+      title: updated.isActive ? 'Retorno reactivado' : 'Retorno anulado',
+      description: `El retorno #${id} quedó ${updated.isActive ? 'activo' : 'anulado'}.`,
+      severity: updated.isActive ? 'Informativa' : 'Advertencia',
+      module: 'loan-returns',
+    });
+    return updated;
   },
 };

@@ -22,25 +22,25 @@ const CARDS = [
     {
         codename: ["create_user", "edit_user"],
         icon: <UsersRound />,
-        title: "Gestión de usuarios:",
+        title: "Gestión de usuarios",
         to: "/dashboard/users",
     },
     {
         codename: "list_consumable_materials",
         icon: <Package />,
-        title: "Gestión de materiales consumibles:",
+        title: "Gestión de materiales consumibles",
         to: "/dashboard/consumable-materials",
     },
     {
         codename: "list_returnable_materials",
         icon: <RefreshCw />,
-        title: "Gestión de materiales devolutivos:",
+        title: "Gestión de materiales devolutivos",
         to: "/dashboard/returnable-materials",
     },
     {
         codename: "list_loans",
         icon: <HandshakeIcon />,
-        title: "Gestión de prestamos:",
+        title: "Gestión de préstamos",
         to: "/dashboard/loans",
     },
 ];

@@ -43,8 +43,11 @@ export const updateReturnableMaterialSchema = Joi.object({
   categoryId:     Joi.number().integer().positive(),
   model:          Joi.string().max(100),
   serial:         Joi.string().max(20),
-  technicalSheet: Joi.string().max(255).allow('', null),
   dimensions:     Joi.string().max(100).allow('', null),
+  // Orden final de las fichas técnicas, serializado como JSON porque un
+  // FormData no puede llevar un array. Mezcla ids ya guardados y referencias
+  // "new:<i>" a los archivos recién subidos; lo que NO aparezca se elimina.
+  sheetOrder:     Joi.string().max(255).allow('', null),
 }).min(1);
 
 export const validate = (schema) => (req, res, next) => {

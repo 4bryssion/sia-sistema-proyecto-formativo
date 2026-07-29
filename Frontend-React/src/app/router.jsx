@@ -24,6 +24,7 @@ import {
 // Módulo auth:
 import {
     RecoverPasswordForm,
+    VerifyCodeForm,
     AuthLoginForm,
     ResetPasswordForm
 
@@ -31,11 +32,10 @@ import {
 
 
 // Módulo users:
-import { 
-    ListUserPage, 
-    CreateUserPage,
-    ViewUserPage,
-    EditUserPage 
+// Visualizar y editar usuario ya no tienen ruta: son modales (jul-2026)
+import {
+    ListUserPage,
+    CreateUserPage
 
 } from "@/features/users";
 
@@ -48,19 +48,18 @@ import {
 
 
 // Módulo consumable-materials:
-import { 
-    ListConsumableMaterialPage, CreateConsumablesMaterialPage,
-    ViewConsumableMaterialPage , EditConsumibleMaterialPage
-    
+// Visualizar y editar material de consumo ya no tienen ruta: son modales (jul-2026)
+import {
+    ListConsumableMaterialPage, CreateConsumablesMaterialPage
+
 } from "@/features/consumable-material";
 
 
 // Módulo returnable-materials:
+// Visualizar y editar ya no tienen ruta: son modales que abre el listado
 import {
     ListReturnableMaterialPage,
     CreateReturnableMaterialPage,
-    ViewReturnableMaterialPage,
-    EditReturnableMaterialPage
 
 } from "@/features/returnable-material";
 
@@ -126,13 +125,20 @@ const router = createBrowserRouter([
             element: <AuthLoginForm />,
             }, 
 
-            //Ruta de recuperar contraseña
+            // Flujo de recuperación separado en 3 vistas (jul-2026):
+            // 1) pedir el código con el correo
             {
                 path: "recover-password",
                 element: <RecoverPasswordForm />,
             },
 
-            //Ruta de nueva contraseña (P39) — recibe resetTicket por router state
+            // 2) ingresar el código — recibe el correo por router state
+            {
+                path: "verify-code",
+                element: <VerifyCodeForm />,
+            },
+
+            // 3) nueva contraseña (P39) — recibe resetTicket por router state
             {
                 path: "reset-password",
                 element: <ResetPasswordForm />,
@@ -165,14 +171,6 @@ const router = createBrowserRouter([
             {
                 path: "users/create",
                 element: <RequirePermission codename="create_user"><CreateUserPage /></RequirePermission>,
-            },
-            {
-                path: "users/view",
-                element: <ViewUserPage />,
-            },
-            {
-                path: "users/edit",
-                element: <RequirePermission codename="edit_user"><EditUserPage /></RequirePermission>,
             },
             // Módulo tasks:
             {
@@ -247,16 +245,10 @@ const router = createBrowserRouter([
         path: "/view",
         element: <ProtectedRoute><PermissionsProvider><ViewLayout /></PermissionsProvider></ProtectedRoute>,
         children: [
-            // Módulo users:
-            {
-                path: "users/:id",
-                element: <ViewUserPage />,
+            // Módulo users: sin rutas de ver ni editar — ahora son modales
+            // (ViewUserModal / EditUserModal), abiertos desde la tabla y, en el
+            // caso de "Mi perfil", desde el propio Navbar.
 
-            },
-            {
-                path: "users/:id/edit",
-                element: <RequirePermission codename="edit_user"><EditUserPage /></RequirePermission>,
-            },
             // Módulo tasks:
             {
                 path: "tasks/:id",
@@ -268,24 +260,11 @@ const router = createBrowserRouter([
             },
 
             // Módulo consumable-materials:
-            {
-                path: "consumable-materials/:id",
-                element: <RequirePermission codename="list_consumable_materials"><ViewConsumableMaterialPage /></RequirePermission>,
-            },
-            {
-                path: "consumable-materials/:id/edit",
-                element: <RequirePermission codename="edit_consumable_material"><EditConsumibleMaterialPage /></RequirePermission>,
-            },
+            // Módulo consumable-materials: sin rutas de ver ni editar — son
+            // modales abiertos desde la tabla de listar
 
-            // Módulo returnable-materials:
-            {
-                path: "returnable-materials/:id",
-                element: <RequirePermission codename="list_returnable_materials"><ViewReturnableMaterialPage /></RequirePermission>,
-            },
-            {
-                path: "returnable-materials/:id/edit",
-                element: <RequirePermission codename="edit_returnable_material"><EditReturnableMaterialPage/></RequirePermission>,
-            },
+            // Módulo returnable-materials: sin rutas de ver ni editar — son
+            // modales abiertos desde la tabla de listar
 
             // Módulo loans:
             {

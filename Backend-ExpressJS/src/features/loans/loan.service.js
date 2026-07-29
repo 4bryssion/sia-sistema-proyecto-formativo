@@ -76,7 +76,6 @@ export const loanService = {
       description: `Préstamo #${loan.id} creado para el grupo ${loan.apprenticeGroup} (pendiente de firmas).`,
       severity: 'Informativa',
       module: 'loans',
-      userId: data.lenderId,
     });
     return loan;
   },
@@ -98,7 +97,14 @@ export const loanService = {
         if (err) throw new Error(err);
       }
     }
-    return loanRepository.toggle(id, !loan.isActive, lines);
+    const toggled= await loanRepository.toggle(id, !loan.isActive, lines);
+    notify({
+      title: toggled.isActive ? 'Préstamo reactivado' : 'Préstamo desactivado',
+      description: `Préstamo #${id} ${toggled.isActive ? 'reactivado (stock descontado nuevamente)' : 'desactivado (stock restaurado)'}.`,
+      severity: toggled.isActive ? 'Informativa' : 'Advertencia',
+      module: 'loans',
+    });
+    return toggled;
   },
 
   async update(id, data) {
@@ -125,7 +131,7 @@ export const loanService = {
       if (err) throw new Error(err);
     }
 
-    return loanRepository.update(id, {
+    const updated = await loanRepository.update(id, {
       header: {
         apprenticeGroup: data.apprenticeGroup,
         useJustification: data.useJustification,
@@ -139,6 +145,17 @@ export const loanService = {
       newMaterials: data.materials,
       parties: { lenderId: data.lenderId, receiverId: data.receiverId },
     });
+
+    // (P43) Log: modificación del préstamo (incluye materiales/cantidades nuevas)
+    const detalle = data.materials
+      .map((m) => `material #${m.materialId} x${m.borrowedQuantity}`)
+      .join(', ');
+    notify({
+      title: 'Préstamo modificado',
+      description: `Préstamo #${id} actualizado. Materiales: ${detalle}.`,
+      module: 'loans',
+    });
+    return updated;
   },
 
   async getSignatureInfo(token) {

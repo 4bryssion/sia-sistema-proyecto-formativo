@@ -1,77 +1,26 @@
-import { Switch, Dropdown, DropdownTrigger, DropdownContent, DropdownItem, Alert } from "@/shared";
-import { ListFilter } from "lucide-react";
+import { Switch, Alert } from "@/shared";
 import ReturnableMaterialRowActions from "../components/ReturnableMaterialRowActions";
 import returnableMaterialService from "../services/returnableMaterialService";
 import { getStatusLabel } from "../utils/statusLabel";
 
-// Estados disponibles para el filtro del header (mismo catálogo que statusLabel)
-const STATUS_OPTIONS = [
-  "Disponible",
-  "No_disponible",
-  "Mantenimiento",
-  "En_prestamo",
-  "Traslado",
-  "Baja",
-];
-
-// Header de "Estado" con icono de filtro: mismo patrón que consumibles — usa el
-// Dropdown compartido; su contenido va en portal fixed y se superpone a la tabla
-function StatusFilterHeader({ column }) {
-  const current = column.getFilterValue();
-
-  return (
-    <Dropdown>
-      <DropdownTrigger>
-        <button
-          type="button"
-          className="flex items-center gap-1 cursor-pointer hover:opacity-70"
-          aria-label="Filtrar por estado"
-        >
-          Estado
-          <ListFilter size={16} className={current ? "text-primary" : ""} />
-        </button>
-      </DropdownTrigger>
-
-      {/* w-48 fijo: sin él, el menú del portal se estira demasiado */}
-      <DropdownContent className="w-48">
-        <DropdownItem
-          onClick={() => column.setFilterValue(undefined)}
-          className={!current ? "font-semibold" : ""}
-        >
-          Todos
-        </DropdownItem>
-        {STATUS_OPTIONS.map((s) => (
-          <DropdownItem
-            key={s}
-            onClick={() => column.setFilterValue(s)}
-            className={current === s ? "font-semibold" : ""}
-          >
-            {getStatusLabel(s)}
-          </DropdownItem>
-        ))}
-      </DropdownContent>
-    </Dropdown>
-  );
-}
-
-export const returnableMaterialColumns = (refetch, can = () => true) => [
-  // {
-  //   accessorKey: "id",
-  //   header: "ID",
-  // },
+// El filtro por estado ya no vive en la cabecera de esta columna: se movió a la
+// barra de la tabla (FilterMenu en `toolbarExtra`), igual que en usuarios y
+// consumibles. Allí filtra el array ANTES de entregarlo a DataTable, así que el
+// buscador, la paginación, el contador y el reporte trabajan sobre el conjunto
+// ya filtrado — cosa que el filtro por columna de TanStack no lograba.
+export const returnableMaterialColumns = (refetch, can = () => true, onView, onEdit) => [
     {
         id: "materialName",
         header: "Nombre", // Encabezado visible
         cell: ({ row }) => {
             const returnable = row.original;
 
-            const handleDoubleClick = () => {
-            window.location.href = `/view/returnable-material/${returnable.materialName}`;
-            };
-
             return (
+            // Doble clic abre el modal de consulta. Antes navegaba con
+            // window.location a una ruta construida con el NOMBRE del material,
+            // que además ya no existe (visualizar dejó de ser una página).
             <span
-                onDoubleClick={handleDoubleClick}
+                onDoubleClick={() => onView?.(returnable.id)}
                 className="cursor-pointer hover:underline"
             >
                 {returnable.consumableMaterial?.materialName ?? "—"}
@@ -100,10 +49,10 @@ export const returnableMaterialColumns = (refetch, can = () => true) => [
   },
   {
     id: "status",
-    // accessorFn + filterFn "equals" habilitan el filtro por columna del header
+    header: "Estado",
+    // accessorFn se mantiene: es lo que permite al buscador global de la tabla
+    // encontrar por estado, aunque el valor viva dentro de consumableMaterial
     accessorFn: (row) => row.consumableMaterial?.status,
-    filterFn: "equals",
-    header: ({ column }) => <StatusFilterHeader column={column} />,
     cell: ({ row }) => getStatusLabel(row.original.consumableMaterial?.status),
   },
   {
@@ -141,7 +90,11 @@ export const returnableMaterialColumns = (refetch, can = () => true) => [
   {
     id: "actions",
     cell: ({ row }) => (
-      <ReturnableMaterialRowActions returnableMaterial={row.original} />
+      <ReturnableMaterialRowActions
+        returnableMaterial={row.original}
+        onView={onView}
+        onEdit={onEdit}
+      />
     ),
   },
 ];

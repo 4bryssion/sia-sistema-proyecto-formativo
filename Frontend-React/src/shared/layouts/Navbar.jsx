@@ -13,19 +13,31 @@ import {
 
 import { IconButton, Dropdown, DropdownTrigger, DropdownItem, DropdownContent, getCurrentUser, Alert, usePermissions } from "@/shared";
 
+// Import directo (no vía @/features/users) para no arrastrar el índice completo
+// del módulo de usuarios dentro del layout
+import ViewUserModal from "@/features/users/components/ViewUserModal";
+import EditUserModal from "@/features/users/components/EditUserModal";
+
 import logo from "@/assets/logos/logo-sena-negro.png";
+
 
 export default function Navbar(){
     const { can } = usePermissions();
 
     const [view, setView] = useState("main");
+    // Id del usuario cuyo perfil se está viendo en el modal (null = cerrado)
+    const [profileUserId, setProfileUserId] = useState(null);
+    const [editProfileId, setEditProfileId] = useState(null);
     const navigate = useNavigate();
 
     const handleLogout = async () => {
         // Confirmación de cierre de sesión (el usuario decide sí o sí)
         const result = await Alert.confirm("Cierre de sesión", "¿Está seguro que desea cerrar sesión?");
         if (!result.isConfirmed) return;
-        logout();
+        // await: el logout ahora avisa al backend para liberar la sesión única
+        // (p45). Sin esperarlo, navegar podría desmontar el componente antes de
+        // que saliera la petición y la cuenta quedaría bloqueada.
+        await logout();
         navigate("/auth", { replace: true });
     };
 
@@ -33,13 +45,13 @@ export default function Navbar(){
         setView(value)
     }
 
-    // Reusa el módulo de usuarios (P20+P21): navega al "ver" del usuario autenticado
-    // tomando el id guardado en sessionStorage al hacer login (ver authService/AuthLoginForm).
+    // "Mi perfil" abre el modal de visualizar usuario aquí mismo, sin navegar.
+    // Antes iba a /view/users/:id, ruta que desapareció al convertir esa vista en
+    // modal; montarlo en el Navbar hace que funcione desde cualquier pantalla y
+    // para cualquier rol (un Instructor no tiene acceso al listado de usuarios).
     const handleProfileClick = () => {
         const currentUser = getCurrentUser();
-        if (currentUser?.id) {
-            navigate(`/view/users/${currentUser.id}`);
-        }
+        if (currentUser?.id) setProfileUserId(currentUser.id);
     };
 
     return(
@@ -92,15 +104,17 @@ export default function Navbar(){
                         <Link to="/dashboard/alert-history">
                             <IconButton
                                 ariaLabel = "Notificaciones de historial general"
+                                variant="onColor"
                             >
                                 <Bell strokeWidth={2.8} />
                             </IconButton>
                         </Link>
                         )}
 
-                        {/* Icono de usuario autenticado: ver el propio perfil (reusa ViewUserPage) */}
+                        {/* Icono de usuario autenticado: abre el modal de su propio perfil */}
                         <IconButton
                             ariaLabel = "Mi perfil de usuario autenticado"
+                            variant="onColor"
                             onClick={handleProfileClick}
                         >
                             <CircleUser strokeWidth={2.8} />
@@ -120,6 +134,7 @@ export default function Navbar(){
                                 <DropdownTrigger>
                                     <IconButton
                                         ariaLabel = "Menu"
+                                        variant="onColor"
                                     >
                                         <Menu strokeWidth={2.8} />
                                     </IconButton>
@@ -237,6 +252,21 @@ export default function Navbar(){
                     </div>
                 </div>
             </div>
+
+            {/* Mi perfil: modales de visualizar y editar el usuario autenticado.
+                Viven en el Navbar para estar disponibles en cualquier pantalla. */}
+            <ViewUserModal
+                isOpen={profileUserId != null}
+                userId={profileUserId}
+                onClose={() => setProfileUserId(null)}
+                onEdit={(id) => { setProfileUserId(null); setEditProfileId(id); }}
+            />
+
+            <EditUserModal
+                isOpen={editProfileId != null}
+                userId={editProfileId}
+                onClose={() => setEditProfileId(null)}
+            />
         </nav>
     )
 }

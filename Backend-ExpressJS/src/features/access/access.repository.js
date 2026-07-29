@@ -1,4 +1,5 @@
 import prisma from '../../config/prisma.js';
+import { SUPERADMIN_GROUP } from '../../config/systemIdentities.js';
 
 export const accessRepository = {
   // json_build_object replica la forma { group: { id, groupName } } que daba Prisma con include
@@ -71,7 +72,7 @@ export const accessRepository = {
       FROM user_groups ug
       INNER JOIN groups g ON g.id = ug.group_id
       WHERE ug.user_id = ${userId}
-        AND g.group_name = 'SuperAdmin'
+        AND g.group_name = ${SUPERADMIN_GROUP}
         AND g.is_active = TRUE
       LIMIT 1;`;
     return rows.length > 0;

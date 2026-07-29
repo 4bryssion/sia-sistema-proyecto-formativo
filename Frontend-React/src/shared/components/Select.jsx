@@ -29,6 +29,10 @@ export default function Select({
     required = false,
     disabled = false,
     placeholder = "Seleccione una opción",
+    // Mismo criterio que en Input: el ancho es una prop, no algo a sobrescribir
+    // con className (dos max-width con la misma especificidad se resuelven por
+    // el orden del CSS generado, no por el del atributo)
+    widthClass = "w-full md:max-w-[320px]",
 }){
     const isSearch = variant === "search";
 
@@ -79,11 +83,12 @@ export default function Select({
                 place-self-start
                 font-secondary
 
-                ${error ? "text-red-800" : "text-text-primary"}
+                ${error ? "text-error" : "text-text-primary"}
             `}
         >
             {label}
-            {required && <span className="text-error ml-0.5" aria-hidden="true">*</span>}
+            {/* Asterisco de obligatorio en verde primario (token --color-required) */}
+                    {required && <span className="text-required font-bold ml-0.5" aria-hidden="true">*</span>}
         </label>
     );
 
@@ -103,12 +108,17 @@ export default function Select({
     // ---------------- Variante básica (select nativo) ----------------
     if (!isSearch) {
         return (
-            <div className={`w-full md:max-w-[320px] ${className}`}>
+            <div className={`${widthClass} ${className}`}>
                 {labelNode}
 
                 {/* Contenedor h-11 con el campo de 48px superpuesto: iguala la
                     altura total del Input en el layout */}
                 <div className="relative h-11 flex items-center">
+                    {/* bg-white y text-text-primary explícitos: un <select> nativo
+                        HEREDA el color de texto del contenedor pero NO el fondo.
+                        Sobre superficies oscuras (el panel negro de administración
+                        de permisos) heredaba texto blanco sobre su fondo blanco y
+                        quedaba ilegible. */}
                     <select
                         name={name}
                         value={value}
@@ -123,10 +133,12 @@ export default function Select({
                             rounded-md
                             px-4
                             font-secondary
+                            bg-white
+                            text-text-primary
 
                             hover:border-2
                             hover:border-focus-border
-                            ${error ? "border-red-800" : "border border-border"}
+                            ${error ? "border-error" : "border border-border"}
                         `}
                     >
                         <option value="">{placeholder}</option>
@@ -146,7 +158,7 @@ export default function Select({
 
     // ---------------- Variante con búsqueda ----------------
     return (
-        <div className={`w-full md:max-w-[320px] ${className}`} ref={containerRef}>
+        <div className={`${widthClass} ${className}`} ref={containerRef}>
             {labelNode}
 
             <div className="relative h-11 flex items-center">
@@ -176,10 +188,12 @@ export default function Select({
 
                         hover:border-2
                         hover:border-focus-border
-                        ${error ? "border-red-800" : "border border-border"}
+                        ${error ? "border-error" : "border border-border"}
                     `}
                 >
-                    <span className={`truncate ${selectedLabel ? "" : "text-text-muted"}`}>
+                    {/* Mismo motivo que en la variante básica: sobre superficies
+                        oscuras el texto heredaría el color claro del contenedor */}
+                    <span className={`truncate ${selectedLabel ? "text-text-primary" : "text-text-muted"}`}>
                         {selectedLabel || placeholder}
                     </span>
                     <ChevronDown size={16} className="shrink-0" />

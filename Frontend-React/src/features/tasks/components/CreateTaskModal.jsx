@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { getTopGroupName } from "@/features/users/utils/topGroup";
-import { Button, Input, Select, Alert } from "@/shared";
+import { Button, Input, Select, Alert, Modal } from "@/shared";
 import { taskSchema, todayLocalISO } from "../schemas/taskSchema.js";
 import taskService from "../services/taskService.js";
 import { useUsers } from "@/features/users/hooks/useUsers";
@@ -42,8 +41,8 @@ export default function CreateTaskModal({ isOpen, onClose, onSave, assignedUser 
 
   if (!isOpen) return null;
 
-  // El SuperAdmin no aparece como asignable
-  const userOptions = (users ?? []).filter((u) => getTopGroupName(u) !== "SuperAdmin").map((u) => ({
+  // El SADMIN ya viene excluido por el backend (systemIdentities.js)
+  const userOptions = (users ?? []).map((u) => ({
     id: u.id,
     value: String(u.id),
     label: `${u.userFirstName} ${u.userLastName}`,
@@ -87,18 +86,13 @@ export default function CreateTaskModal({ isOpen, onClose, onSave, assignedUser 
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={onClose}
-    >
-      {/* text-neutral-900 explícito: el modal puede montarse en contextos con texto
-          claro (ej. panel negro de Visualizar Usuario) y no debe heredar ese color */}
-      <div
-        className="w-full max-w-md md:max-w-2xl rounded-xl bg-white p-6 text-neutral-900"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="mb-6 text-xl font-semibold">Crear Tarea</h2>
-
+    // Migrado al Modal compartido (antes era un overlay propio con z-50 sin
+    // portal). Sin portal quedaba dentro del árbol de quien lo abriera, así que
+    // al montarse sobre Visualizar Usuario aparecía POR DETRÁS de ese modal:
+    // z-index de contextos de apilamiento distintos no compiten entre sí.
+    // Ahora ambos son hijos de <body> y el último montado queda encima.
+    <Modal isOpen={isOpen} onClose={onClose} title="Crear Tarea" size="md">
+      <div className="text-neutral-900">
         {/* Vertical hasta md; desde md: 2 columnas × 3 filas (botón incluido) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
@@ -156,6 +150,6 @@ export default function CreateTaskModal({ isOpen, onClose, onSave, assignedUser 
 
         {errors.form && <p className="text-error text-caption mt-4">{errors.form}</p>}
       </div>
-    </div>
+    </Modal>
   );
 }

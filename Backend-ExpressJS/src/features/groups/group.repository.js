@@ -1,4 +1,5 @@
 import prisma from '../../config/prisma.js';
+import { SUPERADMIN_GROUP } from '../../config/systemIdentities.js';
 
 export const groupRepository = {
   // json_agg replica la forma { permissions: [{ groupId, permissionId, permission:{id,permissionName} }], _count:{users,permissions} }
@@ -26,7 +27,11 @@ export const groupRepository = {
       FROM groups g
       LEFT JOIN group_permissions gp ON gp.group_id = g.id
       LEFT JOIN permissions p        ON p.id = gp.permission_id
+      -- El grupo de superusuario se excluye en el origen: este listado alimenta
+      -- la tabla de grupos, el panel de accesos y el select de grupo de crear
+      -- usuario. Filtrarlo aquí evita repetir el filtro en cada pantalla.
       WHERE g.is_active = TRUE
+        AND g.group_name <> ${SUPERADMIN_GROUP}
       GROUP BY g.id, g.group_name, g.is_active, g.created_at, g.updated_at
       ORDER BY g.group_name;`;
     // Mapear columnas planas de conteo al objeto _count que espera el frontend

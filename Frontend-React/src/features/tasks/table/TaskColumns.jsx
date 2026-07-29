@@ -38,7 +38,8 @@ function StatusCheckboxCell({ task, onChanged }) {
 }
 
 export const TaskColumns = (onChanged) => [
-  // { accessorKey: "id", header: "Id" },
+  // Sin columna de ID: el registro se identifica por su nombre; el id solo
+  // viaja internamente para abrir el modal o llamar al servicio.
   { accessorKey: "taskName", header: "Título" },
   { accessorKey: "description", header: "Descripción" },
   {

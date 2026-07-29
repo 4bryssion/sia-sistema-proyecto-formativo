@@ -10,6 +10,24 @@ const authError = (msg) => {
   return err;
 };
 
+// Sesión única (p45): 409 Conflict — no es un fallo de credenciales (401), es que
+// las credenciales son correctas pero ya hay una sesión abierta en otro lado.
+const sessionConflictError = () => {
+  const err = new Error(
+    'Ya tienes una sesión iniciada en otro navegador o dispositivo. Ciérrala antes de volver a ingresar.',
+  );
+  err.statusCode = 409;
+  return err;
+};
+
+// Una sesión cuenta como viva solo si hay jti Y todavía no venció. La caducidad
+// es lo que impide dejar la cuenta bloqueada cuando alguien cierra el navegador
+// sin hacer logout: pasado el vencimiento del token, la sesión se libera sola.
+const hasLiveSession = (user) =>
+  Boolean(user.activeSessionJti) &&
+  Boolean(user.activeSessionExpiresAt) &&
+  user.activeSessionExpiresAt > new Date();
+
 const RESET_CODE_TTL_MIN = 15;
 const RESET_TICKET_TTL = '5m';
 const MAX_ATTEMPTS = 5;
@@ -27,16 +45,35 @@ export const authService = {
 
     if (!user.isActive) throw authError('Usuario inactivo');
 
+    // Sesión única (p45): las credenciales se validan ANTES de mirar la sesión
+    // activa. Si se hiciera al revés, cualquiera podría averiguar quién tiene
+    // sesión abierta probando correos con contraseñas falsas.
+    if (hasLiveSession(user)) throw sessionConflictError();
+
+    // jti: identificador único de este token. Se guarda en la BD para poder
+    // invalidar la sesión sin blacklist (el token que no coincida deja de servir).
+    const jti = crypto.randomUUID();
     const token = jwt.sign(
-      { id: user.id, email: user.userEmail },
+      { id: user.id, email: user.userEmail, jti },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES },
     );
+
+    // La caducidad de la sesión se toma del propio token (campo exp), no de un
+    // cálculo aparte: así nunca se desincronizan si cambia JWT_EXPIRES.
+    const { exp } = jwt.decode(token);
+    await authRepository.setActiveSession(user.id, jti, new Date(exp * 1000));
 
     return {
       token,
       user: { id: user.id, email: user.userEmail },
     };
+  },
+
+  // Cierra la sesión activa del usuario: el token que tenga ese jti deja de ser
+  // aceptado por authenticateToken de inmediato.
+  async logout(userId) {
+    await authRepository.clearActiveSession(userId);
   },
 
   async forgotPassword(email) {

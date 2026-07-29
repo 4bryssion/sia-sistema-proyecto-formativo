@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import api from "../services/axiosInstance";
+import { getCurrentUser, getCurrentUserName, setCurrentUserName } from "../services/authStorage";
 
 /**
  * Permission Gate — RBAC dinámico con autorización basada en permisos.
@@ -37,6 +38,20 @@ export function PermissionsProvider({ children }) {
   }, []);
 
   useEffect(() => { fetchPermissions(); }, [fetchPermissions]);
+
+  // Resuelve el nombre completo del usuario autenticado y lo cachea en
+  // sessionStorage. Se hace aquí porque este provider ya envuelve /dashboard y
+  // /view y corre una sola vez por sesión; los encabezados de los reportes lo
+  // leen después de forma síncrona. GET /users/:id con el propio id está
+  // permitido sin list_users (excepción documentada de "Mi perfil").
+  useEffect(() => {
+    const id = getCurrentUser()?.id;
+    if (!id || getCurrentUserName()) return;
+    api.get(`/users/${id}`)
+      .then(({ data }) => setCurrentUserName(`${data.userFirstName} ${data.userLastName}`.trim()))
+      // Sin nombre el reporte cae al correo: no vale la pena molestar al usuario
+      .catch(() => {});
+  }, []);
 
   // can("list_users") · can(["create_loan", "edit_loan"]) → true si tiene ALGUNO
   const can = useCallback(

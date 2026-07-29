@@ -8,11 +8,12 @@ export const authController = {
     } catch (err) { next(err); }
   },
 
-  // El logout con JWT es client-side (el cliente descarta el token).
-  // Este endpoint confirma el logout al frontend y está estructurado
-  // para cuando se implemente una blacklist de tokens en el futuro.
+  // Con sesión única (p45) el logout ya NO es solo client-side: libera el jti
+  // activo del usuario. Sin esto, cerrar sesión dejaría la cuenta bloqueada
+  // hasta que venciera el token.
   async logout(req, res, next) {
     try {
+      await authService.logout(req.user.id);
       res.json({ mensaje: 'Logout exitoso.' });
     } catch (err) { next(err); }
   },

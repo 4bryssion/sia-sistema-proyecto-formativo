@@ -9,7 +9,34 @@ export const authRepository = {
         userEmail:    true,
         userPassword: true,
         isActive: true, // estado único: si es false, no puede iniciar sesión
+        // Sesión única (p45): se leen aquí para decidir si ya hay una sesión viva
+        activeSessionJti:       true,
+        activeSessionExpiresAt: true,
       },
+    });
+  },
+
+  // Sesión única (p45)
+  async setActiveSession(userId, jti, expiresAt) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { activeSessionJti: jti, activeSessionExpiresAt: expiresAt },
+    });
+  },
+
+  async clearActiveSession(userId) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { activeSessionJti: null, activeSessionExpiresAt: null },
+    });
+  },
+
+  // Usado por authenticateToken en CADA petición protegida: solo trae lo mínimo
+  // para contrastar el jti del token contra el de la sesión activa.
+  async findSessionState(userId) {
+    return prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, isActive: true, activeSessionJti: true, activeSessionExpiresAt: true },
     });
   },
 
@@ -49,7 +76,13 @@ export const authRepository = {
 
   async resetPasswordTransaction(userId, hashedPassword, codeId) {
     return prisma.$transaction([
-      prisma.user.update({ where: { id: userId }, data: { userPassword: hashedPassword } }),
+      prisma.user.update({
+        where: { id: userId },
+        // Cambiar la contraseña cierra la sesión activa (p45): es lo esperable por
+        // seguridad y además es la vía de escape si alguien quedó bloqueado por el
+        // "ya tienes una sesión iniciada" sin poder cerrarla.
+        data: { userPassword: hashedPassword, activeSessionJti: null, activeSessionExpiresAt: null },
+      }),
       prisma.passwordResetCode.update({ where: { id: codeId }, data: { used: true } }),
     ]);
   },

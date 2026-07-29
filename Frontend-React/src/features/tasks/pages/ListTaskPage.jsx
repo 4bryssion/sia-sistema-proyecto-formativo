@@ -1,14 +1,13 @@
 import { useState } from "react";
-import { DataTable, Button, IconButton, usePermissions } from "@/shared";
+import { DataTable, Button, usePermissions , ListPageHeader } from "@/shared";
 import { TaskColumns } from "../table/TaskColumns.jsx";
 import { useTasks } from "../hooks/useTasks";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { Undo2 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import CreateTaskModal from "../components/CreateTaskModal.jsx";
+import ReportConfigModal from "../reports/components/ReportConfigModal.jsx";
 
 export default function ListTaskPage() {
   const { can } = usePermissions();
-  const navigate = useNavigate();
   // ?userId=X ("Ver mis tareas" desde Mi Perfil): filtra a las tareas de ese usuario
   const [searchParams] = useSearchParams();
   const userId = searchParams.get("userId");
@@ -17,25 +16,21 @@ export default function ListTaskPage() {
   const effectiveUserId = can("list_tasks") ? userId : ownId;
   const { tasks, loading, error, refetch } = useTasks(effectiveUserId);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   return (
     <div className="p-6">
-      <div className="flex justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <IconButton ariaLabel="Devolverse" onClick={() => navigate(-1)}>
-            <Undo2 strokeWidth={2.8} />
-          </IconButton>
-          <h1 className="text-xl font-semibold mb-0 text-h3 sm:text-h2">
-            {effectiveUserId ? "Mis Tareas" : "Tareas"}
-          </h1>
-        </div>
+      <ListPageHeader title={effectiveUserId ? "Mis Tareas" : "Tareas"}>
+        <Button variant="secondary" onClick={() => setIsReportOpen(true)}>
+          Generar Reporte
+        </Button>
 
         {can("create_task") && (
           <Button variant="primary" onClick={() => setIsCreateOpen(true)}>
             Crear Tarea
           </Button>
         )}
-      </div>
+      </ListPageHeader>
 
       {loading ? (
         <p className="text-gray-600">Cargando tareas...</p>
@@ -49,6 +44,12 @@ export default function ListTaskPage() {
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onSave={refetch}
+      />
+
+      <ReportConfigModal
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        tasks={tasks}
       />
     </div>
   );

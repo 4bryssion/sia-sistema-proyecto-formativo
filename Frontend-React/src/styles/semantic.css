@@ -34,9 +34,18 @@
     --semantic-focus-border: var(--color-primary-500);
 
     /* ============= STATE ================ */
+    /* Campo obligatorio: quintinario 950 (decisión jul-2026, antes verde primario).
+       Comparte color con --semantic-error a propósito: ambos son señales de que
+       algo falta o está mal en un campo, y el proyecto tiene prohibido el rojo. */
+    --semantic-required: var(--color-quintinary-950);
     --semantic-succes: var(--color-primary-950);
     --semantic-warning: var(--color-tertiary-950);
-    --semantic-error: var(--color-secondary-950);
+    /* El proyecto tiene prohibido el rojo, así que el estado de error se señaliza
+       con el quintinario (morado): es el único color de la paleta con suficiente
+       contraste sobre blanco y que NO se confunde con el verde de éxito/obligatorio
+       ni con el amarillo de advertencia. Antes apuntaba a --color-secondary-950
+       (verde oscuro), indistinguible del estado de éxito. */
+    --semantic-error: var(--color-quintinary-950);
 
     /* =========== TYPOGRAPHY ============== */
     --semantic-font-size-display: var(--fs-xxl); /* Textode alto impacto, texto protagonista, hero, números grandes. */

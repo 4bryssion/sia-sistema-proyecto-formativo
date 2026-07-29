@@ -14,12 +14,16 @@ export default function TextArea({
     className = "",
     // required: pinta el asterisco de campo obligatorio junto al label
     required = false,
+    // Mismo criterio que en Input y Select: el ancho es una prop y no algo a
+    // sobrescribir con className (dos max-width con la misma especificidad se
+    // resuelven por el orden del CSS generado, no por el del atributo)
+    widthClass = "w-full md:max-w-[320px]",
     ...props
 }){
     // Cuerpo de la función
     return(
         // Contenedor del textarea que se exporta con label, cuerpo y feedback message
-        <div className={`w-full md:max-w-[320px] ${className}`}>
+        <div className={`${widthClass} ${className}`}>
 
             {/* Label */}
             {label && (
@@ -31,11 +35,12 @@ export default function TextArea({
                         place-self-start
                         font-secondary
 
-                        ${error ? "text-red-800" : "text-text-primary"}
+                        ${error ? "text-error" : "text-text-primary"}
                     `}
                 >
                     {label}
-                    {required && <span className="text-error ml-0.5" aria-hidden="true">*</span>}
+                    {/* Asterisco de obligatorio en verde primario (token --color-required) */}
+                    {required && <span className="text-required font-bold ml-0.5" aria-hidden="true">*</span>}
                 </label>
             )}
 
@@ -80,7 +85,7 @@ export default function TextArea({
                         focus:ring-1
                         focus:ring-focus-ring
 
-                        ${error ? "border-red-800" : "border border-border"}
+                        ${error ? "border-error" : "border border-border"}
                     `}
                         {...props}
                 />

@@ -61,11 +61,8 @@ const materialsLabel = (loan) => {
 };
 
 export const loanColumns = (refetch, can = () => true) => [
-  // Columna identificador del préstamo
-  // {
-  //     accessorKey: "id",
-  //     header: "ID",
-  // },    
+  // Sin columna de ID: el préstamo se identifica por su solicitante y su fecha;
+  // el id solo viaja internamente para abrir el modal o llamar al servicio.
   { 
     id: "receiver", 
     header: "Usuario solicitante", 

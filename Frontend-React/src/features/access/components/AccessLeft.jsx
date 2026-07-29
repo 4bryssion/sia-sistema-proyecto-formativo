@@ -24,7 +24,6 @@ export default function AccessLeft({
   }, [selectedUserId]);
 
   const groupOptions = [
-    // { value: "", label: "— Selecciona un grupo —" },
     ...groups.map((g) => ({ value: String(g.id), label: g.groupName })),
   ];
 
@@ -41,7 +40,6 @@ export default function AccessLeft({
   const availableGroups = groups.filter((g) => !assignedGroupIds.has(g.id));
 
   const assignOptions = [
-    // { value: "", label: "— Selecciona un grupo —" },
     ...availableGroups.map((g) => ({ value: String(g.id), label: g.groupName })),
   ];
 
@@ -102,7 +100,7 @@ export default function AccessLeft({
                     </span>
                     <button
                       onClick={() => onRemoveGroup(ug.groupId)}
-                      className="text-red-600 hover:text-red-300 text-xs "
+                      className="text-error hover:opacity-70 text-xs "
                       title="Remover grupo"
                     >
                       ✕

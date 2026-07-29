@@ -2,10 +2,12 @@ import { Switch, Alert } from "@/shared";
 import UserRowActions from "../components/UserRowActions";
 import { getTopGroupName } from "../utils/topGroup";
 import userService from "../services/userService";
-import { Link } from "react-router-dom";
 
-export const UserColumns = (onChanged, can = () => true) => [
-  // { accessorKey: "id", header: "Id" },
+// onView / onEdit: abren los modales de ListUserPage. Antes estas acciones
+// navegaban a /view/users/:id, rutas que ya no existen.
+export const UserColumns = (onChanged, can = () => true, onView, onEdit) => [
+  // Sin columna de ID: el registro se identifica por su nombre; el id solo
+  // viaja internamente para abrir el modal o llamar al servicio.
   {
     id: "nombre",
     header: "Nombre",
@@ -13,15 +15,11 @@ export const UserColumns = (onChanged, can = () => true) => [
     cell: ({ row }) => {
       const u = row.original;
 
-      // Cambio: se reemplaza la navegación de un solo clic por doble clic
-      // según observación del instructor, para evitar redirecciones accidentales
-      const handleDoubleClick = () => {
-        window.location.href = `/view/users/${u.id}`;
-      };
-
+      // Cambio: se reemplaza la apertura de un solo clic por doble clic
+      // según observación del instructor, para evitar aperturas accidentales
       return (
         <span
-          onDoubleClick={handleDoubleClick}
+          onDoubleClick={() => onView?.(u.id)}
           className="cursor-pointer hover:underline"
         >
           {u.userFirstName} {u.userLastName}
@@ -30,9 +28,20 @@ export const UserColumns = (onChanged, can = () => true) => [
     },
   },
   {
-    id: "tipoUsuario",
-    header: "Tipo de usuario",
+    // "Grupo" y no "Rol": el sistema decide por permisos, no por nombre de rol,
+    // y un usuario puede pertenecer a varios grupos (aquí se muestra el principal)
+    id: "grupo",
+    header: "Grupo",
     accessorFn: (row) => getTopGroupName(row),
+  },
+  {
+    // Tipo de usuario = userAccountType (Cuentadante | Solidario).
+    // accessorKey (no accessorFn) para que el filtro por columna funcione
+    // con setFilterValue desde el menú de la barra de herramientas.
+    accessorKey: "userAccountType",
+    id: "userAccountType",
+    header: "Tipo de usuario",
+    cell: ({ getValue }) => getValue() ?? "—",
   },
   {
     id: "fechaFin",
@@ -68,6 +77,6 @@ export const UserColumns = (onChanged, can = () => true) => [
   },
   {
     id: "actions",
-    cell: ({ row }) => <UserRowActions users={row.original} />,
+    cell: ({ row }) => <UserRowActions users={row.original} onView={onView} onEdit={onEdit} />,
   },
 ];

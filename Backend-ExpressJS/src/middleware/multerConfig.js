@@ -19,16 +19,34 @@ const imageFileFilter = (req, file, cb) => {
   else cb(new Error('Tipo de archivo no permitido'), false);
 };
 
-const filesFileFilter = (req, file, cb) => {
-  const allowedImages = ['image/jpeg', 'image/png', 'image/jpg'];
-  const allowedFiles = [
+// Tipos permitidos POR CAMPO, no por instancia de multer.
+//
+// uploadFiles solo lo usa material devolutivo, que sube dos cosas distintas por
+// la misma petición: la imagen del material y sus fichas técnicas. Un filtro
+// único dejaría subir un PDF como imagen y una foto como ficha; multer entrega
+// el `fieldname` en el filtro, así que cada campo valida lo suyo.
+const ALLOWED_BY_FIELD = {
+  image: ['image/jpeg', 'image/png', 'image/jpg'],
+  // La ficha técnica NO acepta imágenes: es documentación, y en el visor se
+  // muestra como documento descargable
+  technical_sheet: [
     'application/pdf',
     'application/vnd.ms-excel',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  ];
-  if (allowedImages.includes(file.mimetype)) cb(null, true);
-  else if (allowedFiles.includes(file.mimetype)) cb(null, true);
-  else cb(new Error('Tipo de archivo no permitido'), false);
+  ],
+};
+
+const filesFileFilter = (req, file, cb) => {
+  const allowed = ALLOWED_BY_FIELD[file.fieldname];
+  if (!allowed) return cb(new Error('Campo de archivo inesperado.'), false);
+
+  if (allowed.includes(file.mimetype)) return cb(null, true);
+
+  const mensaje =
+    file.fieldname === 'technical_sheet'
+      ? 'La ficha técnica solo acepta archivos PDF o Excel.'
+      : 'La imagen solo acepta archivos JPG o PNG.';
+  cb(new Error(mensaje), false);
 };
 
 export const uploadImage = multer({

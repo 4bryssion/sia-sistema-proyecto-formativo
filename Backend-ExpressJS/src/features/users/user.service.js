@@ -37,7 +37,9 @@ export const userService = {
 
     data.userPhoto = `/uploads/${file.filename}`;
     data.documentTypeId = Number(data.documentTypeId);
-    if (data.userEndDate) data.userEndDate = new Date(data.userEndDate);
+    // Instructor de planta: sin fecha de finalización. La columna es nullable
+    // (p44), pero Prisma no acepta '' en un DateTime — hay que mandar null.
+    data.userEndDate = data.userEndDate ? new Date(data.userEndDate) : null;
 
     // '' → null: la columna es única y dos usuarios con '' chocarían (NULL sí se repite)
     if (data.userEmailInstitutional === '') data.userEmailInstitutional = null;
@@ -82,7 +84,6 @@ export const userService = {
       description: `Se creó el usuario ${user.userFirstName} ${user.userLastName} (${user.userEmail}). Correo de credenciales: ${emailSent ? 'enviado' : `falló (${emailError})`}.`,
       severity: emailSent ? 'Informativa' : 'Advertencia',
       module: 'users',
-      userId: user.id,
     });
 
     return { user, emailSent, emailError };
@@ -96,7 +97,11 @@ export const userService = {
     if (file) data.userPhoto = `/uploads/${file.filename}`;
     if (data.userPassword) data.userPassword = await bcrypt.hash(data.userPassword, SALT_ROUNDS);
     if (data.documentTypeId) data.documentTypeId = Number(data.documentTypeId);
-    if (data.userEndDate) data.userEndDate = new Date(data.userEndDate);
+    // Igual que en create: '' (campo vacío del formulario) debe viajar como null,
+    // no como cadena vacía, o Prisma rechaza el DateTime
+    if (data.userEndDate !== undefined) {
+      data.userEndDate = data.userEndDate ? new Date(data.userEndDate) : null;
+    }
 
     // '' → null: mismo motivo que en create (unique con NULLs repetibles)
     if (data.userEmailInstitutional === '') data.userEmailInstitutional = null;
@@ -112,6 +117,11 @@ export const userService = {
     try {
       const resultado = await userRepository.update(id, data);
       if (file && currentUser.userPhoto) deleteFile(currentUser.userPhoto);
+      notify({
+        title: 'Usuario modificado',
+        description: `Se actualizaron los datos del usuario ${resultado.userFirstName} ${resultado.userLastName}.`,
+        module: 'users',
+      });
       return resultado;
     } catch (err) {
       if (file) deleteFile(data.userPhoto);
@@ -121,6 +131,13 @@ export const userService = {
 
   async toggle(id) {
     const record = await userService.getById(id);
-    return userRepository.toggle(id, !record.isActive);
+    const updated = await userRepository.toggle(id, !record.isActive);
+    notify({
+      title: updated.isActive ? 'Usuario activado' : 'Usuario desactivado',
+      description: `${updated.userFirstName} ${updated.userLastName} quedó ${updated.isActive ? 'activo' : 'inactivo'}.`,
+      severity: updated.isActive ? 'Informativa' : 'Advertencia',
+      module: 'users',
+    });
+    return updated;
   },
 };
