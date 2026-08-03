@@ -93,6 +93,9 @@ const initialPermissions = [
   // Retornos de préstamo (inmutables)
   { permissionName: 'Ver retornos de préstamos',                    permissionCodename: 'list_loan_returns',            appLabel: 'loan-returns' },
   { permissionName: 'Registrar retorno de préstamo',                permissionCodename: 'create_loan_return',           appLabel: 'loan-returns' },
+  // (P47) Autorizar la devolución que registró otro: es la segunda fase del
+  // retorno y la única que mueve stock, por eso es un permiso aparte de registrar
+  { permissionName: 'Autorizar devolución de préstamo',             permissionCodename: 'authorize_devolution',          appLabel: 'loan-returns' },
 
   // Tareas
   { permissionName: 'Ver listado de tareas',                        permissionCodename: 'list_tasks',                   appLabel: 'tasks' },
@@ -147,7 +150,7 @@ const roleMatrix = {
     // préstamos
     'list_loans', 'create_loan', 'update_loan', 'toggle_loan', 'report_loans',
     // retornos
-    'list_loan_returns', 'create_loan_return',
+    'list_loan_returns', 'create_loan_return', 'authorize_devolution',
     // tareas
     'list_tasks', 'create_task', 'edit_task', 'toggle_task',
   ],
@@ -167,7 +170,7 @@ const roleMatrix = {
     // préstamos
     'list_loans', 'create_loan', 'update_loan', 'report_loans',
     // retornos
-    'list_loan_returns', 'create_loan_return',
+    'list_loan_returns', 'create_loan_return', 'authorize_devolution',
   ],
 
   Invitado: [

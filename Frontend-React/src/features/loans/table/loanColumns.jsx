@@ -1,51 +1,7 @@
-import { Switch, Dropdown, DropdownTrigger, DropdownContent, DropdownItem, Alert } from "@/shared";
-import { ListFilter } from "lucide-react";
+import { Switch, Alert } from "@/shared";
 import LoanRowActions from "../components/LoanRowActions";
 import loanService from "../services/loanService";
 import { getLoanStatusLabel } from "../utils/loanStatusLabel";
-
-// Estados del préstamo para el filtro del header (enum LoanStatus)
-const STATUS_OPTIONS = ["Pendiente_confirmacion", "Activo", "Finalizado"];
-
-// Header de "Estado" con icono de filtro: mismo patrón que materiales — usa el
-// Dropdown compartido; su contenido va en portal fixed y se superpone a la tabla
-function StatusFilterHeader({ column }) {
-  const current = column.getFilterValue();
-
-  return (
-    <Dropdown>
-      <DropdownTrigger>
-        <button
-          type="button"
-          className="flex items-center gap-1 cursor-pointer hover:opacity-70"
-          aria-label="Filtrar por estado"
-        >
-          Estado
-          <ListFilter size={16} className={current ? "text-primary" : ""} />
-        </button>
-      </DropdownTrigger>
-
-      {/* w-56 fijo: "Pendiente de confirmación" necesita más ancho que el w-48 de materiales */}
-      <DropdownContent className="w-56">
-        <DropdownItem
-          onClick={() => column.setFilterValue(undefined)}
-          className={!current ? "font-semibold" : ""}
-        >
-          Todos
-        </DropdownItem>
-        {STATUS_OPTIONS.map((s) => (
-          <DropdownItem
-            key={s}
-            onClick={() => column.setFilterValue(s)}
-            className={current === s ? "font-semibold" : ""}
-          >
-            {getLoanStatusLabel(s)}
-          </DropdownItem>
-        ))}
-      </DropdownContent>
-    </Dropdown>
-  );
-}
 
 const partyName = (loan, party) => {
   const sig = loan.signatures?.find((s) => s.party === party);
@@ -60,7 +16,7 @@ const materialsLabel = (loan) => {
     .join(", ");
 };
 
-export const loanColumns = (refetch, can = () => true) => [
+export const loanColumns = (refetch, can = () => true, onReturn) => [
   // Sin columna de ID: el préstamo se identifica por su solicitante y su fecha;
   // el id solo viaja internamente para abrir el modal o llamar al servicio.
   { 
@@ -98,10 +54,12 @@ export const loanColumns = (refetch, can = () => true) => [
   },
   {
     id: "status",
-    // accessorFn + filterFn "equals" habilitan el filtro por columna del header
+    header: "Estado",
+    // El filtro por estado se movió a la barra de la tabla (FilterMenu): allí
+    // recorta el array ANTES de entregarlo a DataTable, así el buscador, la
+    // paginación, el contador y el reporte trabajan sobre lo ya filtrado.
+    // accessorFn se conserva para que el buscador global encuentre por estado.
     accessorFn: (row) => row.status,
-    filterFn: "equals",
-    header: ({ column }) => <StatusFilterHeader column={column} />,
     cell: ({ row }) => getLoanStatusLabel(row.original.status),
   },
   {
@@ -131,5 +89,5 @@ export const loanColumns = (refetch, can = () => true) => [
       return <Switch checked={loan.isActive} onChange={handleToggle} className="inline-flex" />;
     },
   },
-  { id: "actions", cell: ({ row }) => <LoanRowActions loan={row.original} /> },
+  { id: "actions", cell: ({ row }) => <LoanRowActions loan={row.original} onReturn={onReturn} /> },
 ];

@@ -72,11 +72,6 @@ import {
     SignLoanPage,
 
 } from "@/features/loans";
-//Modulo loan-returns:
-import { 
-    CreateLoanReturnPage
-
-} from "@/features/loan-returns";
 
 
 // Módulo brands:
@@ -275,11 +270,8 @@ const router = createBrowserRouter([
                 path: "loans/:id/edit",
                 element: <RequirePermission codename="update_loan"><EditLoanPage/></RequirePermission>,
             },
-            // Módulo loan-returns:
-{
-                path: "loans/:id/return",
-                element: <RequirePermission codename="create_loan_return"><CreateLoanReturnPage /></RequirePermission>,
-            },
+            // Módulo loan-returns: retornar es un modal abierto desde la tabla
+            // de listar préstamos, ya no tiene ruta propia
 
             // Módulo groups:
             {

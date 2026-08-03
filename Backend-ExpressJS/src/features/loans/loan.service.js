@@ -35,7 +35,20 @@ const sendSignatureEmails = (loan, signatures = loan.signatures) => {
       { expiresIn: SIGN_TOKEN_TTL },
     );
     const signUrl = `${process.env.FRONTEND_URL}/loans/sign?token=${token}`;
-    sendLoanSignatureRequest(s.user.userEmail, { partyLabel: s.party, loan, signUrl }).catch((e) => {
+
+    // La otra parte del préstamo: el correo debe decir frente a quién se firma
+    const otra = (loan.signatures ?? []).find((x) => x.party !== s.party);
+    const nombreDe = (firma) =>
+      firma?.user ? `${firma.user.userFirstName} ${firma.user.userLastName}` : null;
+
+    sendLoanSignatureRequest(s.user.userEmail, {
+      partyLabel: s.party,
+      signerName: nombreDe(s),
+      counterpartLabel: otra?.party,
+      counterpartName: nombreDe(otra),
+      loan,
+      signUrl,
+    }).catch((e) => {
       console.error('Error enviando correos de firma:', e.message);
     });
   }

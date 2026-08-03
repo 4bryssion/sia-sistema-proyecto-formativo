@@ -97,6 +97,10 @@ model User {
   activeSessionExpiresAt DateTime?           @map("active_session_expires_at")
   consumableMaterials ConsumableMaterial[]
   loanSignatures      LoanSignature[]
+  // Dos relaciones distintas hacia la misma tabla (quien entrega y quien
+  // autoriza): Prisma exige nombrarlas para poder distinguirlas
+  devolutionsRequested  DevolutionRequest[] @relation("DevolutionRequester")
+  devolutionsAuthorized DevolutionRequest[] @relation("DevolutionAuthorizer")
   tasks               Task[]
   groups              UserGroup[]
   directPermissions   UserPermission[]
@@ -168,6 +172,7 @@ model ConsumableMaterial {
   user          User                @relation(fields: [userId], references: [id], map: "consumable_materials_user_id_fkey")
   loanMaterials LoanMaterial[]
   returnable    ReturnableMaterial?
+  devolutionItems DevolutionRequestItem[]
 
   @@map("consumable_materials")
 }
@@ -213,6 +218,9 @@ model Loan {
   isActive         Boolean         @default(true) @map("is_active")
   materials        LoanMaterial[]
   signatures       LoanSignature[]
+  // Devoluciones registradas sobre este préstamo (P47). El préstamo NO cambia de
+  // estado por tener una pendiente: sigue Activo hasta devolverse todo.
+  devolutions      DevolutionRequest[]
 
   @@map("loans")
 }
@@ -221,6 +229,10 @@ model LoanMaterial {
   loanId             Int                @map("loan_id")
   materialId         Int                @map("material_id")
   borrowedQuantity   Int                @map("borrowed_quantity")
+  // Cuánto de lo prestado ya volvió y fue AUTORIZADO (P47). Devuelto por
+  // completo ⇔ returnedQuantity == borrowedQuantity; la fila no se borra para no
+  // romper la FK compuesta de loan_returns ni perder el histórico.
+  returnedQuantity   Int                @default(0) @map("returned_quantity")
   created_at         DateTime           @default(now())
   loan               Loan               @relation(fields: [loanId], references: [id], onDelete: Cascade)
   consumableMaterial ConsumableMaterial @relation(fields: [materialId], references: [id])
@@ -254,6 +266,61 @@ model LoanReturn {
   loanMaterial      LoanMaterial @relation(fields: [loanId, materialId], references: [loanId, materialId])
 
   @@map("loan_returns")
+}
+
+// Solicitud de devolución (P47). Los dos estados que pide el requerimiento
+// ("En espera de autorizar devolución total/parcial") son la combinación de
+// `type` y `status`; la etiqueta se compone en el cliente.
+model DevolutionRequest {
+  id             Int                      @id @default(autoincrement())
+  loanId         Int                      @map("loan_id")
+  type           DevolutionType
+  status         DevolutionStatus         @default(En_espera)
+  requestedById  Int                      @map("requested_by_id")
+  // Fecha y hora de la petición: el modal de autorizar la muestra
+  requestedAt    DateTime                 @default(now()) @map("requested_at")
+  authorizedById Int?                     @map("authorized_by_id")
+  authorizedAt   DateTime?                @map("authorized_at")
+  isActive       Boolean                  @default(true) @map("is_active")
+  created_at     DateTime                 @default(now())
+  updated_at     DateTime                 @updatedAt
+  loan           Loan                     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  requestedBy    User                     @relation("DevolutionRequester", fields: [requestedById], references: [id])
+  authorizedBy   User?                    @relation("DevolutionAuthorizer", fields: [authorizedById], references: [id])
+  items          DevolutionRequestItem[]
+
+  @@index([loanId])
+  @@index([status])
+  @@map("devolution_requests")
+}
+
+model DevolutionRequestItem {
+  id                     Int                @id @default(autoincrement())
+  requestId              Int                @map("request_id")
+  materialId             Int                @map("material_id")
+  // Unidades que vuelven al almacén: lo entregado en un devolutivo, lo sobrante
+  // en un consumible. Un solo dato porque responde a lo mismo: cuánto regresa.
+  returnedQuantity       Int                @map("returned_quantity")
+  requesterObservations  String             @default("") @map("requester_observations") @db.VarChar(255)
+  // Lo decide quien autoriza; null mientras está en espera. Solo `Disponible`
+  // reintegra cantidad al inventario.
+  materialStatus         MaterialStatus?    @map("material_status")
+  authorizerObservations String             @default("") @map("authorizer_observations") @db.VarChar(255)
+  request                DevolutionRequest  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  consumableMaterial     ConsumableMaterial @relation(fields: [materialId], references: [id])
+
+  @@index([requestId])
+  @@map("devolution_request_items")
+}
+
+enum DevolutionType {
+  Total
+  Parcial
+}
+
+enum DevolutionStatus {
+  En_espera
+  Autorizada
 }
 
 model Task {

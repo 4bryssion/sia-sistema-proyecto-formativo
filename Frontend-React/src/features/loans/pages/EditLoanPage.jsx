@@ -61,13 +61,20 @@ export default function EditLoanPage() {
         // Disponibles (consumo + devolutivo) + los que el préstamo ya tiene
         const optionMap = new Map();
         buildMaterialOptions(consumables, returnables).forEach((o) => optionMap.set(o.value, o));
-        (l.materials ?? []).forEach((lm) =>
+        (l.materials ?? []).forEach((lm) => {
+          // Solo se agrega si NO está ya en la lista de disponibles: si está, su
+          // entrada trae el tipo y el disponible reales y sobrescribirla los
+          // perdería (todo material del préstamo se marcaba como "consumible")
+          if (optionMap.has(String(lm.materialId))) return;
           optionMap.set(String(lm.materialId), {
             value: String(lm.materialId),
             label: lm.consumableMaterial?.materialName ?? `#${lm.materialId}`,
-            type: "consumible",
-          })
-        );
+            type: lm.consumableMaterial?.returnable ? "devolutivo" : "consumible",
+            // Ya no figura como disponible porque está prestado justo aquí: lo
+            // que se puede reasignar sin tocar stock es lo ya prestado
+            available: lm.borrowedQuantity,
+          });
+        });
         setMaterialOptions([...optionMap.values()]);
       } catch (err) {
         setLoadError(err.response?.data?.error ?? "Error al cargar el préstamo");
@@ -80,8 +87,39 @@ export default function EditLoanPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Mismo recorte que en crear: la cantidad no puede pasar del disponible del
+  // material elegido, y al cambiar de material arranca en 0 para que se lea
+  // "0/disponible"
+  const disponibleDe = (materialId) =>
+    materialOptions.find((o) => String(o.value) === String(materialId))?.available ?? null;
+
   const handleMaterialChange = (idx, field, value) =>
-    setMaterials((prev) => prev.map((l, i) => (i === idx ? { ...l, [field]: value } : l)));
+    setMaterials((prev) =>
+      prev.map((linea, i) => {
+        if (i !== idx) return linea;
+
+        if (field === "materialId") {
+          const tope = disponibleDe(value);
+          const actual = linea.borrowedQuantity;
+          return {
+            materialId: value,
+            borrowedQuantity: !value
+              ? ""
+              : actual === ""
+                ? "0"
+                : tope != null && Number(actual) > tope
+                  ? String(tope)
+                  : actual,
+          };
+        }
+
+        const tope = disponibleDe(linea.materialId);
+        let cantidad = value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+        if (cantidad === "") cantidad = linea.materialId ? "0" : "";
+        if (tope != null && Number(cantidad) > tope) cantidad = String(tope);
+        return { ...linea, borrowedQuantity: cantidad };
+      }),
+    );
 
   const addMaterial    = () => setMaterials((prev) => [...prev, { materialId: "", borrowedQuantity: "" }]);
   const removeMaterial = (idx) => setMaterials((prev) => prev.filter((_, i) => i !== idx));

@@ -123,7 +123,17 @@ export const classifyMailError = (err) => {
   return rejectedByServer ? 'invalid_recipient' : 'service_error';
 };
 
-export const sendLoanSignatureRequest = async (to, { partyLabel, loan, signUrl }) => {
+// Solicitud de firma electrónica de un préstamo.
+//
+// Sigue la misma estructura que los otros dos correos del sistema: saludo con el
+// nombre de quien recibe, el dato accionable destacado, un bloque de datos, el
+// botón de acción, el aviso de vencimiento y la nota de seguridad al pie.
+// `partyLabel` es el rol de quien firma; `counterpartName`, con quién queda el
+// préstamo — sin eso el correo pedía una firma sin decir frente a quién.
+export const sendLoanSignatureRequest = async (
+  to,
+  { partyLabel, signerName, counterpartLabel, counterpartName, loan, signUrl },
+) => {
   const lines = loan.materials
     .map((m) => `- ${m.consumableMaterial.materialName} x${m.borrowedQuantity}`)
     .join('\n');
@@ -131,29 +141,50 @@ export const sendLoanSignatureRequest = async (to, { partyLabel, loan, signUrl }
     (m) => `${m.consumableMaterial.materialName} <strong>x${m.borrowedQuantity}</strong>`,
   );
   const returnDate = loan.returnDate.toISOString().slice(0, 10);
+  const loanDate = (loan.loanDate ?? new Date()).toISOString().slice(0, 10);
+  const rol = partyLabel.toLowerCase();
+
+  const datos = [
+    { label: 'Fecha del préstamo', value: loanDate },
+    { label: 'Fecha de devolución', value: returnDate },
+    { label: 'Grupo de aprendices', value: loan.apprenticeGroup },
+    { label: 'Justificación de uso', value: loan.useJustification },
+  ];
+  if (counterpartName) {
+    datos.unshift({ label: counterpartLabel ?? 'Otra parte', value: counterpartName });
+  }
 
   const html = layout({
     title: `Firma requerida — Préstamo #${loan.id}`,
-    preview: `Tienes un préstamo pendiente de firma como ${partyLabel}.`,
+    preview: `Tienes un préstamo pendiente de firma como ${rol}.`,
     body: [
-      p(`Tienes un préstamo pendiente de firma en calidad de <strong>${partyLabel}</strong>. El préstamo solo queda activo cuando ambas partes firman.`),
+      p(`${signerName ? `Hola <strong>${signerName}</strong>. ` : ''}Tienes un préstamo pendiente de firma en calidad de <strong>${rol}</strong>. El préstamo solo queda activo cuando ambas partes lo firman.`),
       subtitle('Materiales'),
       list(items),
-      dataBox([
-        { label: 'Grupo de aprendices', value: loan.apprenticeGroup },
-        { label: 'Justificación de uso', value: loan.useJustification },
-        { label: 'Fecha de devolución', value: returnDate },
-      ]),
+      subtitle('Datos del préstamo'),
+      dataBox(datos),
       button(signUrl, 'Firmar préstamo'),
-      notice('El enlace de firma vence en <strong>7 días</strong>.'),
-      small('Si no reconoces este préstamo, comunícate con el administrador del sistema antes de firmar.'),
+      notice('El enlace de firma vence en <strong>7 días</strong> y solo puede usarse una vez.'),
+      small('Si no reconoces este préstamo, no firmes: comunícate con el administrador del sistema.'),
     ].join(''),
   });
 
   await send({
     to,
     subject: `Firma requerida — Préstamo #${loan.id} — S.I.I`,
-    text: `Tienes un préstamo pendiente de firma como ${partyLabel}.\n\nMateriales:\n${lines}\n\nGrupo: ${loan.apprenticeGroup}\nJustificación: ${loan.useJustification}\nFecha de devolución: ${returnDate}\n\nFirma aquí (vence en 7 días): ${signUrl}`,
+    text: `${signerName ? `Hola ${signerName}.\n\n` : ''}Tienes un préstamo pendiente de firma como ${rol}. El préstamo solo queda activo cuando ambas partes lo firman.
+
+Materiales:
+${lines}
+${counterpartName ? `\n${counterpartLabel ?? 'Otra parte'}: ${counterpartName}` : ''}
+Fecha del préstamo: ${loanDate}
+Fecha de devolución: ${returnDate}
+Grupo de aprendices: ${loan.apprenticeGroup}
+Justificación: ${loan.useJustification}
+
+Firma aquí (el enlace vence en 7 días): ${signUrl}
+
+Si no reconoces este préstamo, no firmes: comunícate con el administrador del sistema.`,
     html,
   });
 };

@@ -31,6 +31,10 @@ import loanRoutes from './features/loans/loan.routes.js';
 
 import loanReturnRoutes from './features/loan-returns/loanReturn.routes.js';
 
+// Devoluciones en dos fases (P47): registrar y autorizar. Va aparte de
+// loan-returns, que es el retorno de una sola fase ya existente.
+import devolutionRoutes from './features/devolutions/devolution.routes.js';
+
 import taskRoutes from './features/tasks/task.routes.js';
 // (P43) Notificaciones / logs del sistema
 import notificationRoutes from './features/notifications/notification.routes.js';
@@ -80,6 +84,7 @@ app.use('/api/returnable-materials', returnableMaterialRoutes);
 app.use('/api/loans', loanRoutes);
 
 app.use('/api/loan-returns',         loanReturnRoutes);
+app.use('/api/devolutions',          devolutionRoutes);
 
 app.use('/api/tasks', taskRoutes);
 app.use('/api/notifications', notificationRoutes);

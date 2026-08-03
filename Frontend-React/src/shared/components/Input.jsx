@@ -12,6 +12,13 @@ export default function Input({
     // Prefijo visual fijo (ej. "$" para precios): se superpone dentro del campo y
     // desplaza el texto; NO forma parte del value (el dato sigue siendo numérico puro)
     prefix,
+    // Sufijo visual PEGADO al valor, no al borde derecho: sirve para campos del
+    // tipo "cantidad sobre un máximo" (se escribe 3 y se lee "3/40").
+    // Se coloca midiendo el valor en unidades `ch`, que es el ancho del carácter
+    // "0". Eso solo cuadra si el campo acepta ÚNICAMENTE dígitos: en las fuentes
+    // del proyecto los números son tabulares (todos miden lo mismo) pero las
+    // letras no, así que con texto libre el sufijo se despegaría.
+    suffix,
     // revealable: en type="password" agrega el IconButton de ojo para mostrar/ocultar.
     // Se puede apagar (revealable={false}) donde no se quiera dar esa opción.
     revealable = true,
@@ -125,6 +132,28 @@ export default function Input({
                         "
                     >
                         {prefix}
+                    </span>
+                )}
+
+                {/* Sufijo pegado al valor. El desplazamiento es el padding
+                    izquierdo del campo (pl-4 = 1rem, o pl-8 = 2rem si hay
+                    prefijo) más un `ch` por cada dígito escrito */}
+                {suffix && (
+                    <span
+                        className="
+                            absolute
+                            z-10
+                            text-base
+                            font-secondary
+                            text-text-muted
+                            pointer-events-none
+                            select-none
+                        "
+                        style={{
+                            left: `calc(${prefix ? "2rem" : "1rem"} + ${String(props.value ?? "").length}ch)`,
+                        }}
+                    >
+                        {suffix}
                     </span>
                 )}
 

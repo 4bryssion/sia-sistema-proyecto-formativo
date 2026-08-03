@@ -4,7 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { Dropdown, DropdownTrigger, DropdownItem, DropdownContent, Alert, usePermissions } from "@/shared";
 import { getLoanStatusLabel } from "../utils/loanStatusLabel";
 
-export default function LoanRowActions({ loan }) {
+// onReturn: retornar dejó de ser una página y pasó a ser el modal que mantiene
+// ListLoanPage en una sola instancia. Visualizar y editar siguen navegando
+// mientras no se conviertan (paso 5 del bloque).
+export default function LoanRowActions({ loan, onReturn }) {
   const { can } = usePermissions();
     const navigate = useNavigate();
 
@@ -34,7 +37,7 @@ export default function LoanRowActions({ loan }) {
             );
             return;
         }
-        navigate(`/view/loans/${loan.id}/return`);
+        onReturn?.(loan.id);
     };
 
     return (
@@ -52,7 +55,8 @@ export default function LoanRowActions({ loan }) {
 
             <button
                 onClick={handleReturn}
-                className="p-1 rounded hover:bg-gray-900"
+                aria-label="Retornar préstamo"
+                className="p-1 rounded hover:bg-gray-900 cursor-pointer"
             >
                 < ArrowLeftRight  size={16} />
             </button>

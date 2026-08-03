@@ -2,7 +2,18 @@ import prisma from '../../config/prisma.js';
 import { applyLend, applyRestore } from './loan.stock.js';
 
 const loanInclude = {
-  materials: { include: { consumableMaterial: true } },
+  // `returnable` se trae solo para saber de qué TIPO es cada material: la
+  // herencia de tabla hace que un devolutivo sea un consumable_materials con
+  // fila hermana en returnable_materials, y sin este dato el cliente no puede
+  // distinguirlos (el formulario de préstamo y los retornos etiquetan por tipo).
+  // Se pide solo el id para no arrastrar toda la fila.
+  materials: {
+    include: {
+      consumableMaterial: {
+        include: { returnable: { select: { id: true } } },
+      },
+    },
+  },
   signatures: { include: { user: true } },
 };
 

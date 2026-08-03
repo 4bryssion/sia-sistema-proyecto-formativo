@@ -21,6 +21,9 @@ export default function LoanRegisterForm() {
   });
   const [materials, setMaterials]               = useState([{ materialId: "", borrowedQuantity: "" }]);
   const [userOptions, setUserOptions]           = useState([]);
+  // El prestador es quien entrega y responde por el material: solo cuentadantes.
+  // El receptor puede ser cualquiera, así que son dos listas distintas.
+  const [lenderOptions, setLenderOptions]       = useState([]);
   const [materialOptions, setMaterialOptions]   = useState([]);
   const [errors, setErrors]                     = useState({});
   const [materialErrors, setMaterialErrors]     = useState([]);
@@ -34,9 +37,19 @@ export default function LoanRegisterForm() {
           consumableMaterialService.getAll("active"),
           returnableMaterialService.getAll("active").catch(() => []),
         ]);
-        // El SADMIN ya viene excluido por el backend (systemIdentities.js)
-        setUserOptions(
-          users.map((u) => ({ value: u.id, label: `${u.userFirstName} ${u.userLastName}` }))
+        // El SADMIN ya viene excluido por el backend (systemIdentities.js).
+        // El value va como STRING: el schema Zod espera string y con el número
+        // crudo fallaba con "Invalid input: expected string, received number"
+        // en cuanto se elegía un usuario.
+        const opciones = users.map((u) => ({
+          value: String(u.id),
+          label: `${u.userFirstName} ${u.userLastName}`,
+        }));
+        setUserOptions(opciones);
+        setLenderOptions(
+          users
+            .filter((u) => u.userAccountType === "Cuentadante")
+            .map((u) => ({ value: String(u.id), label: `${u.userFirstName} ${u.userLastName}` })),
         );
         setMaterialOptions(buildMaterialOptions(consumables, returnables));
       } catch {
@@ -47,11 +60,45 @@ export default function LoanRegisterForm() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    // El grupo de aprendices es un número pero el campo es de texto (para no
+    // arrastrar las flechas del type="number"): se filtra a dígitos al escribir
+    const limpio = name === "apprenticeGroup" ? value.replace(/\D/g, "") : value;
+    setFormData((prev) => ({ ...prev, [name]: limpio }));
   };
 
+  // Cuántas unidades admite un material. Sale de las opciones ya cargadas, que
+  // llevan el disponible calculado (serializado ⇒ 1).
+  const disponibleDe = (materialId) =>
+    materialOptions.find((o) => String(o.value) === String(materialId))?.available ?? null;
+
   const handleMaterialChange = (idx, field, value) => {
-    setMaterials((prev) => prev.map((l, i) => (i === idx ? { ...l, [field]: value } : l)));
+    setMaterials((prev) =>
+      prev.map((linea, i) => {
+        if (i !== idx) return linea;
+
+        if (field === "materialId") {
+          const tope = disponibleDe(value);
+          return {
+            materialId: value,
+            // Al elegir material la cantidad arranca en 0 para que el campo se
+            // lea "0/disponible"; si venía escrita, se recorta al nuevo tope
+            borrowedQuantity: !value
+              ? ""
+              : linea.borrowedQuantity === "" || Number(linea.borrowedQuantity) > tope
+                ? (linea.borrowedQuantity === "" ? "0" : String(tope))
+                : linea.borrowedQuantity,
+          };
+        }
+
+        // Cantidad: solo dígitos, sin ceros a la izquierda y con tope en el
+        // disponible del material elegido
+        const tope = disponibleDe(linea.materialId);
+        let cantidad = value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+        if (cantidad === "") cantidad = linea.materialId ? "0" : "";
+        if (tope != null && Number(cantidad) > tope) cantidad = String(tope);
+        return { ...linea, borrowedQuantity: cantidad };
+      }),
+    );
   };
   const addMaterial    = () => setMaterials((prev) => [...prev, { materialId: "", borrowedQuantity: "" }]);
   const removeMaterial = (idx) => setMaterials((prev) => prev.filter((_, i) => i !== idx));
@@ -116,8 +163,11 @@ export default function LoanRegisterForm() {
       {/* Cuadro blanco que envuelve el formulario sobrepasándolo 32px (p-8),
           igual que en los módulos de materiales */}
       <div className="bg-white rounded-xl shadow-sm p-8 w-full">
+      {/* La columna de datos se queda en los 320px de siempre y la de materiales
+          se lleva TODO el resto: sus filas son select + cantidad + papelera, y
+          con 320px el nombre del material se cortaba casi entero */}
       <form
-        className="grid gap-6 md:grid-cols-2 justify-items-center w-full"
+        className="grid gap-6 md:grid-cols-[320px_minmax(0,1fr)] justify-items-center w-full"
         onSubmit={handleSubmit}
       >
         {/* Columna izquierda: datos del préstamo */}
@@ -126,7 +176,7 @@ export default function LoanRegisterForm() {
             label="Prestador" variant="search"
             name="lenderId"
             required
-            options={userOptions}
+            options={lenderOptions}
             value={formData.lenderId}
             onChange={handleChange}
             error={errors.lenderId}
@@ -144,7 +194,11 @@ export default function LoanRegisterForm() {
             label="Grupo de aprendices"
             name="apprenticeGroup"
             required
-            type="number"
+            // De texto y no de número: el type="number" trae las flechas de
+            // subir/bajar, que aquí no significan nada (un grupo no es una
+            // cantidad que se incremente). Los dígitos los garantiza handleChange.
+            type="text"
+            inputMode="numeric"
             placeholder="Ingrese el número del grupo"
             value={formData.apprenticeGroup}
             onChange={handleChange}
@@ -172,7 +226,7 @@ export default function LoanRegisterForm() {
         </div>
 
         {/* Columna derecha: materiales */}
-        <div className="flex flex-col gap-6 w-full md:w-[320px]">
+        <div className="flex flex-col gap-6 w-full">
           <LoanMaterialLines
             lines={materials}
             options={materialOptions}
