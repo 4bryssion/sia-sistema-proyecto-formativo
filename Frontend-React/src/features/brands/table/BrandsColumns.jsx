@@ -1,10 +1,8 @@
 import BrandRowActions from "../components/BrandRowActions";
 
 export const brandColumns = (onChanged) => [
-    {
-        accessorKey: "id",
-        header: "Id",
-    },
+  // Sin columna de ID: el registro se identifica por su nombre; el id solo
+  // viaja internamente para abrir el modal o llamar al servicio.
     {
         accessorKey: "brandName",
         header: "Nombre",

@@ -20,7 +20,8 @@ export const createUserSchema = Joi.object({
   userLastName: baseSchema.userLastName.required(),
   documentTypeId: baseSchema.documentTypeId.required(),
   userDocumentNumber: baseSchema.userDocumentNumber.required(),
-  userEndDate: baseSchema.userEndDate.required(),
+  // Opcional: instructores de planta y administradores no tienen fecha de finalización
+  userEndDate: baseSchema.userEndDate.optional().allow(null, ''),
   userEmail: baseSchema.userEmail.required(),
   userPhone: baseSchema.userPhone.required(),
   userAddress: baseSchema.userAddress.required(),

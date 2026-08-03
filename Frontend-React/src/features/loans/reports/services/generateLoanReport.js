@@ -1,6 +1,9 @@
+// Orquesta el reporte de préstamos. La generación del archivo (y su encabezado
+// con sistema, fecha/hora, usuario y totales) la hace el generador compartido:
+// ver shared/reports/generateReport.
+
 import { buildReportDataset } from "../utils/buildReportDataset";
-import { generateExcelReport } from "./generateExcelReport";
-import { generatePdfReport } from "./generatePdfReport";
+import { generateReport } from "@/shared/reports/generateReport";
 
 export function generateLoanReport({
   format,
@@ -8,6 +11,7 @@ export function generateLoanReport({
   scope,
   usuario,
   loans = [],
+  statusLabel,
 }) {
   const { headers, rows } = buildReportDataset({
     loans,
@@ -16,17 +20,21 @@ export function generateLoanReport({
     usuario,
   });
 
-  if (!rows.length) {
-    alert("No hay datos para generar reporte.");
-    return;
-  }
-
-  const timestamp = new Date().toISOString().slice(0, 10);
-
-  if (format === "excel") {
-    generateExcelReport({ headers, rows, fileName: `loan-report.${timestamp}.xlsx` });
-  }
-  if (format === "pdf") {
-    generatePdfReport({ headers, rows, fileName: `loan-report.${timestamp}.pdf` });
-  }
+  return generateReport({
+    format,
+    title: "Reporte de préstamos",
+    fileBase: "prestamos",
+    sheetName: "Préstamos",
+    headers,
+    rows,
+    filters: [
+      { label: "Estado", value: statusLabel },
+      {
+        label: "Alcance",
+        value: scope === "usuario" && usuario
+          ? `Préstamos del usuario ${usuario}`
+          : "Todos los préstamos listados",
+      },
+    ],
+  });
 }

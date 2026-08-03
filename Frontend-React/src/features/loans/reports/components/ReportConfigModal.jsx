@@ -11,7 +11,7 @@ import { generateLoanReport } from "../services/generateLoanReport";
 import { Button, Input, Select, Checkbox } from "@/shared";
 
 // Componente modal para configuración de reportes de préstamos
-export default function ReportConfigModal({ isOpen, onClose, loans = [] }) {
+export default function ReportConfigModal({ isOpen, onClose, loans = [], statusLabel }) {
 
     // Estado del formato de salida
     const [format, setFormat] = useState("pdf");
@@ -53,6 +53,7 @@ export default function ReportConfigModal({ isOpen, onClose, loans = [] }) {
             scope,
             usuario,
             loans,
+            statusLabel,
         });
 
         // Cierra el modal después de generar el reporte

@@ -48,4 +48,17 @@ export const groupController = {
       res.json({ mensaje: 'Permiso removido del grupo.' });
     } catch (err) { next(err); }
   },
+
+  async getPermissions(req, res, next) {
+    try {
+      res.json(await groupService.getPermissions(Number(req.params.id)));
+    } catch (err) { next(err); }
+  },
+
+  async updatePermissions(req, res, next) {
+    try {
+      await groupService.updatePermissions(Number(req.params.id), req.body.permissionIds);
+      res.json({ mensaje: 'Permisos del grupo actualizados.' });
+    } catch (err) { next(err); }
+  },
 };

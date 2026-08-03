@@ -1,7 +1,8 @@
-import { Input, Button, Select } from "@/shared";
+import { Input, Button, Select, CancelButton } from "@/shared";
 import { Pencil } from "lucide-react";
 import logo from "@/assets/logos/logo-sena-negro.png";
 import LoanMaterialLines from "./LoanMaterialLines";
+import { todayLocalISO } from "../schemas/loanSchema.js";
 
 const STATUS_OPTIONS = [
   { value: "Activo",     label: "Activo" },
@@ -58,6 +59,7 @@ export default function LoanEditRight({
             label="Fecha de devolución"
             name="returnDate"
             type="date"
+            min={todayLocalISO()}
             value={form.returnDate}
             onChange={onChange}
             error={errors.returnDate}
@@ -95,6 +97,7 @@ export default function LoanEditRight({
       {errors.form && <p className="text-error font-secondary text-center mt-4">{errors.form}</p>}
 
       <div className="flex flex-wrap items-center justify-end gap-6 mt-6">
+        <CancelButton disabled={saving} />
         <Button variant="primary" type="button" className="gap-2" onClick={onSubmit} disabled={saving}>
           <Pencil size={16} />
           {saving ? "Guardando..." : "Guardar"}

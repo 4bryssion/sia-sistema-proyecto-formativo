@@ -1,14 +1,16 @@
 import { Router } from 'express';
 import { permissionController } from './permission.controller.js';
 import { validate, createPermissionSchema, updatePermissionSchema } from './permission.validator.js';
+import { authenticateToken } from '../../middleware/auth.middleware.js';
+import { requirePermission } from '../../middleware/permission.middleware.js';
 
 const router = Router();
 
-router.get('/',             permissionController.getAll);
-router.get('/:id',          permissionController.getById);
-router.post('/',            validate(createPermissionSchema), permissionController.create);
-router.put('/:id',          validate(updatePermissionSchema),  permissionController.update);
-router.patch('/:id/toggle', permissionController.toggle);
+router.get('/', authenticateToken, requirePermission('list_permissions'),             permissionController.getAll);
+router.get('/:id', authenticateToken, requirePermission('list_permissions'),          permissionController.getById);
+router.post('/', authenticateToken, requirePermission('create_permission'),            validate(createPermissionSchema), permissionController.create);
+router.put('/:id', authenticateToken, requirePermission('edit_permission'),          validate(updatePermissionSchema),  permissionController.update);
+router.patch('/:id/toggle', authenticateToken, requirePermission('toggle_permission'), permissionController.toggle);
 
 router.use((err, req, res, next) => {
   if (err.message && !err.code) {

@@ -6,8 +6,6 @@ import { IconButton } from "@/shared";
 import UserRegisterForm 
 from "../components/UserRegisterForm";
 
-// import formBg from "@/assets/images/background-claro.jpg"
-
 import { Undo2 } from "lucide-react";
 
 export default function CreateUserPage(){

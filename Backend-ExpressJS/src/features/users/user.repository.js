@@ -1,4 +1,5 @@
 import prisma from '../../config/prisma.js';
+import { withoutSuperAdminUsers } from '../../config/systemIdentities.js';
 
 const selectPublic = {
   id:                     true,
@@ -32,12 +33,17 @@ const selectPublic = {
 
 export const userRepository = {
   async findAll(status = 'active') {
-    const where =
+    const statusWhere =
       status === 'all'      ? {} :
       status === 'inactive' ? { isActive: false } :
                               { isActive: true }; // 'active' y cualquier valor desconocido
+
     return prisma.user.findMany({
-      where,
+      // El SADMIN se excluye AQUÍ y no en cada pantalla: este listado alimenta
+      // la tabla de usuarios, los reportes y todos los selects de cuentadante,
+      // prestador, receptor y asignación de tareas. Filtrarlo en el origen evita
+      // que un listado nuevo se olvide de hacerlo y lo deje ver.
+      where: { ...statusWhere, ...withoutSuperAdminUsers },
       select: selectPublic,
       orderBy: { userFirstName: 'asc' },
     });

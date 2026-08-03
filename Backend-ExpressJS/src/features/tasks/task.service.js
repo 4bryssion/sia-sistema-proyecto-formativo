@@ -1,4 +1,5 @@
 import { taskRepository } from './task.repository.js';
+import { notify } from '../notifications/notification.service.js';
 
 // Medianoche de hoy (para comparar fechas sin hora)
 const startOfToday = () => {
@@ -26,8 +27,12 @@ export const taskService = {
   },
 
   async create(bodyData) {
+    // Joi (date().iso()) ya convirtió endDate a Date en UTC medianoche; se compara
+    // por fecha de calendario (toISOString) contra hoy local para no rechazar el
+    // mismo día por desfase de zona horaria (bug: en UTC-5 "hoy" quedaba < medianoche local)
     const endDate = new Date(bodyData.endDate);
-    if (endDate < startOfToday()) {
+    const todayLocal = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+    if (endDate.toISOString().slice(0, 10) < todayLocal) {
       throw new Error('La fecha de fin no puede ser anterior a hoy.');
     }
     const data = {
@@ -35,7 +40,13 @@ export const taskService = {
       userId: Number(bodyData.userId),
       endDate,
     };
-    return taskRepository.create(data);
+    const created = await taskRepository.create(data);
+    notify({
+      title: 'Tarea asignada',
+      description: `Se asignó la tarea "${created.taskName}" al usuario #${created.userId}.`,
+      module: 'tasks',
+    });
+    return created;
   },
 
   async update(id, bodyData) {
@@ -47,20 +58,33 @@ export const taskService = {
     delete data.isActive;
 
     if (data.endDate) {
+      // Misma comparación por fecha de calendario que en create (evita el desfase UTC/local)
       const endDate = new Date(data.endDate);
-      const inicio = new Date(tarea.created_at);
-      inicio.setHours(0, 0, 0, 0);
-      if (endDate < inicio) {
+      const inicioLocal = new Date(tarea.created_at).toLocaleDateString('en-CA');
+      if (endDate.toISOString().slice(0, 10) < inicioLocal) {
         throw new Error('La fecha de fin no puede ser anterior a la fecha de inicio.');
       }
       data.endDate = endDate;
     }
 
-    return taskRepository.update(id, data);
+    const updated = await taskRepository.update(id, data);
+    notify({
+      title: 'Tarea modificada',
+      description: `Se actualizó la tarea "${updated.taskName}" (estado: ${updated.status}).`,
+      module: 'tasks',
+    });
+    return updated;
   },
 
   async toggle(id) {
     const record = await taskService.getById(id);
-    return taskRepository.toggle(id, !record.isActive);
+    const updated = await taskRepository.toggle(id, !record.isActive);
+    notify({
+      title: updated.isActive ? 'Tarea activada' : 'Tarea desactivada',
+      description: `"${updated.taskName}" quedó ${updated.isActive ? 'activa' : 'inactiva'}.`,
+      severity: updated.isActive ? 'Informativa' : 'Advertencia',
+      module: 'tasks',
+    });
+    return updated;
   },
 };

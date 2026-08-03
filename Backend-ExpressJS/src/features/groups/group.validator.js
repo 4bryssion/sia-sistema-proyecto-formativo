@@ -12,6 +12,11 @@ export const assignPermissionSchema = Joi.object({
   permissionId: Joi.number().integer().positive().required(),
 });
 
+// Reemplazo atómico del set de permisos — array de IDs positivos, puede ser vacío (quita todos)
+export const updatePermissionsSchema = Joi.object({
+  permissionIds: Joi.array().items(Joi.number().integer().positive()).required(),
+});
+
 export const validate = (schema) => (req, res, next) => {
   const { error } = schema.validate(req.body, { abortEarly: false });
   if (error) {

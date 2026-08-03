@@ -4,8 +4,12 @@ export default function Checkbox({
     label, // Texto visible asociado al checkbox 
     checked = false, // Estado controlado del checkbox
     onChange, // Funcion que maneja el cambio de estado
-    disable = false, // Indica si el checkboix esta habilitado 
+    disable = false, // Indica si el checkboix esta habilitado
     className = "", // Clases adicionales para personalización
+    // Tamaño del texto del label. Va sobre el <span> y no sobre el <label> para
+    // que el consumidor pueda sobrescribirlo: dos utilidades de tamaño en el
+    // mismo elemento se resolverían por el orden del CSS, no por el del atributo.
+    labelClassName = "text-sm",
 
 }) {
 
@@ -17,7 +21,6 @@ export default function Checkbox({
                 flex
                 items-center
                 gap-2
-                text-sm
                 cursor-pointer
                 ${disable ? "opacity-50 cursor-not-allowed" : ""}
                 ${className }
@@ -38,7 +41,7 @@ export default function Checkbox({
             />
             {/* Texto del checkbox */}
 
-            <span>{label}</span>
+            <span className={`font-secondary ${labelClassName}`}>{label}</span>
 
         </label>
     );

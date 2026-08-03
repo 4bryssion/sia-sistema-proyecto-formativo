@@ -9,6 +9,8 @@ import CreateGroupModal from "./CreateGroupModal.jsx";
 export default function ListGroupPage() {
   const navigate = useNavigate();
   const { groups, loading, error, refetch } = useGroups();
+  // El grupo SuperAdmin ya viene excluido por el backend (systemIdentities.js)
+  const visibleGroups = groups;
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (
@@ -34,7 +36,7 @@ export default function ListGroupPage() {
       ) : error ? (
         <p className="text-error">{error}</p>
       ) : (
-        <DataTable data={groups} columns={groupColumns(refetch)} />
+        <DataTable data={visibleGroups} columns={groupColumns(refetch)} />
       )}
 
       <CreateGroupModal

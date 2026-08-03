@@ -1,17 +1,15 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-// import { CircleUser } from "lucide-react"
 import logo from "@/assets/logos/logo-sena-verde.png";
 
 
 
-import { 
-    Input, 
-    Button, 
-} from "@/shared";
+import { Input, 
+    Button, Alert } from "@/shared";
 
 import { authSchema } from "../schemas/authSchema.js";
 import { login } from "../services/authService.js";
+import { askOtherTabsForSession } from "@/shared/services/sessionChannel.js";
 
 export default function AuthRegisterForm(){
 
@@ -81,16 +79,41 @@ export default function AuthRegisterForm(){
             return;
         }
 
-        // Si la validación es exitosa se limpian los errores anteriores 
+        // Si la validación es exitosa se limpian los errores anteriores
         setErrors({});
 
+        // Sesión única dentro del mismo navegador (p45): el backend no puede ver
+        // este caso cuando se inicia sesión con OTRO usuario en una pestaña
+        // duplicada (cada usuario tiene su propio jti, no hay conflicto para él).
+        // Se pregunta a las demás pestañas antes de enviar las credenciales.
+        const otherTab = await askOtherTabsForSession();
+        if (otherTab.active) {
+            const msg = otherTab.email
+                ? `Ya tienes una sesión iniciada en otra pestaña de este navegador con la cuenta ${otherTab.email}. Ciérrala antes de ingresar con otra.`
+                : "Ya tienes una sesión iniciada en otra pestaña de este navegador. Ciérrala antes de ingresar con otra.";
+            Alert.error("Sesión ya iniciada", msg);
+            setErrors({ form: msg });
+            return;
+        }
+
         try {
+            Alert.loading("Iniciando sesión...");
             const data =  await login(result.data)
 
             sessionStorage.setItem("token", data.token); // Clave
+            sessionStorage.setItem("user", JSON.stringify(data.user)); // { id, email } — usado por Navbar para "Mi perfil"
 
+
+            Alert.close();
             navigate("/dashboard");
         } catch (error) {
+            Alert.close();
+            // 409: credenciales correctas pero la cuenta ya tiene sesión abierta
+            // en otro navegador o dispositivo (sesión única, p45)
+            Alert.error(
+                error.status === 409 ? "Sesión ya iniciada" : "Error al iniciar sesión",
+                error.message,
+            );
             setErrors({ form: error.message });
         }
     };
@@ -102,6 +125,12 @@ export default function AuthRegisterForm(){
                 className="grid gap-6 mx-6 p-8 sm:p-12 justify-items-center max-w-max  bg-white border rounded-md"
                 onSubmit={handleSubmit}
             >
+                {/* Presentación del software: va arriba del logo, con las variables
+                    de tipografía del proyecto (font-main + text-body) */}
+                <p className="font-main text-h2 font-heading text-center text-text-primary max-w-[320px]">
+                    S.I.I - Software de Inventario de Infraestructura
+                </p>
+
                 <img src={logo} alt="logo" className="h-24"/>
                 <h1 className="text-h3 font-main">
                     Inicio de Sesión

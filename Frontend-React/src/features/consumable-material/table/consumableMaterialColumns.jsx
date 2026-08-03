@@ -1,13 +1,13 @@
-import { Switch } from "@/shared";
+import { Switch, Alert } from "@/shared";
 import ConsumableMaterialRowActions from "../components/ConsumableMaterialRowActions";
 import consumableMaterialService from "../services/consumableMaterialService";
 import { getStatusLabel } from "../utils/statusLabel";
 
-export const consumableMaterialColumns = (refetch) => [
-  {
-    accessorKey: "id",
-    header: "ID",
-  },
+// onView / onEdit: abren los modales de ListConsumableMaterialPage. Antes
+// estas acciones navegaban a /view/consumable-materials/:id, rutas que ya no existen.
+export const consumableMaterialColumns = (refetch, can = () => true, onView, onEdit) => [
+  // Sin columna de ID: el registro se identifica por su nombre; el id solo
+  // viaja internamente para abrir el modal o llamar al servicio.
   {
     accessorKey: "materialName",
     header: "Nombre",
@@ -17,13 +17,9 @@ export const consumableMaterialColumns = (refetch) => [
     cell: ({ row }) => {
       const consumable = row.original;
 
-      const handleDoubleClick = () => {
-        window.location.href = `/view/consumable-materials/${consumable.materialName}`;
-      };
-
       return (
         <span
-          onDoubleClick={handleDoubleClick}
+          onDoubleClick={() => onView?.(consumable.id)}
           className="cursor-pointer hover:underline"
         >
           {consumable.materialName}
@@ -37,6 +33,12 @@ export const consumableMaterialColumns = (refetch) => [
     cell: ({ row }) => row.original.brand?.brandName ?? "—",
   },
   {
+    id: "quantity",
+    header: "Cantidad",
+    // Serializados (placa SENA, quantity null) → cantidad efectiva 1 (modelo de stock)
+    cell: ({ row }) => row.original.quantity ?? 1,
+  },
+  {
     id: "user",
     header: "Cuentadante",
     cell: ({ row }) => {
@@ -46,6 +48,9 @@ export const consumableMaterialColumns = (refetch) => [
   },
   {
     id: "status",
+    // El filtro por estado vive ahora en la barra de la tabla (FilterMenu),
+    // no en la cabecera: ver ListConsumableMaterialPage
+    accessorFn: (row) => row.status,
     header: "Estado",
     cell: ({ row }) => getStatusLabel(row.original.status),
   },
@@ -55,20 +60,29 @@ export const consumableMaterialColumns = (refetch) => [
     cell: ({ row }) => {
       const m = row.original;
       const handleToggle = async () => {
+        // Confirmación obligatoria antes de activar/desactivar (soft-delete)
+        const result = await Alert.warning(
+          `¿${m.isActive ? "Desactivar" : "Activar"} material?`,
+          `"${m.materialName}" quedará ${m.isActive ? "inactivo" : "activo nuevamente"}.`
+        );
+        if (!result.isConfirmed) return;
         try {
           await consumableMaterialService.toggle(m.id);
+          Alert.success(`Material ${m.isActive ? "desactivado" : "activado"}`);
           refetch();
         } catch (err) {
-          console.error("Error al cambiar estado:", err);
+          Alert.error("Error al cambiar estado", err.response?.data?.error ?? "");
         }
       };
+      // Sin permiso de toggle: solo lectura
+      if (!can("toggle_consumable_material")) return m.isActive ? "Activo" : "Inactivo";
       return <Switch checked={m.isActive} onChange={handleToggle} className="inline-flex" />;
     },
   },
   {
     id: "actions",
     cell: ({ row }) => (
-      <ConsumableMaterialRowActions consumableMaterial={row.original} />
+      <ConsumableMaterialRowActions consumableMaterial={row.original} onView={onView} onEdit={onEdit} />
     ),
   },
 ];

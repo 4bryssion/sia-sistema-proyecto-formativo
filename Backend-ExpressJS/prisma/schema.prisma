@@ -29,15 +29,28 @@ model Group {
   @@map("groups")
 }
 
+model ContentType {
+  id          Int          @id @default(autoincrement()) @map("content_type_id")
+  appLabel    String       @map("app_label") @db.VarChar(100)
+  model       String       @db.VarChar(100)
+  displayName String       @default("") @map("display_name") @db.VarChar(100)
+  permissions Permission[]
+
+  @@unique([appLabel, model], map: "uq_content_type")
+  @@map("content_type")
+}
+
 model Permission {
-  id             Int               @id(map: "permissions_pkey") @default(autoincrement())
-  permissionName String            @unique @map("permission_name") @db.VarChar(100)
-  description    String?           @db.VarChar(255)
-  isActive       Boolean           @default(true) @map("is_active")
-  created_at     DateTime          @default(now())
-  updated_at     DateTime          @updatedAt
-  groups         GroupPermission[]
-  users          UserPermission[]
+  id                 Int               @id(map: "permissions_pkey") @default(autoincrement())
+  permissionName     String            @unique @map("permission_name") @db.VarChar(150)
+  permissionCodename String            @unique @map("permission_codename") @db.VarChar(100)
+  isActive           Boolean           @default(true) @map("is_active")
+  created_at         DateTime          @default(now())
+  updated_at         DateTime          @updatedAt
+  contentTypeId      Int?              @map("content_type_id")
+  contentType        ContentType?      @relation(fields: [contentTypeId], references: [id], map: "fk_permissions_content_type")
+  groups             GroupPermission[]
+  users              UserPermission[]
 
   @@map("permissions")
 }
@@ -58,7 +71,11 @@ model User {
   userFirstName       String                 @map("user_first_name") @db.VarChar(100)
   userLastName        String                 @map("user_last_name") @db.VarChar(100)
   userDocumentNumber  String                 @unique @map("user_document_number") @db.VarChar(20)
-  userEndDate         DateTime               @map("user_end_date") @db.Date
+  // Opcional: los instructores de planta / administradores no tienen fecha de
+  // finalización de vínculo. Joi ya la aceptaba opcional y el frontend no la
+  // envía cuando se marca "Es instructor de planta"; la columna era la única
+  // que seguía exigiéndola (migración p44_user_end_date_nullable).
+  userEndDate         DateTime?              @map("user_end_date") @db.Date
   userEmail               String              @unique @map("user_email") @db.VarChar(150)
   userEmailInstitutional String?              @unique @map("user_email_institutional") @db.VarChar(150)
   userPhone           String                 @map("user_phone") @db.VarChar(15)
@@ -70,11 +87,25 @@ model User {
   userAccountType     AccountType            @default(Solidario) @map("user_account_type")
   createdAt           DateTime               @default(now()) @map("created_at")
   updatedAt           DateTime               @updatedAt @map("updated_at")
+  // Sesión única (p45): identificador (jti) del ÚNICO token válido del usuario.
+  // El JWT sigue siendo stateless en su firma, pero el jti se contrasta contra
+  // esta columna en cada petición: así una sesión abierta en otro navegador se
+  // detecta al iniciar sesión y una sesión reemplazada muere al instante.
+  // `activeSessionExpiresAt` evita el bloqueo permanente si el usuario cierra el
+  // navegador sin hacer logout: pasada esa fecha la sesión se considera libre.
+  activeSessionJti       String?             @map("active_session_jti") @db.VarChar(64)
+  activeSessionExpiresAt DateTime?           @map("active_session_expires_at")
   consumableMaterials ConsumableMaterial[]
   loanSignatures      LoanSignature[]
+  // Dos relaciones distintas hacia la misma tabla (quien entrega y quien
+  // autoriza): Prisma exige nombrarlas para poder distinguirlas
+  devolutionsRequested  DevolutionRequest[] @relation("DevolutionRequester")
+  devolutionsAuthorized DevolutionRequest[] @relation("DevolutionAuthorizer")
   tasks               Task[]
   groups              UserGroup[]
   directPermissions   UserPermission[]
+  passwordResetCodes  PasswordResetCode[]
+  notifications       Notification[]
   documentType        DocumentType           @relation(fields: [documentTypeId], references: [id], map: "users_document_type_id_fkey")
 
   @@map("users")
@@ -141,6 +172,7 @@ model ConsumableMaterial {
   user          User                @relation(fields: [userId], references: [id], map: "consumable_materials_user_id_fkey")
   loanMaterials LoanMaterial[]
   returnable    ReturnableMaterial?
+  devolutionItems DevolutionRequestItem[]
 
   @@map("consumable_materials")
 }
@@ -150,12 +182,30 @@ model ReturnableMaterial {
   categoryId         Int                @map("category_id")
   model              String             @db.VarChar(100)
   serial             String             @unique @db.VarChar(20)
-  technicalSheet     String             @map("technical_sheet")
+  // dimensions solo lo pide la categoría "Muebles y enseres"; para el resto
+  // queda null y no interfiere en la creación
   dimensions         String?            @db.VarChar(100)
   category           Category           @relation(fields: [categoryId], references: [id], map: "returnable_materials_category_id_fkey")
   consumableMaterial ConsumableMaterial @relation(fields: [id], references: [id], onDelete: Cascade, map: "returnable_materials_id_fkey")
+  // La ficha técnica dejó de ser una columna: son hasta 3 archivos (p46)
+  technicalSheets    ReturnableMaterialFile[]
 
   @@map("returnable_materials")
+}
+
+model ReturnableMaterialFile {
+  id         Int                @id @default(autoincrement())
+  materialId Int                @map("material_id")
+  fileUrl    String             @map("file_url") @db.VarChar(255)
+  fileName   String             @map("file_name") @db.VarChar(255)
+  mimeType   String             @map("mime_type") @db.VarChar(100)
+  // Orden elegido al arrastrar las previsualizaciones en el formulario
+  sortOrder  Int                @default(0) @map("sort_order")
+  created_at DateTime           @default(now())
+  material   ReturnableMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@index([materialId])
+  @@map("returnable_material_files")
 }
 
 model Loan {
@@ -168,6 +218,9 @@ model Loan {
   isActive         Boolean         @default(true) @map("is_active")
   materials        LoanMaterial[]
   signatures       LoanSignature[]
+  // Devoluciones registradas sobre este préstamo (P47). El préstamo NO cambia de
+  // estado por tener una pendiente: sigue Activo hasta devolverse todo.
+  devolutions      DevolutionRequest[]
 
   @@map("loans")
 }
@@ -176,6 +229,10 @@ model LoanMaterial {
   loanId             Int                @map("loan_id")
   materialId         Int                @map("material_id")
   borrowedQuantity   Int                @map("borrowed_quantity")
+  // Cuánto de lo prestado ya volvió y fue AUTORIZADO (P47). Devuelto por
+  // completo ⇔ returnedQuantity == borrowedQuantity; la fila no se borra para no
+  // romper la FK compuesta de loan_returns ni perder el histórico.
+  returnedQuantity   Int                @default(0) @map("returned_quantity")
   created_at         DateTime           @default(now())
   loan               Loan               @relation(fields: [loanId], references: [id], onDelete: Cascade)
   consumableMaterial ConsumableMaterial @relation(fields: [materialId], references: [id])
@@ -211,6 +268,61 @@ model LoanReturn {
   @@map("loan_returns")
 }
 
+// Solicitud de devolución (P47). Los dos estados que pide el requerimiento
+// ("En espera de autorizar devolución total/parcial") son la combinación de
+// `type` y `status`; la etiqueta se compone en el cliente.
+model DevolutionRequest {
+  id             Int                      @id @default(autoincrement())
+  loanId         Int                      @map("loan_id")
+  type           DevolutionType
+  status         DevolutionStatus         @default(En_espera)
+  requestedById  Int                      @map("requested_by_id")
+  // Fecha y hora de la petición: el modal de autorizar la muestra
+  requestedAt    DateTime                 @default(now()) @map("requested_at")
+  authorizedById Int?                     @map("authorized_by_id")
+  authorizedAt   DateTime?                @map("authorized_at")
+  isActive       Boolean                  @default(true) @map("is_active")
+  created_at     DateTime                 @default(now())
+  updated_at     DateTime                 @updatedAt
+  loan           Loan                     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  requestedBy    User                     @relation("DevolutionRequester", fields: [requestedById], references: [id])
+  authorizedBy   User?                    @relation("DevolutionAuthorizer", fields: [authorizedById], references: [id])
+  items          DevolutionRequestItem[]
+
+  @@index([loanId])
+  @@index([status])
+  @@map("devolution_requests")
+}
+
+model DevolutionRequestItem {
+  id                     Int                @id @default(autoincrement())
+  requestId              Int                @map("request_id")
+  materialId             Int                @map("material_id")
+  // Unidades que vuelven al almacén: lo entregado en un devolutivo, lo sobrante
+  // en un consumible. Un solo dato porque responde a lo mismo: cuánto regresa.
+  returnedQuantity       Int                @map("returned_quantity")
+  requesterObservations  String             @default("") @map("requester_observations") @db.VarChar(255)
+  // Lo decide quien autoriza; null mientras está en espera. Solo `Disponible`
+  // reintegra cantidad al inventario.
+  materialStatus         MaterialStatus?    @map("material_status")
+  authorizerObservations String             @default("") @map("authorizer_observations") @db.VarChar(255)
+  request                DevolutionRequest  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  consumableMaterial     ConsumableMaterial @relation(fields: [materialId], references: [id])
+
+  @@index([requestId])
+  @@map("devolution_request_items")
+}
+
+enum DevolutionType {
+  Total
+  Parcial
+}
+
+enum DevolutionStatus {
+  En_espera
+  Autorizada
+}
+
 model Task {
   id          Int        @id(map: "tasks_pkey") @default(autoincrement())
   userId      Int        @map("user_id")
@@ -224,6 +336,20 @@ model Task {
   user        User       @relation(fields: [userId], references: [id], map: "tasks_user_id_fkey")
 
   @@map("tasks")
+}
+
+model PasswordResetCode {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  codeHash  String   @map("code_hash") @db.VarChar(64)
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_codes")
 }
 
 enum AccountType {
@@ -255,4 +381,25 @@ enum TaskStatus {
   en_progreso
   completada
   no_completada
+}
+
+// (P43) Notificaciones / logs del sistema — criticidad separada por severidad
+enum NotificationSeverity {
+  Critica
+  Advertencia
+  Informativa
+}
+
+model Notification {
+  id          Int                  @id @default(autoincrement())
+  title       String               @db.VarChar(100)
+  description String               @db.VarChar(255)
+  severity    NotificationSeverity
+  module      String               @db.VarChar(50)
+  userId      Int?                 @map("user_id")
+  user        User?                @relation(fields: [userId], references: [id])
+  isActive    Boolean              @default(true) @map("is_active")
+  created_at  DateTime             @default(now())
+
+  @@map("notifications")
 }

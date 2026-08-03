@@ -1,126 +1,89 @@
+// Paso 1 de 3 del flujo de recuperación: solicitar el código.
+//
+// Antes esta vista hacía las tres cosas (pedir correo, enviar código y verificarlo),
+// lo que saturaba la pantalla. Ahora cada paso es una ruta propia con su schema y su
+// estado: /auth/recover-password → /auth/verify-code → /auth/reset-password.
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "@/assets/logos/logo-sena-verde.png";
-import bg from "@/assets/images/background-oscuro.jpg";
-import { Input, Button } from "@/shared";
-import { recoverPasswordSchema } from "../schemas/recoverPasswordSchema.js";
-import { Undo2 } from "lucide-react";
+import { Input, Button, Alert } from "@/shared";
+import { recoverEmailSchema } from "../schemas/recoverPasswordSchema.js";
+import { forgotPassword } from "../services/authService.js";
+import AuthCard from "./AuthCard.jsx";
 
 export default function RecoverPasswordForm() {
-
     const navigate = useNavigate();
 
-    // Estado del formulario
-    const [formData, setFormData] = useState({
-        userEmail: "",
-        userEmailConfirm: "",
-    });
-
+    const [userEmail, setUserEmail] = useState("");
     const [errors, setErrors] = useState({});
+    const [sending, setSending] = useState(false);
 
-    // Handle genérico para inputs
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-        if (errors.form) setErrors((prev) => ({ ...prev, form: undefined }));
+        setUserEmail(e.target.value);
+        setErrors({});
     };
 
-    // Handle submit con validación
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Validación con Zod
-        const result = recoverPasswordSchema.safeParse(formData);
-
+        const result = recoverEmailSchema.safeParse({ userEmail });
         if (!result.success) {
-            const fieldErrors = {};
-            result.error.issues.forEach((issue) => {
-                const field = issue.path[0];
-                fieldErrors[field] = issue.message;
-            });
-            setErrors(fieldErrors);
+            setErrors({ userEmail: result.error.issues[0].message });
             return;
         }
 
-        setErrors({});
-
+        setSending(true);
         try {
-            // Aquí irá la llamada al backend para recuperar contraseña
-            console.log("Recuperar contraseña:", result.data);
-            alert("Se ha enviado un correo de restablecimiento.");
-            navigate("/auth");
-
+            Alert.loading("Enviando código...", "Revisa tu correo electrónico");
+            await forgotPassword(result.data.userEmail);
+            Alert.close();
+            // El correo viaja por router state, nunca por la URL: no debe quedar en
+            // el historial ni poder compartirse (mismo criterio que el resetTicket)
+            navigate("/auth/verify-code", { state: { email: result.data.userEmail } });
         } catch (error) {
+            Alert.close();
+            Alert.error("No se pudo enviar el código", error.message);
             setErrors({ form: error.message });
+        } finally {
+            setSending(false);
         }
     };
 
     return (
-        // Contenedor con fondo igual al login
-        <div
-            className="relative flex min-h-screen items-center justify-center"
+        <AuthCard
+            title="Recuperar Contraseña"
+            description="¡Ingrese su correo registrado para restablecer su contraseña!"
+            backTo="/auth"
+            onSubmit={handleSubmit}
         >
-            {/* Fondo con imagen */}
-            <div
-                className="absolute inset-0 -z-10 bg-cover bg-center"
-                style={{ backgroundImage: `url(${bg})` }}
-            />
+            <div className="flex flex-col gap-4 w-[320px]">
+                <Input
+                    label="Correo electrónico"
+                    name="userEmail"
+                    placeholder="Correo electrónico"
+                    type="email"
+                    required
+                    value={userEmail}
+                    onChange={handleChange}
+                    error={errors.userEmail}
+                />
 
-            {/* Botón volver */}
-            <button
-                onClick={() => navigate("/auth")}
-                className="absolute top-6 left-6 flex items-center gap-2 text-white hover:opacity-80"
-            >
-                <Undo2 strokeWidth={2.8} />
-            </button>
+                {errors.form && (
+                    <p className="font-secondary text-caption text-error text-center">
+                        {errors.form}
+                    </p>
+                )}
+            </div>
 
-            <form
-                className="grid gap-4 mx-6 p-8 sm:p-12 justify-items-center max-w-max bg-white border rounded-md my-8"
-                onSubmit={handleSubmit}
-            >
-                {/* Logo SENA */}
-                <img src={logo} alt="logo" className="h-24" />
-
-                {/* Título */}
-                <h1 className="text-h3 font-main font-bold">
-                    Recuperar Contraseña
-                </h1>
-
-                {/* Descripción */}
-                <p className="font-secondary text-body text-center max-w-xs">
-                    ¡Ingrese su correo registrado para restablecer su contraseña!
-                </p>
-
-                {/* Inputs */}
-                <div className="flex flex-col gap-6 w-[320px]">
-                    <Input
-                        label="Correo electrónico"
-                        name="userEmail"
-                        placeholder="Correo electrónico"
-                        type="email"
-                        value={formData.userEmail}
-                        onChange={handleChange}
-                        error={errors.userEmail || errors.form}
-                    />
-                    <Input
-                        label="Confirmación correo"
-                        name="userEmailConfirm"
-                        placeholder="Confirmación correo"
-                        type="email"
-                        value={formData.userEmailConfirm}
-                        onChange={handleChange}
-                        error={errors.userEmailConfirm}
-                    />
-                </div>
-
-                {/* Botón */}
+            {/* El botón solo existe cuando hay algo escrito: al borrar el correo
+                desaparece (no se deshabilita, se desmonta) */}
+            {userEmail.trim() !== "" && (
                 <div className="flex items-center justify-center gap-6">
-                    <Button variant="primary" size="md" type="submit">
-                        Confirmar
+                    <Button variant="primary" size="md" type="submit" disabled={sending}>
+                        {sending ? "Enviando..." : "Enviar código"}
                     </Button>
                 </div>
-
-            </form>
-        </div>
+            )}
+        </AuthCard>
     );
 }

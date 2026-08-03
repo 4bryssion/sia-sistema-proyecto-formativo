@@ -1,14 +1,16 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
+import RequirePermission from "@/shared/components/auth/RequirePermission.jsx";
 
 // Import componentes:
 
-import {
-    AuthLayout,
+import {    AuthLayout,
     DashboardLayout,
     ViewLayout,
     ProtectedRoute,
     GuestRoute
 
+,
+    PermissionsProvider
 } from "@/shared"
 
 // Import pages
@@ -20,61 +22,56 @@ import {
 } from "@/features/home"
 
 // Módulo auth:
-import { 
-    RecoverPasswordForm, 
-    AuthLoginForm
+import {
+    RecoverPasswordForm,
+    VerifyCodeForm,
+    AuthLoginForm,
+    ResetPasswordForm
 
 } from "@/features/auth";
 
 
 // Módulo users:
-import { 
-    ListUserPage, 
-    CreateUserPage,
-    ViewUserPage,
-    EditUserPage 
+// Visualizar y editar usuario ya no tienen ruta: son modales (jul-2026)
+import {
+    ListUserPage,
+    CreateUserPage
 
 } from "@/features/users";
 
 // Módulo tasks:
 import {
     ListTaskPage,
-    CreateTaskPage,
     ViewTaskPage,
     EditTaskPage
 } from "@/features/tasks";
 
 
 // Módulo consumable-materials:
-import { 
-    ListConsumableMaterialPage, CreateConsumablesMaterialPage,
-    ViewConsumableMaterialPage , EditConsumibleMaterialPage
-    
+// Visualizar y editar material de consumo ya no tienen ruta: son modales (jul-2026)
+import {
+    ListConsumableMaterialPage, CreateConsumablesMaterialPage
+
 } from "@/features/consumable-material";
 
 
 // Módulo returnable-materials:
+// Visualizar y editar ya no tienen ruta: son modales que abre el listado
 import {
     ListReturnableMaterialPage,
     CreateReturnableMaterialPage,
-    ViewReturnableMaterialPage,
-    EditReturnableMaterialPage
 
 } from "@/features/returnable-material";
 
 // Módulo loans:
-import { 
+import {
     ListLoanPage,
     CreateLoanPage,
     ViewLoanPage,
     EditLoanPage,
+    SignLoanPage,
 
 } from "@/features/loans";
-//Modulo loan-returns:
-import { 
-    CreateLoanReturnPage
-
-} from "@/features/loan-returns";
 
 
 // Módulo brands:
@@ -94,6 +91,11 @@ import {
      AccessPage
 } from "@/features/access";
 
+// Módulo notifications (P43):
+import {
+    ListNotificationPage
+} from "@/features/notifications";
+
 
 
 const router = createBrowserRouter([
@@ -101,6 +103,13 @@ const router = createBrowserRouter([
     {
         path: "/",
         element: <Navigate to="auth" replace />
+    },
+
+    // Firma de préstamos (P40) — pública, sin sesión: llega desde el enlace del correo.
+    // SIN ProtectedRoute NI GuestRoute a propósito: debe funcionar con y sin sesión activa.
+    {
+        path: "/loans/sign",
+        element: <SignLoanPage />,
     },
     {
         path: "/auth",
@@ -111,10 +120,23 @@ const router = createBrowserRouter([
             element: <AuthLoginForm />,
             }, 
 
-            //Ruta de recuperar contraseña
+            // Flujo de recuperación separado en 3 vistas (jul-2026):
+            // 1) pedir el código con el correo
             {
                 path: "recover-password",
                 element: <RecoverPasswordForm />,
+            },
+
+            // 2) ingresar el código — recibe el correo por router state
+            {
+                path: "verify-code",
+                element: <VerifyCodeForm />,
+            },
+
+            // 3) nueva contraseña (P39) — recibe resetTicket por router state
+            {
+                path: "reset-password",
+                element: <ResetPasswordForm />,
             },
       
         ],
@@ -122,12 +144,12 @@ const router = createBrowserRouter([
 
     {
         path: "/dashboard",
-        element: <ProtectedRoute><DashboardLayout /></ProtectedRoute>,
+        element: <ProtectedRoute><PermissionsProvider><DashboardLayout /></PermissionsProvider></ProtectedRoute>,
         children: [
-            // Este modulo de alert-history aún estamos en duda de si realizarlo o no.
+            // Notificaciones / logs del sistema (P43)
             {
                 path: "alert-history",
-                element: <h1>Historial de alertas del sistema en general</h1>
+                element: <RequirePermission codename="list_notifications"><ListNotificationPage /></RequirePermission>,
             },
 
             // Módulo home:
@@ -139,80 +161,69 @@ const router = createBrowserRouter([
             // Módulo users:
             {
                 path: "users",
-                element: <ListUserPage />
+                element: <RequirePermission codename={["create_user", "edit_user"]}><ListUserPage /></RequirePermission>
             },
             {
                 path: "users/create",
-                element: <CreateUserPage />,
-            },
-            {
-                path: "users/view",
-                element: <ViewUserPage />,
-            },
-            {
-                path: "users/edit",
-                element: <EditUserPage />,
+                element: <RequirePermission codename="create_user"><CreateUserPage /></RequirePermission>,
             },
             // Módulo tasks:
             {
                 path: "tasks",
-                element: <ListTaskPage />,
+                element: <RequirePermission codename="list_tasks"><ListTaskPage /></RequirePermission>,
             },
-            {
-                path: "tasks/create",
-                element: <CreateTaskPage />,
-            },
+            // crear tarea ahora es un modal (CreateTaskModal) abierto desde ListTaskPage
 
             // Módulo consumable-materials:
             {
                 path: "consumable-materials",
-                element: <ListConsumableMaterialPage />,
+                element: <RequirePermission codename="list_consumable_materials"><ListConsumableMaterialPage /></RequirePermission>,
             },
             {
                 path: "consumable-materials/create",
-                element: <CreateConsumablesMaterialPage />,
+                element: <RequirePermission codename="create_consumable_material"><CreateConsumablesMaterialPage /></RequirePermission>,
             },
             // Módulo returnable-materials:
             {
                 path: "returnable-materials",
-                element: <ListReturnableMaterialPage />
+                element: <RequirePermission codename="list_returnable_materials"><ListReturnableMaterialPage /></RequirePermission>
             },
             {
                 path: "returnable-materials/create",
-                element: <CreateReturnableMaterialPage />,
+                element: <RequirePermission codename="create_returnable_material"><CreateReturnableMaterialPage /></RequirePermission>,
             },
             
 
             // Módulo loans:
             {
                 path: "loans",
-                element:  <ListLoanPage />,
+                element: <RequirePermission codename="list_loans"><ListLoanPage /></RequirePermission>,
             },
             {
                 path: "loans/create",
-                element:  <CreateLoanPage />,
+                element: <RequirePermission codename="create_loan"><CreateLoanPage /></RequirePermission>,
             },
 
             // Módulo brands:
             {
                 path: "brands",
-                element: <ListBrandPage />,
+                element: <RequirePermission codename="list_brands"><ListBrandPage /></RequirePermission>,
             },
             {
                 path: "brands/create",
-                element: <CreateBrandPage />,
+                element: <RequirePermission codename="create_brand"><CreateBrandPage /></RequirePermission>,
             },
 
             // Módulo groups:
             {
                 path: "groups",
-                element: <ListGroupPage />
+                element: <RequirePermission codename="list_groups"><ListGroupPage /></RequirePermission>
             },
 
          // Módulo access:
             {
                 path: "admin",
-                element: <AccessPage />,
+                element: <RequirePermission codename="list_permissions"><AccessPage /></RequirePermission>,
             },
             
         ],
@@ -227,62 +238,40 @@ const router = createBrowserRouter([
     // Queda más limpio y legible
     {
         path: "/view",
-        element: <ProtectedRoute><ViewLayout /></ProtectedRoute>,
+        element: <ProtectedRoute><PermissionsProvider><ViewLayout /></PermissionsProvider></ProtectedRoute>,
         children: [
-            // Módulo users:
-            {
-                path: "users/:id",
-                element: <ViewUserPage />,
+            // Módulo users: sin rutas de ver ni editar — ahora son modales
+            // (ViewUserModal / EditUserModal), abiertos desde la tabla y, en el
+            // caso de "Mi perfil", desde el propio Navbar.
 
-            },
-            {
-                path: "users/:id/edit",
-                element: <EditUserPage />,
-            },
             // Módulo tasks:
             {
                 path: "tasks/:id",
-                element: <ViewTaskPage />,
+                element: <RequirePermission codename="list_tasks"><ViewTaskPage /></RequirePermission>,
             },
             {
                 path: "tasks/:id/edit",
-                element: <EditTaskPage />,
+                element: <RequirePermission codename="edit_task"><EditTaskPage /></RequirePermission>,
             },
 
             // Módulo consumable-materials:
-            {
-                path: "consumable-materials/:id",
-                element: <ViewConsumableMaterialPage />,
-            },
-            {
-                path: "consumable-materials/:id/edit",
-                element:<EditConsumibleMaterialPage />,
-            },
+            // Módulo consumable-materials: sin rutas de ver ni editar — son
+            // modales abiertos desde la tabla de listar
 
-            // Módulo returnable-materials:
-            {
-                path: "returnable-materials/:id",
-                element: <ViewReturnableMaterialPage />,
-            },
-            {
-                path: "returnable-materials/:id/edit",
-                element: <EditReturnableMaterialPage/>,
-            },
+            // Módulo returnable-materials: sin rutas de ver ni editar — son
+            // modales abiertos desde la tabla de listar
 
             // Módulo loans:
             {
                 path: "loans/:id",
-                element: <ViewLoanPage/>,
+                element: <RequirePermission codename="list_loans"><ViewLoanPage/></RequirePermission>,
             },
             {
                 path: "loans/:id/edit",
-                element: <EditLoanPage/>,
+                element: <RequirePermission codename="update_loan"><EditLoanPage/></RequirePermission>,
             },
-            // Módulo loan-returns:
-{
-                path: "loans/:id/return",
-                element: <CreateLoanReturnPage />,
-            },
+            // Módulo loan-returns: retornar es un modal abierto desde la tabla
+            // de listar préstamos, ya no tiene ruta propia
 
             // Módulo groups:
             {

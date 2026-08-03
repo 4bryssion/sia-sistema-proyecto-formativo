@@ -1,11 +1,56 @@
+import jwt from 'jsonwebtoken';
 import { loanRepository } from './loan.repository.js';
 import prisma from '../../config/prisma.js';
 import { checkAvailability } from './loan.stock.js';
+import { sendLoanSignatureRequest } from '../../config/mailer.js';
+import { notify } from '../notifications/notification.service.js';
+
+const SIGN_TOKEN_TTL = '7d';
 
 const assertUniqueMaterials = (materials) => {
   const ids = materials.map((m) => m.materialId);
   if (new Set(ids).size !== ids.length) {
     throw new Error('No se puede repetir el mismo material en un préstamo.');
+  }
+};
+
+const verifySignToken = (token) => {
+  let payload;
+  try {
+    payload = jwt.verify(token, process.env.JWT_SECRET);
+  } catch {
+    throw new Error('Enlace de firma inválido o expirado.');
+  }
+  if (payload.purpose !== 'loan_signature') throw new Error('Enlace de firma inválido o expirado.');
+  return payload;
+};
+
+// Envía (o reenvía) el correo de firma a las firmas indicadas (por defecto, todas). Fire-and-forget:
+// no bloquea al caller ni propaga errores de envío (mismo criterio que forgot-password).
+const sendSignatureEmails = (loan, signatures = loan.signatures) => {
+  for (const s of signatures) {
+    const token = jwt.sign(
+      { loanId: loan.id, party: s.party, purpose: 'loan_signature' },
+      process.env.JWT_SECRET,
+      { expiresIn: SIGN_TOKEN_TTL },
+    );
+    const signUrl = `${process.env.FRONTEND_URL}/loans/sign?token=${token}`;
+
+    // La otra parte del préstamo: el correo debe decir frente a quién se firma
+    const otra = (loan.signatures ?? []).find((x) => x.party !== s.party);
+    const nombreDe = (firma) =>
+      firma?.user ? `${firma.user.userFirstName} ${firma.user.userLastName}` : null;
+
+    sendLoanSignatureRequest(s.user.userEmail, {
+      partyLabel: s.party,
+      signerName: nombreDe(s),
+      counterpartLabel: otra?.party,
+      counterpartName: nombreDe(otra),
+      loan,
+      signUrl,
+    }).catch((e) => {
+      console.error('Error enviando correos de firma:', e.message);
+    });
   }
 };
 
@@ -28,7 +73,7 @@ export const loanService = {
       const err = checkAvailability(material, m.borrowedQuantity, 0);
       if (err) throw new Error(err);
     }
-    return loanRepository.create({
+    const loan = await loanRepository.create({
       header: {
         apprenticeGroup: data.apprenticeGroup,
         useJustification: data.useJustification,
@@ -37,10 +82,22 @@ export const loanService = {
       materials: data.materials,
       parties: { lenderId: data.lenderId, receiverId: data.receiverId },
     });
+    sendSignatureEmails(loan); // fire-and-forget: no bloquea la respuesta de creación
+    // (P43) Log del sistema
+    notify({
+      title: 'Préstamo creado',
+      description: `Préstamo #${loan.id} creado para el grupo ${loan.apprenticeGroup} (pendiente de firmas).`,
+      severity: 'Informativa',
+      module: 'loans',
+    });
+    return loan;
   },
 
   async toggle(id) {
     const loan = await loanService.getById(id);
+    // Con retornos ya reintegrados, restaurar/reaplicar stock a ciegas duplicaría el stock.
+    const hasReturns = await prisma.loanReturn.findFirst({ where: { loanId: id, isActive: true } });
+    if (hasReturns) throw new Error('No se puede desactivar/reactivar un préstamo con devoluciones registradas.');
     const lines = loan.materials.map((lm) => ({
       materialId: lm.materialId,
       borrowedQuantity: lm.borrowedQuantity,
@@ -53,7 +110,14 @@ export const loanService = {
         if (err) throw new Error(err);
       }
     }
-    return loanRepository.toggle(id, !loan.isActive, lines);
+    const toggled= await loanRepository.toggle(id, !loan.isActive, lines);
+    notify({
+      title: toggled.isActive ? 'Préstamo reactivado' : 'Préstamo desactivado',
+      description: `Préstamo #${id} ${toggled.isActive ? 'reactivado (stock descontado nuevamente)' : 'desactivado (stock restaurado)'}.`,
+      severity: toggled.isActive ? 'Informativa' : 'Advertencia',
+      module: 'loans',
+    });
+    return toggled;
   },
 
   async update(id, data) {
@@ -80,7 +144,7 @@ export const loanService = {
       if (err) throw new Error(err);
     }
 
-    return loanRepository.update(id, {
+    const updated = await loanRepository.update(id, {
       header: {
         apprenticeGroup: data.apprenticeGroup,
         useJustification: data.useJustification,
@@ -94,5 +158,56 @@ export const loanService = {
       newMaterials: data.materials,
       parties: { lenderId: data.lenderId, receiverId: data.receiverId },
     });
+
+    // (P43) Log: modificación del préstamo (incluye materiales/cantidades nuevas)
+    const detalle = data.materials
+      .map((m) => `material #${m.materialId} x${m.borrowedQuantity}`)
+      .join(', ');
+    notify({
+      title: 'Préstamo modificado',
+      description: `Préstamo #${id} actualizado. Materiales: ${detalle}.`,
+      module: 'loans',
+    });
+    return updated;
+  },
+
+  async getSignatureInfo(token) {
+    const payload = verifySignToken(token);
+    const loan = await loanRepository.findById(payload.loanId);
+    if (!loan) throw new Error('Préstamo no encontrado.');
+    const signature = loan.signatures.find((s) => s.party === payload.party);
+    // Resumen seguro para pantalla pública (no exponer el objeto user completo)
+    return {
+      loanId: loan.id, status: loan.status, party: payload.party,
+      alreadySigned: signature.signed,
+      apprenticeGroup: loan.apprenticeGroup, useJustification: loan.useJustification,
+      loanDate: loan.loanDate, returnDate: loan.returnDate,
+      materials: loan.materials.map((m) => ({
+        materialName: m.consumableMaterial.materialName, borrowedQuantity: m.borrowedQuantity,
+      })),
+      signerName: `${signature.user.userFirstName} ${signature.user.userLastName}`,
+    };
+  },
+
+  async sign(token) {
+    const payload = verifySignToken(token);
+    const loan = await loanRepository.findById(payload.loanId);
+    if (!loan) throw new Error('Préstamo no encontrado.');
+    if (loan.status !== 'Pendiente_confirmacion') {
+      throw new Error(`Este préstamo ya no está pendiente de firma (estado: ${loan.status}).`);
+    }
+    const signature = loan.signatures.find((s) => s.party === payload.party);
+    if (signature.signed) throw new Error('Esta parte ya firmó el préstamo.');
+
+    return loanRepository.sign(loan.id, payload.party); // marca firma y activa si ambas
+  },
+
+  async resendSignatures(id) {
+    const loan = await loanService.getById(id);
+    if (loan.status !== 'Pendiente_confirmacion') {
+      throw new Error('Solo se pueden reenviar correos de préstamos pendientes de firma.');
+    }
+    const pending = loan.signatures.filter((s) => !s.signed);
+    sendSignatureEmails(loan, pending);
   },
 };

@@ -1,4 +1,5 @@
 import path from 'path';
+import { notify } from '../notifications/notification.service.js';
 import fs from 'fs';
 import { consumableMaterialRepository } from './consumableMaterial.repository.js';
 
@@ -44,7 +45,14 @@ export const consumableMaterialService = {
     data.image = `/uploads/${file.filename}`;
 
     try {
-      return await consumableMaterialRepository.create(data);
+      const created = await consumableMaterialRepository.create(data);
+      // (P43) Log: creación de material (incluye cantidad inicial)
+      notify({
+        title: 'Material de consumo creado',
+        description: `Se creó "${created.materialName}" con cantidad ${created.quantity ?? 1}${created.senaPlate ? ` (placa ${created.senaPlate})` : ''}.`,
+        module: 'consumable-materials',
+      });
+      return created;
     } catch (err) {
       deleteFile(data.image);
       throw err;
@@ -60,6 +68,16 @@ export const consumableMaterialService = {
     try {
       const resultado = await consumableMaterialRepository.update(id, data);
       if (file && currentMaterial.image) deleteFile(currentMaterial.image);
+      // (P43) Log: modificación (detalla el cambio de cantidad si lo hubo)
+      const cambioCantidad =
+        data.quantity !== undefined && Number(data.quantity) !== Number(currentMaterial.quantity)
+          ? ` Cantidad: ${currentMaterial.quantity ?? 1} → ${resultado.quantity ?? 1}.`
+          : '';
+      notify({
+        title: cambioCantidad ? 'Cantidad de material modificada' : 'Material de consumo modificado',
+        description: `Se actualizó "${resultado.materialName}".${cambioCantidad}`,
+        module: 'consumable-materials',
+      });
       return resultado;
     } catch (err) {
       if (file) deleteFile(data.image);
@@ -69,6 +87,13 @@ export const consumableMaterialService = {
 
   async toggle(id) {
     const record = await consumableMaterialService.getById(id);
-    return consumableMaterialRepository.toggle(id, !record.isActive);
+    const updated = await consumableMaterialRepository.toggle(id, !record.isActive);
+    notify({
+      title: updated.isActive ? 'Material de consumo activado' : 'Material de consumo desactivado',
+      description: `"${updated.materialName}" quedó ${updated.isActive ? 'activo' : 'inactivo'}.`,
+      severity: updated.isActive ? 'Informativa' : 'Advertencia',
+      module: 'consumable-materials',
+    });
+    return updated;
   },
 };

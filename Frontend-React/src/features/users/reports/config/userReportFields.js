@@ -4,7 +4,9 @@ const fmtDateOnly = (d) => (d ? new Date(d).toLocaleDateString("es-CO", { timeZo
 
 export const userReportFields = [
   { key: "nombre", label: "Nombre", default: true, accessor: (u) => `${u.userFirstName} ${u.userLastName}` },
-  { key: "rol", label: "Rol", default: true, accessor: (u) => getTopGroupName(u) },
+  // "Grupo" y no "Rol": mismo criterio que la columna de la tabla — el sistema
+  // no razona por nombres de rol y un usuario puede estar en varios grupos
+  { key: "grupo", label: "Grupo", default: true, accessor: (u) => getTopGroupName(u) },
   { key: "tipoDocumento", label: "Tipo de documento", default: true, accessor: (u) => u.documentType?.documentName ?? "" },
   { key: "userDocumentNumber", label: "Documento", default: true },
   { key: "userEndDate", label: "Fecha de finalización", default: true, accessor: (u) => fmtDateOnly(u.userEndDate) },
@@ -13,6 +15,6 @@ export const userReportFields = [
   { key: "userPhone", label: "Teléfono", default: false },
   { key: "userSecondPhone", label: "Segundo teléfono", default: false },
   { key: "userAddress", label: "Dirección", default: false },
-  { key: "userAccountType", label: "Tipo de cuenta", default: false },
+  { key: "userAccountType", label: "Tipo de usuario", default: true },
   { key: "estado", label: "Estado", default: true, accessor: (u) => (u.isActive ? "Activo" : "Inactivo") },
 ];

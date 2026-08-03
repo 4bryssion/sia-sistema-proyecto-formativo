@@ -1,59 +1,42 @@
 import { Pencil, EllipsisVertical } from "lucide-react";
-// Hook de React Router para navegar programáticamente entre rutas
-import { useNavigate } from "react-router-dom";
 
-import {
-    Dropdown,
-    DropdownTrigger,
-    DropdownItem,
-    DropdownContent
-} from "@/shared";
+import { Dropdown, DropdownTrigger, DropdownItem, DropdownContent, usePermissions } from "@/shared";
 
-
-// Componente que renderiza las acciones de cada fila de material consumible
-// Recibe como prop el objeto returnableMaterial
-export default function ReturnableMaterialRowActions({ returnableMaterial }) {
-
-    // Hook que permite redirigir a otra ruta desde código
-    const navigate = useNavigate();
-
-    const handleView = () => {
-        navigate(`/view/returnable-materials/${returnableMaterial.id}`)
-    };
-
-    // Acción para editar el material retornable
-    // Error anterior: la ruta no tenía el prefijo /view/ y tenía /edit duplicado
-    // Corrección: ruta completa y correcta según el router
-    const handleEdit = () => {
-        navigate(`/view/returnable-materials/${returnableMaterial.id}/edit`)
-    };
+// Acciones de cada fila de materiales devolutivos.
+//
+// Ver y editar ya no navegan a una página: abren los modales que
+// ListReturnableMaterialPage mantiene en una sola instancia. Por eso este
+// componente recibe onView/onEdit y ya no usa useNavigate.
+export default function ReturnableMaterialRowActions({ returnableMaterial, onView, onEdit }) {
+  const { can } = usePermissions();
 
     return (
         // Contenedor de los botones de acciones
         <div className="flex gap-2">
 
-            {/* Botón editar */}
+            {/* Botón editar — oculto para roles de solo lectura (INV y nuevos) */}
+            {can("edit_returnable_material") && (
             <button
-                onClick={handleEdit}
-                className="p-1 rounded hover:bg-gray-900"
+                onClick={() => onEdit?.(returnableMaterial.id)}
+                aria-label="Editar material"
+                className="p-1 rounded hover:bg-gray-900 cursor-pointer"
             >
                 <Pencil size={16} />
             </button>
+            )}
 
             {/* Botón option */}
             <Dropdown>
 
             <DropdownTrigger>
-                <button className="p-1 rounded hover:bg-gray-900">
+                <button className="p-1 rounded hover:bg-gray-900 cursor-pointer" aria-label="Más opciones">
                     <EllipsisVertical size={16} />
                 </button>
             </DropdownTrigger>
 
             <DropdownContent className="right-0">
-                <DropdownItem>
-                    <button onClick={handleView}>
-                        Visualizar Material
-                    </button>
+                <DropdownItem onClick={() => onView?.(returnableMaterial.id)}>
+                    Visualizar Material
                 </DropdownItem>
             </DropdownContent>
 

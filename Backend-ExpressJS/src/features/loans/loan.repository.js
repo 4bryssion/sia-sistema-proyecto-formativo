@@ -2,7 +2,18 @@ import prisma from '../../config/prisma.js';
 import { applyLend, applyRestore } from './loan.stock.js';
 
 const loanInclude = {
-  materials: { include: { consumableMaterial: true } },
+  // `returnable` se trae solo para saber de qué TIPO es cada material: la
+  // herencia de tabla hace que un devolutivo sea un consumable_materials con
+  // fila hermana en returnable_materials, y sin este dato el cliente no puede
+  // distinguirlos (el formulario de préstamo y los retornos etiquetan por tipo).
+  // Se pide solo el id para no arrastrar toda la fila.
+  materials: {
+    include: {
+      consumableMaterial: {
+        include: { returnable: { select: { id: true } } },
+      },
+    },
+  },
   signatures: { include: { user: true } },
 };
 
@@ -100,6 +111,21 @@ export const loanRepository = {
       await tx.loan.update({ where: { id }, data: header });
 
       return tx.loan.findUnique({ where: { id }, include: loanInclude });
+    });
+  },
+
+  // Marca la firma de una parte; si ambas quedan firmadas, el préstamo pasa a Activo.
+  async sign(loanId, party) {
+    return prisma.$transaction(async (tx) => {
+      await tx.loanSignature.update({
+        where: { loanId_party: { loanId, party } },
+        data: { signed: true, signedAt: new Date() },
+      });
+      const pending = await tx.loanSignature.count({ where: { loanId, signed: false } });
+      if (pending === 0) {
+        await tx.loan.update({ where: { id: loanId }, data: { status: 'Activo' } });
+      }
+      return tx.loan.findUnique({ where: { id: loanId }, include: loanInclude });
     });
   },
 };

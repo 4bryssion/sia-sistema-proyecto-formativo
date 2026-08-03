@@ -3,7 +3,8 @@
 // Auth usa fetch nativo — no importar este archivo desde authService.js.
 
 import axios from "axios";
-import { logout } from "@/features/auth/services/logoutService";
+import { Alert } from "../components/utils/alert.js";
+import { clearSession } from "@/features/auth/services/logoutService";
 
 const api = axios.create({
   baseURL: "http://localhost:5000/api",
@@ -21,8 +22,19 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // 403: el backend rechazó por falta de permisos (autorización real del servidor)
+    if (error.response?.status === 403) {
+      Alert.error(
+        "Acción no permitida",
+        error.response?.data?.error ?? "No tienes permisos para realizar esta acción."
+      );
+    }
+
     if (error.response?.status === 401) {
-      logout();                        // Limpia sessionStorage["token"]
+      // clearSession (no logout): el token ya fue rechazado, avisar al backend
+      // devolvería otro 401 y entraría en bucle. Con sesión única (p45) este 401
+      // también ocurre cuando la sesión se cerró desde otro lugar.
+      clearSession();
       window.location.href = "/auth"; // Redirige y recarga (limpia estado React)
     }
     return Promise.reject(error);

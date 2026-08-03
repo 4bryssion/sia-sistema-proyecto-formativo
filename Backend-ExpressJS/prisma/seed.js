@@ -5,81 +5,106 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
 
+// ---- Content types (P35): un registro por módulo del sistema ----
+const contentTypes = [
+  { appLabel: 'document-types',       model: 'documentType',       displayName: 'Tipos de documento' },
+  { appLabel: 'brands',               model: 'brand',              displayName: 'Marcas' },
+  { appLabel: 'categories',           model: 'category',           displayName: 'Categorías' },
+  { appLabel: 'access',               model: 'permission',         displayName: 'Permisos' },
+  { appLabel: 'groups',               model: 'group',              displayName: 'Grupos' },
+  { appLabel: 'users',                model: 'user',               displayName: 'Usuarios' },
+  { appLabel: 'consumable-materials', model: 'consumableMaterial', displayName: 'Materiales de consumo' },
+  { appLabel: 'returnable-materials', model: 'returnableMaterial', displayName: 'Materiales devolutivos' },
+  { appLabel: 'loans',                model: 'loan',               displayName: 'Préstamos' },
+  { appLabel: 'loan-returns',         model: 'loanReturn',         displayName: 'Retornos de préstamo' },
+  { appLabel: 'tasks',                model: 'task',               displayName: 'Tareas' },
+  { appLabel: 'notifications',        model: 'notification',       displayName: 'Notificaciones' },
+];
+
 // ---- Catálogo de permisos realineado a los endpoints reales ----
+// (P35) description eliminado; se agrega permissionCodename + appLabel para resolución de contentTypeId
+// (Fix post-P37) permissionName pasa a ser la etiqueta humana visible (recupera los textos del
+// antiguo description); el identificador estable del sistema es permissionCodename (estilo edward).
 const initialPermissions = [
   // Tipos de documento (gestionado por SADMIN)
-  { permissionName: 'ver_tipos_documento',                  description: 'Ver listado de tipos de documento' },
-  { permissionName: 'crear_tipo_documento',                 description: 'Crear nuevo tipo de documento' },
-  { permissionName: 'editar_tipo_documento',                description: 'Editar tipo de documento existente' },
-  { permissionName: 'habilitar_deshabilitar_tipo_documento',description: 'Habilitar/Deshabilitar tipo de documento' },
+  { permissionName: 'Ver listado de tipos de documento',            permissionCodename: 'list_document_types',          appLabel: 'document-types' },
+  { permissionName: 'Crear nuevo tipo de documento',                permissionCodename: 'create_document_type',         appLabel: 'document-types' },
+  { permissionName: 'Editar tipo de documento existente',           permissionCodename: 'edit_document_type',           appLabel: 'document-types' },
+  { permissionName: 'Habilitar/Deshabilitar tipo de documento',     permissionCodename: 'toggle_document_type',         appLabel: 'document-types' },
 
   // Marcas
-  { permissionName: 'ver_marcas',                description: 'Ver listado de marcas' },
-  { permissionName: 'crear_marca',               description: 'Crear nueva marca' },
-  { permissionName: 'editar_marca',              description: 'Editar marca existente' },
-  { permissionName: 'habilitar_deshabilitar_marca', description: 'Habilitar/Deshabilitar marca' },
+  { permissionName: 'Ver listado de marcas',                        permissionCodename: 'list_brands',                  appLabel: 'brands' },
+  { permissionName: 'Crear nueva marca',                            permissionCodename: 'create_brand',                 appLabel: 'brands' },
+  { permissionName: 'Editar marca existente',                       permissionCodename: 'edit_brand',                   appLabel: 'brands' },
+  { permissionName: 'Habilitar/Deshabilitar marca',                 permissionCodename: 'toggle_brand',                 appLabel: 'brands' },
 
   // Categorías (gestionado por SADMIN)
-  { permissionName: 'ver_categorias',                description: 'Ver listado de categorías' },
-  { permissionName: 'crear_categoria',               description: 'Crear nueva categoría' },
-  { permissionName: 'editar_categoria',              description: 'Editar categoría existente' },
-  { permissionName: 'habilitar_deshabilitar_categoria', description: 'Habilitar/Deshabilitar categoría' },
+  { permissionName: 'Ver listado de categorías',                    permissionCodename: 'list_categories',              appLabel: 'categories' },
+  { permissionName: 'Crear nueva categoría',                        permissionCodename: 'create_category',              appLabel: 'categories' },
+  { permissionName: 'Editar categoría existente',                   permissionCodename: 'edit_category',                appLabel: 'categories' },
+  { permissionName: 'Habilitar/Deshabilitar categoría',             permissionCodename: 'toggle_category',              appLabel: 'categories' },
 
   // Permisos
-  { permissionName: 'ver_permisos',                description: 'Ver listado de permisos del sistema' },
-  { permissionName: 'crear_permiso',               description: 'Crear nuevo permiso' },
-  { permissionName: 'editar_permiso',              description: 'Editar permiso existente' },
-  { permissionName: 'habilitar_deshabilitar_permiso', description: 'Habilitar/Deshabilitar permiso' },
+  { permissionName: 'Ver listado de permisos del sistema',          permissionCodename: 'list_permissions',             appLabel: 'access' },
+  { permissionName: 'Crear nuevo permiso',                          permissionCodename: 'create_permission',            appLabel: 'access' },
+  { permissionName: 'Editar permiso existente',                     permissionCodename: 'edit_permission',              appLabel: 'access' },
+  { permissionName: 'Habilitar/Deshabilitar permiso',               permissionCodename: 'toggle_permission',            appLabel: 'access' },
 
   // Grupos (roles)
-  { permissionName: 'ver_grupos',              description: 'Ver listado de grupos' },
-  { permissionName: 'crear_grupo',             description: 'Crear nuevo grupo' },
-  { permissionName: 'editar_grupo',            description: 'Editar grupo existente' },
-  { permissionName: 'habilitar_deshabilitar_grupo', description: 'Habilitar/Deshabilitar grupo' },
-  { permissionName: 'asignar_permiso_grupo',   description: 'Asignar un permiso a un grupo' },
-  { permissionName: 'remover_permiso_grupo',   description: 'Remover un permiso de un grupo' },
+  { permissionName: 'Ver listado de grupos',                        permissionCodename: 'list_groups',                  appLabel: 'groups' },
+  { permissionName: 'Crear nuevo grupo',                            permissionCodename: 'create_group',                 appLabel: 'groups' },
+  { permissionName: 'Editar grupo existente',                       permissionCodename: 'edit_group',                   appLabel: 'groups' },
+  { permissionName: 'Habilitar/Deshabilitar grupo',                 permissionCodename: 'toggle_group',                 appLabel: 'groups' },
+  { permissionName: 'Asignar un permiso a un grupo',                permissionCodename: 'assign_permission_to_group',   appLabel: 'groups' },
+  { permissionName: 'Remover un permiso de un grupo',               permissionCodename: 'remove_permission_from_group', appLabel: 'groups' },
 
   // Usuarios
-  { permissionName: 'ver_usuarios',                description: 'Ver listado de usuarios' },
-  { permissionName: 'crear_usuario',               description: 'Crear nuevo usuario' },
-  { permissionName: 'editar_usuario',              description: 'Editar usuario existente' },
-  { permissionName: 'habilitar_deshabilitar_usuario', description: 'Habilitar/Deshabilitar usuario' },
-  { permissionName: 'asignar_grupo_usuario',       description: 'Asignar un grupo a un usuario' },
-  { permissionName: 'remover_grupo_usuario',       description: 'Remover un grupo de un usuario' },
-  { permissionName: 'asignar_permiso_usuario',     description: 'Asignar permiso directo a usuario' },
-  { permissionName: 'remover_permiso_usuario',     description: 'Remover permiso directo de usuario' },
-  { permissionName: 'generar_reporte_usuarios',    description: 'Generar reporte de usuarios' },
+  { permissionName: 'Ver listado de usuarios',                      permissionCodename: 'list_users',                   appLabel: 'users' },
+  { permissionName: 'Crear nuevo usuario',                          permissionCodename: 'create_user',                  appLabel: 'users' },
+  { permissionName: 'Editar usuario existente',                     permissionCodename: 'edit_user',                    appLabel: 'users' },
+  { permissionName: 'Habilitar/Deshabilitar usuario',               permissionCodename: 'toggle_user',                  appLabel: 'users' },
+  { permissionName: 'Asignar un grupo a un usuario',                permissionCodename: 'assign_group_to_user',         appLabel: 'users' },
+  { permissionName: 'Remover un grupo de un usuario',               permissionCodename: 'remove_group_from_user',       appLabel: 'users' },
+  { permissionName: 'Asignar permiso directo a usuario',            permissionCodename: 'assign_permission_to_user',    appLabel: 'users' },
+  { permissionName: 'Remover permiso directo de usuario',           permissionCodename: 'remove_permission_from_user',  appLabel: 'users' },
+  { permissionName: 'Generar reporte de usuarios',                  permissionCodename: 'report_users',                 appLabel: 'users' },
 
   // Materiales de consumo
-  { permissionName: 'ver_materiales_consumo',                description: 'Ver materiales de consumo' },
-  { permissionName: 'crear_material_consumo',                description: 'Crear material de consumo' },
-  { permissionName: 'editar_material_consumo',               description: 'Editar material de consumo' },
-  { permissionName: 'habilitar_deshabilitar_material_consumo', description: 'Habilitar/Deshabilitar material de consumo' },
-  { permissionName: 'generar_reporte_materiales_consumo',    description: 'Generar reporte de materiales de consumo' },
+  { permissionName: 'Ver materiales de consumo',                    permissionCodename: 'list_consumable_materials',    appLabel: 'consumable-materials' },
+  { permissionName: 'Crear material de consumo',                    permissionCodename: 'create_consumable_material',   appLabel: 'consumable-materials' },
+  { permissionName: 'Editar material de consumo',                   permissionCodename: 'edit_consumable_material',     appLabel: 'consumable-materials' },
+  { permissionName: 'Habilitar/Deshabilitar material de consumo',   permissionCodename: 'toggle_consumable_material',   appLabel: 'consumable-materials' },
+  { permissionName: 'Generar reporte de materiales de consumo',     permissionCodename: 'report_consumable_materials',  appLabel: 'consumable-materials' },
 
   // Materiales devolutivos
-  { permissionName: 'ver_materiales_devolutivo',                description: 'Ver materiales devolutivos' },
-  { permissionName: 'crear_material_devolutivo',               description: 'Crear material devolutivo' },
-  { permissionName: 'editar_material_devolutivo',              description: 'Editar material devolutivo' },
-  { permissionName: 'habilitar_deshabilitar_material_devolutivo', description: 'Habilitar/Deshabilitar material devolutivo' },
-  { permissionName: 'generar_reporte_materiales_devolutivo',    description: 'Generar reporte de materiales devolutivos' },
+  { permissionName: 'Ver materiales devolutivos',                   permissionCodename: 'list_returnable_materials',    appLabel: 'returnable-materials' },
+  { permissionName: 'Crear material devolutivo',                    permissionCodename: 'create_returnable_material',   appLabel: 'returnable-materials' },
+  { permissionName: 'Editar material devolutivo',                   permissionCodename: 'edit_returnable_material',     appLabel: 'returnable-materials' },
+  { permissionName: 'Habilitar/Deshabilitar material devolutivo',   permissionCodename: 'toggle_returnable_material',   appLabel: 'returnable-materials' },
+  { permissionName: 'Generar reporte de materiales devolutivos',    permissionCodename: 'report_returnable_materials',  appLabel: 'returnable-materials' },
 
   // Préstamos
-  { permissionName: 'ver_prestamos',                description: 'Ver listado de préstamos' },
-  { permissionName: 'crear_prestamo',               description: 'Registrar nuevo préstamo' },
-  { permissionName: 'actualizar_prestamo',          description: 'Actualizar préstamo activo' },
-  { permissionName: 'habilitar_deshabilitar_prestamo', description: 'Habilitar/Deshabilitar préstamo' },
-  { permissionName: 'generar_reporte_prestamos',    description: 'Generar reporte de préstamos' },
+  { permissionName: 'Ver listado de préstamos',                     permissionCodename: 'list_loans',                   appLabel: 'loans' },
+  { permissionName: 'Registrar nuevo préstamo',                     permissionCodename: 'create_loan',                  appLabel: 'loans' },
+  { permissionName: 'Actualizar préstamo activo',                   permissionCodename: 'update_loan',                  appLabel: 'loans' },
+  { permissionName: 'Habilitar/Deshabilitar préstamo',              permissionCodename: 'toggle_loan',                  appLabel: 'loans' },
+  { permissionName: 'Generar reporte de préstamos',                 permissionCodename: 'report_loans',                 appLabel: 'loans' },
 
   // Retornos de préstamo (inmutables)
-  { permissionName: 'ver_retornos_prestamo',     description: 'Ver retornos de préstamos' },
-  { permissionName: 'crear_retorno_prestamo',    description: 'Registrar retorno de préstamo' },
+  { permissionName: 'Ver retornos de préstamos',                    permissionCodename: 'list_loan_returns',            appLabel: 'loan-returns' },
+  { permissionName: 'Registrar retorno de préstamo',                permissionCodename: 'create_loan_return',           appLabel: 'loan-returns' },
+  // (P47) Autorizar la devolución que registró otro: es la segunda fase del
+  // retorno y la única que mueve stock, por eso es un permiso aparte de registrar
+  { permissionName: 'Autorizar devolución de préstamo',             permissionCodename: 'authorize_devolution',          appLabel: 'loan-returns' },
 
   // Tareas
-  { permissionName: 'ver_tareas',                description: 'Ver listado de tareas' },
-  { permissionName: 'crear_tarea',               description: 'Crear nueva tarea' },
-  { permissionName: 'editar_tarea',              description: 'Editar tarea existente' },
-  { permissionName: 'habilitar_deshabilitar_tarea', description: 'Habilitar/Deshabilitar tarea' },
+  { permissionName: 'Ver listado de tareas',                        permissionCodename: 'list_tasks',                   appLabel: 'tasks' },
+  { permissionName: 'Crear nueva tarea',                            permissionCodename: 'create_task',                  appLabel: 'tasks' },
+  { permissionName: 'Editar tarea existente',                       permissionCodename: 'edit_task',                    appLabel: 'tasks' },
+  { permissionName: 'Habilitar/Deshabilitar tarea',                 permissionCodename: 'toggle_task',                  appLabel: 'tasks' },
+
+  // notifications (P43) — logs del sistema, solo lectura
+  { permissionName: 'Ver listado de notificaciones del sistema',    permissionCodename: 'list_notifications',           appLabel: 'notifications' },
 ];
 
 // ---- Catálogos base exigidos por los requerimientos ----
@@ -99,53 +124,60 @@ const categories = [
 
 // ---- Matriz de permisos por rol (P13) ----
 // Derivada del xlsx de requerimientos + decisiones acordadas.
+// (Fix post-P37) La matriz referencia permissionCodename (identificador estable),
+// ya que permissionName ahora es etiqueta visual y puede cambiar.
 const roleMatrix = {
   Administrador: [
     // lectura para selects
-    'ver_tipos_documento', 'ver_categorias',
+    'list_document_types', 'list_categories',
+    // notificaciones del sistema (P43)
+    'list_notifications',
     // marcas (CRUD)
-    'ver_marcas', 'crear_marca', 'editar_marca', 'habilitar_deshabilitar_marca',
+    'list_brands', 'create_brand', 'edit_brand', 'toggle_brand',
     // usuarios
-    'ver_usuarios', 'crear_usuario', 'editar_usuario', 'habilitar_deshabilitar_usuario', 'generar_reporte_usuarios',
+    'list_users', 'create_user', 'edit_user', 'toggle_user', 'report_users',
     // panel de accesos (ver + asignaciones; NO crea/edita/togglea grupos ni permisos)
-    'ver_grupos', 'ver_permisos',
-    'asignar_grupo_usuario', 'remover_grupo_usuario',
-    'asignar_permiso_usuario', 'remover_permiso_usuario',
-    'asignar_permiso_grupo', 'remover_permiso_grupo',
+    'list_groups', 'list_permissions',
+    'assign_group_to_user', 'remove_group_from_user',
+    'assign_permission_to_user', 'remove_permission_from_user',
+    'assign_permission_to_group', 'remove_permission_from_group',
     // materiales de consumo
-    'ver_materiales_consumo', 'crear_material_consumo', 'editar_material_consumo',
-    'habilitar_deshabilitar_material_consumo', 'generar_reporte_materiales_consumo',
+    'list_consumable_materials', 'create_consumable_material', 'edit_consumable_material',
+    'toggle_consumable_material', 'report_consumable_materials',
     // materiales devolutivos
-    'ver_materiales_devolutivo', 'crear_material_devolutivo', 'editar_material_devolutivo',
-    'habilitar_deshabilitar_material_devolutivo', 'generar_reporte_materiales_devolutivo',
+    'list_returnable_materials', 'create_returnable_material', 'edit_returnable_material',
+    'toggle_returnable_material', 'report_returnable_materials',
     // préstamos
-    'ver_prestamos', 'crear_prestamo', 'actualizar_prestamo', 'habilitar_deshabilitar_prestamo', 'generar_reporte_prestamos',
+    'list_loans', 'create_loan', 'update_loan', 'toggle_loan', 'report_loans',
     // retornos
-    'ver_retornos_prestamo', 'crear_retorno_prestamo',
+    'list_loan_returns', 'create_loan_return', 'authorize_devolution',
     // tareas
-    'ver_tareas', 'crear_tarea', 'editar_tarea', 'habilitar_deshabilitar_tarea',
+    'list_tasks', 'create_task', 'edit_task', 'toggle_task',
   ],
 
   Instructor: [
-    // lectura para selects
-    'ver_marcas', 'ver_categorias',
+    // lectura para selects (usuarios: necesario para prestador/receptor de préstamos,
+    // cuentadante de materiales y asignación de tareas — NO incluye crear/editar usuarios)
+    'list_brands', 'list_categories', 'list_users',
+    // tareas: el instructor asigna y gestiona tareas
+    'list_tasks', 'create_task', 'edit_task', 'toggle_task',
     // materiales de consumo
-    'ver_materiales_consumo', 'crear_material_consumo', 'editar_material_consumo',
-    'habilitar_deshabilitar_material_consumo', 'generar_reporte_materiales_consumo',
+    'list_consumable_materials', 'create_consumable_material', 'edit_consumable_material',
+    'toggle_consumable_material', 'report_consumable_materials',
     // materiales devolutivos
-    'ver_materiales_devolutivo', 'crear_material_devolutivo', 'editar_material_devolutivo',
-    'habilitar_deshabilitar_material_devolutivo', 'generar_reporte_materiales_devolutivo',
+    'list_returnable_materials', 'create_returnable_material', 'edit_returnable_material',
+    'toggle_returnable_material', 'report_returnable_materials',
     // préstamos
-    'ver_prestamos', 'crear_prestamo', 'actualizar_prestamo', 'generar_reporte_prestamos',
+    'list_loans', 'create_loan', 'update_loan', 'report_loans',
     // retornos
-    'ver_retornos_prestamo', 'crear_retorno_prestamo',
+    'list_loan_returns', 'create_loan_return', 'authorize_devolution',
   ],
 
   Invitado: [
-    'ver_materiales_devolutivo', 'generar_reporte_materiales_devolutivo',
-    'ver_materiales_consumo', 'generar_reporte_materiales_consumo',
-    'ver_prestamos',
-    'ver_retornos_prestamo', 'crear_retorno_prestamo',
+    'list_returnable_materials', 'report_returnable_materials',
+    'list_consumable_materials', 'report_consumable_materials',
+    'list_loans',
+    'list_loan_returns', 'create_loan_return',
   ],
 };
 
@@ -157,12 +189,32 @@ async function main() {
 
   console.log('Iniciando seeds...');
 
-  // 1. Permisos
+  // 1. Content types (P35): deben existir antes de los permisos para resolver contentTypeId
+  for (const ct of contentTypes) {
+    await prisma.contentType.upsert({
+      where: { appLabel_model: { appLabel: ct.appLabel, model: ct.model } },
+      update: { displayName: ct.displayName },
+      create: ct,
+    });
+  }
+  console.log(`✓ ${contentTypes.length} content types creados/verificados.`);
+
+  // Mapa appLabel → contentTypeId para asignar a cada permiso
+  const allCTs = await prisma.contentType.findMany();
+  const ctMap = {};
+  for (const ct of allCTs) {
+    ctMap[ct.appLabel] = ct.id;
+  }
+
+  // 2. Permisos (P35: sin description; con permissionCodename y contentTypeId)
+  // (Fix post-P37) upsert por permissionCodename: es la clave estable; permissionName es
+  // etiqueta visual actualizable sin duplicar registros.
   for (const permiso of initialPermissions) {
+    const contentTypeId = ctMap[permiso.appLabel];
     await prisma.permission.upsert({
-      where: { permissionName: permiso.permissionName },
-      update: { description: permiso.description },
-      create: permiso,
+      where: { permissionCodename: permiso.permissionCodename },
+      update: { permissionName: permiso.permissionName, contentTypeId },
+      create: { permissionName: permiso.permissionName, permissionCodename: permiso.permissionCodename, contentTypeId },
     });
   }
   console.log(`✓ ${initialPermissions.length} permisos creados/verificados.`);
@@ -241,21 +293,22 @@ async function main() {
   console.log('✓ Usuario SuperAdmin enlazado a su grupo.');
 
   // 8. Roles Administrador / Instructor / Invitado con su matriz de permisos
-  for (const [roleName, permNames] of Object.entries(roleMatrix)) {
+  for (const [roleName, permCodenames] of Object.entries(roleMatrix)) {
     const group = await prisma.group.upsert({
       where: { groupName: roleName },
       update: {},
       create: { groupName: roleName },
     });
 
+    // (Fix post-P37) lookup por codename, en línea con la matriz
     const perms = await prisma.permission.findMany({
-      where: { permissionName: { in: permNames } },
+      where: { permissionCodename: { in: permCodenames } },
     });
 
-    // Seguridad: todos los nombres deben existir en el catálogo (P12)
-    if (perms.length !== permNames.length) {
-      const found = perms.map((p) => p.permissionName);
-      const missing = permNames.filter((n) => !found.includes(n));
+    // Seguridad: todos los codenames deben existir en el catálogo (P12)
+    if (perms.length !== permCodenames.length) {
+      const found = perms.map((p) => p.permissionCodename);
+      const missing = permCodenames.filter((n) => !found.includes(n));
       throw new Error(`Permisos inexistentes para ${roleName}: ${missing.join(', ')}`);
     }
 

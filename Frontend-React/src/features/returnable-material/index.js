@@ -2,6 +2,7 @@ export { default as CreateReturnableMaterialPage } from "./pages/CreateReturnabl
 
 export { default as ListReturnableMaterialPage } from "./pages/ListReturnableMaterialPage";
 
-export { default as ViewReturnableMaterialPage } from "./pages/ViewReturnableMaterialPage";
+// Visualizar y editar dejaron de ser páginas: ahora son modales (jul-2026)
+export { default as ViewReturnableMaterialModal } from "./components/ViewReturnableMaterialModal";
 
-export { default as EditReturnableMaterialPage } from "./pages/EditReturnableMaterialPage";
+export { default as EditReturnableMaterialModal } from "./components/EditReturnableMaterialModal";

@@ -61,4 +61,21 @@ export const accessService = {
 
     return accessRepository.removePermission(userId, permissionId);
   },
+
+  // Permisos efectivos del usuario autenticado (RBAC dinámico): el frontend los
+  // consulta una vez al entrar y de ahí sale todo el gating de la UI.
+  // isSuperUser ⇒ se devuelve el catálogo completo (acceso total por diseño).
+  async getEffectivePermissions(userId) {
+    if (await accessRepository.isSuperUser(userId)) {
+      return accessRepository.getAllPermissionCodenames();
+    }
+    return accessRepository.getUserPermissionCodenames(userId);
+  },
+
+  // Estilo edward: SuperAdmin tiene todos los permisos; el resto por UNION directos+grupos
+  async hasPermission(userId, permissionCode) {
+    if (await accessRepository.isSuperUser(userId)) return true;
+    const permissions = await accessRepository.getUserPermissionCodenames(userId);
+    return permissions.includes(permissionCode);
+  },
 };

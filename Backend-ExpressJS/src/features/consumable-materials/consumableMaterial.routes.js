@@ -3,14 +3,16 @@ import multer from 'multer';
 import { consumableMaterialController } from './consumableMaterial.controller.js';
 import { validate, createConsumableMaterialSchema, updateConsumableMaterialSchema } from './consumableMaterial.validator.js';
 import { uploadImage } from '../../middleware/multerConfig.js';
+import { authenticateToken } from '../../middleware/auth.middleware.js';
+import { requirePermission } from '../../middleware/permission.middleware.js';
 
 const router = Router();
 
-router.get('/',       consumableMaterialController.getAll);
-router.get('/:id',    consumableMaterialController.getById);
-router.post('/',      uploadImage.single('image'), validate(createConsumableMaterialSchema), consumableMaterialController.create);
-router.put('/:id',          uploadImage.single('image'), validate(updateConsumableMaterialSchema),  consumableMaterialController.update);
-router.patch('/:id/toggle', consumableMaterialController.toggle);
+router.get('/', authenticateToken, requirePermission('list_consumable_materials'),       consumableMaterialController.getAll);
+router.get('/:id', authenticateToken, requirePermission('list_consumable_materials'),    consumableMaterialController.getById);
+router.post('/', authenticateToken, requirePermission('create_consumable_material'),      uploadImage.single('image'), validate(createConsumableMaterialSchema), consumableMaterialController.create);
+router.put('/:id', authenticateToken, requirePermission('edit_consumable_material'),          uploadImage.single('image'), validate(updateConsumableMaterialSchema),  consumableMaterialController.update);
+router.patch('/:id/toggle', authenticateToken, requirePermission('toggle_consumable_material'), consumableMaterialController.toggle);
 
 router.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {

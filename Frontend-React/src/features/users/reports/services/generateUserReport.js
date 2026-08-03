@@ -1,13 +1,19 @@
+// Orquesta el reporte de usuarios: arma el dataset y delega la generación del
+// archivo en el generador compartido (shared/reports/generateReport), que es el
+// que pone el encabezado con sistema, fecha/hora, usuario generador y totales.
+
 import { buildReportDataset } from "../utils/buildReportDataset";
-import { generateExcelReport } from "./genarateExcelReport";
-import { generatePdfReport } from "./generatePdfReport";
+import { generateReport } from "@/shared/reports/generateReport";
 
 export function generateUserReport({
     users = [],
     format,
     selectedFields,
     scope,
-    documentNumber
+    documentNumber,
+    // Estado con el que está filtrada la tabla (activos/inactivos/todos): se
+    // refleja en el encabezado para que el reporte diga a qué corresponde
+    statusLabel,
 }) {
 
     const { headers, rows } = buildReportDataset({
@@ -17,31 +23,21 @@ export function generateUserReport({
         documentNumber
     });
 
-    //VALIDACION: EVITA GENERACCION DE ARCHIVOS VACIOS
-
-    if (!rows.length) {
-        alert("No hay datos para genera el reporte");
-        return; //Corte de ejecucion
-    }
-
-    //Generacion de timestamp para nombre uniocs de archivo (YYYY-MM-DD)
-    //toISOString(): convierte un afecha a formato estandar UTC
-    const timestamp = new Date().toISOString().slice(0, 10);
-
-    //Seleccion de estrategias de eportacion segun formato
-    if (format === "excel") {
-        generateExcelReport({
-            headers,
-            rows,
-            fileName : `users-report-${timestamp}.xlsx`
-        });
-    }
-
-    if (format === "pdf") {
-        generatePdfReport({
-            headers,
-            rows,
-            fileName: `users-report-${timestamp}.pdf`
-        });
-    }
+    return generateReport({
+        format,
+        title: "Reporte de usuarios",
+        fileBase: "usuarios",
+        sheetName: "Usuarios",
+        headers,
+        rows,
+        filters: [
+            { label: "Estado", value: statusLabel },
+            {
+                label: "Alcance",
+                value: scope === "document" && documentNumber
+                    ? `Usuario con documento ${documentNumber}`
+                    : "Todos los usuarios listados",
+            },
+        ],
+    });
 }
