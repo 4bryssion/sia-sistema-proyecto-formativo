@@ -12,12 +12,16 @@ export function generateConsumableReport({
   scope,
   documentNumber,
   statusLabel,
+  // (p48) Ids de los inventarios elegidos en el modal; vacío = todos
+  inventoryIds = [],
+  inventoryLabels = [],
 }) {
   const { headers, rows } = buildReportDataset({
     consumableMaterials: materials,
     selectedFields,
     scope,
     placa_sena: documentNumber,
+    inventoryIds,
   });
 
   return generateReport({
@@ -29,6 +33,12 @@ export function generateConsumableReport({
     rows,
     filters: [
       { label: "Estado del registro", value: statusLabel },
+      // El encabezado dice sobre qué inventarios se hizo el reporte: sin esta
+      // línea, dos reportes con distinto filtro son indistinguibles en papel
+      {
+        label: "Inventarios",
+        value: inventoryLabels.length ? inventoryLabels.join(", ") : "Todos",
+      },
       {
         label: "Alcance",
         value: scope === "placa_sena" && documentNumber

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { userController } from './user.controller.js';
-import { validate, validateUpdate, createUserSchema, updateUserSchema } from './user.validator.js';
+import { validate, validateUpdate, createUserSchema, updateUserSchema, toggleUserSchema } from './user.validator.js';
 import { uploadImage } from '../../middleware/multerConfig.js';
 import { authenticateToken } from '../../middleware/auth.middleware.js';
 import { requirePermission } from '../../middleware/permission.middleware.js';
@@ -19,7 +19,7 @@ router.get('/', authenticateToken, requirePermission('list_users'),             
 router.get('/:id', authenticateToken, ownProfileOrListAll,          userController.getById);
 router.post('/', authenticateToken, requirePermission('create_user'),            uploadImage.single('image'), validate(createUserSchema), userController.create);
 router.put('/:id', authenticateToken, requirePermission('edit_user'),          uploadImage.single('image'), validateUpdate(updateUserSchema), userController.update);
-router.patch('/:id/toggle', authenticateToken, requirePermission('toggle_user'), userController.toggle);
+router.patch('/:id/toggle', authenticateToken, requirePermission('toggle_user'), validate(toggleUserSchema), userController.toggle);
 
 router.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {

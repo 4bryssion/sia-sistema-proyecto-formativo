@@ -44,14 +44,27 @@ export function PermissionsProvider({ children }) {
   // /view y corre una sola vez por sesión; los encabezados de los reportes lo
   // leen después de forma síncrona. GET /users/:id con el propio id está
   // permitido sin list_users (excepción documentada de "Mi perfil").
-  useEffect(() => {
+  const fetchUserName = useCallback(async () => {
     const id = getCurrentUser()?.id;
     if (!id || getCurrentUserName()) return;
-    api.get(`/users/${id}`)
-      .then(({ data }) => setCurrentUserName(`${data.userFirstName} ${data.userLastName}`.trim()))
+    try {
+      const { data } = await api.get(`/users/${id}`);
+      setCurrentUserName(`${data.userFirstName} ${data.userLastName}`.trim());
+    } catch {
       // Sin nombre el reporte cae al correo: no vale la pena molestar al usuario
-      .catch(() => {});
+    }
   }, []);
+
+  useEffect(() => { fetchUserName(); }, [fetchUserName]);
+
+  // (p48) Las dos cargas juntas. Con la contraseña temporal sin cambiar, el
+  // backend responde 403 a TODO el API, así que este provider arranca con la
+  // lista de permisos VACÍA y el nombre sin resolver. Al terminar el cambio
+  // forzado hay que rehacer ambas o el usuario se queda con el dashboard en
+  // gris hasta que recargue a mano. Lo llama RequirePasswordChange.
+  const reload = useCallback(async () => {
+    await Promise.all([fetchPermissions(), fetchUserName()]);
+  }, [fetchPermissions, fetchUserName]);
 
   // can("list_users") · can(["create_loan", "edit_loan"]) → true si tiene ALGUNO
   const can = useCallback(
@@ -64,7 +77,7 @@ export function PermissionsProvider({ children }) {
   );
 
   return (
-    <PermissionsContext.Provider value={{ permissions, can, loading, refetch: fetchPermissions }}>
+    <PermissionsContext.Provider value={{ permissions, can, loading, refetch: fetchPermissions, reload }}>
       {children}
     </PermissionsContext.Provider>
   );

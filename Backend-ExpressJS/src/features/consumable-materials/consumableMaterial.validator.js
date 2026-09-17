@@ -1,5 +1,7 @@
 import Joi from 'joi';
 
+const validStatuses = ['Disponible', 'No_disponible', 'Mantenimiento', 'En_prestamo', 'Traslado', 'Baja'];
+
 const validateQuantityVsPlate = (value, helpers) => {
   const { senaPlate, quantity } = value;
   if (!senaPlate && (quantity === undefined || quantity === null)) {
@@ -8,11 +10,31 @@ const validateQuantityVsPlate = (value, helpers) => {
   return value;
 };
 
-const validStatuses = ['Disponible', 'No_disponible', 'Mantenimiento', 'En_prestamo', 'Traslado', 'Baja'];
+// La fecha de ingreso no puede ser anterior a la de compra: el material no puede
+// entrar al almacén antes de existir. Se comparan como fecha de calendario porque
+// ambas son columnas DATE sin hora.
+const validateEntryVsPurchase = (value, helpers) => {
+  const { purchaseDate, entryDate } = value;
+  if (purchaseDate && entryDate && new Date(entryDate) < new Date(purchaseDate)) {
+    return helpers.error('any.custom', {
+      message: '"entryDate" no puede ser anterior a "purchaseDate".',
+    });
+  }
+  return value;
+};
+
+// Listas serializadas como JSON dentro del multipart: un FormData no puede llevar
+// un array. accountableIds son los cuentadantes; imageOrder y sheetOrder mezclan
+// ids ya guardados con referencias "new:<i>" a los archivos recién subidos.
+const jsonList = Joi.string().max(1000);
 
 export const createConsumableMaterialSchema = Joi.object({
-  userId: Joi.number().integer().positive().required(),
-  brandId: Joi.number().integer().positive().required(),
+  // (p48) Cuentadantes: uno o varios, ya no un userId suelto
+  accountableIds: jsonList.required(),
+  // (p48) La marca dejó de ser obligatoria
+  brandId: Joi.number().integer().positive().optional().allow('', null),
+  // (p48) El inventario SÍ es obligatorio
+  inventoryId: Joi.number().integer().positive().required(),
   senaPlate: Joi.string().max(20).optional().allow('', null),
   materialName: Joi.string().max(100).required(),
   quantity: Joi.number().integer().min(0).optional().allow(null),
@@ -21,24 +43,47 @@ export const createConsumableMaterialSchema = Joi.object({
   status: Joi.string().valid(...validStatuses).required(),
   description: Joi.string().max(255).required(),
   purchaseDate: Joi.date().iso().required(),
+  // (p48) Fecha de ingreso al almacén, obligatoria
+  entryDate: Joi.date().iso().required(),
   location: Joi.string().max(100).required(),
-}).custom(validateQuantityVsPlate);
+})
+  .custom(validateQuantityVsPlate)
+  .custom(validateEntryVsPurchase);
 
 export const updateConsumableMaterialSchema = Joi.object({
-  userId: Joi.number().integer().positive(),
-  brandId: Joi.number().integer().positive(),
+  accountableIds: jsonList,
+  brandId: Joi.number().integer().positive().allow('', null),
+  inventoryId: Joi.number().integer().positive(),
   senaPlate: Joi.string().max(20).allow('', null),
   materialName: Joi.string().max(100),
-  quantity: Joi.number().integer().min(0).allow(null),
+  // (p48) El vacío significa "no tiene cantidad", o sea material serializado: es
+  // lo que permite convertir uno por cantidad en uno con placa SENA. El service
+  // lo traduce a null. Antes el campo vacío se descartaba y la cantidad vieja se
+  // quedaba pegada, dejando un material con placa Y cantidad — un estado que
+  // rompe la invariante `quantity == null ⇔ serializado` de la que dependen
+  // préstamos, retornos y devoluciones.
+  quantity: Joi.number().integer().min(0).allow('', null),
   unitPrice: Joi.number().precision(2).positive(),
   totalPrice: Joi.number().precision(2).positive(),
   status: Joi.string().valid(...validStatuses),
   description: Joi.string().max(255),
   purchaseDate: Joi.date().iso(),
+  entryDate: Joi.date().iso(),
   location: Joi.string().max(100),
-}).min(1);
+  // Orden final de imágenes y fichas técnicas. Lo que NO aparezca se elimina.
+  imageOrder: jsonList.allow('', null),
+  sheetOrder: jsonList.allow('', null),
+})
+  .min(1)
+  .custom(validateEntryVsPurchase);
 
 export const validate = (schema) => (req, res, next) => {
+  const tieneArchivos = req.files && Object.keys(req.files).length > 0;
+  const tieneBody = Object.keys(req.body).length > 0;
+
+  // Actualización solo con archivos: el body está vacío pero hay files → válido
+  if (!tieneBody && tieneArchivos) return next();
+
   const { error } = schema.validate(req.body, { abortEarly: false, allowUnknown: false });
   if (error) {
     return res.status(400).json({

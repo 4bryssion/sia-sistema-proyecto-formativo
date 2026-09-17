@@ -73,7 +73,7 @@ export default function TextArea({
                         border-border
                         px-4
                         py-3
-                        text-base
+                        text-body
                         font-secondary
                         resize-none
                         overflow-y-auto

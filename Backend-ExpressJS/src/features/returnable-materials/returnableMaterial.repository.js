@@ -1,29 +1,33 @@
 import prisma from '../../config/prisma.js';
 
-const includeComplete = {
-  consumableMaterial: {
+// (p48) Cuentadantes, imágenes y fichas técnicas viven ahora en la tabla PADRE
+// (consumable_materials), así que se piden a través de consumableMaterial y no
+// del devolutivo. Las fichas dejaron de colgar de returnable_materials.
+const relacionesDelPadre = {
+  accountables: {
+    orderBy: { created_at: 'asc' },
     include: {
       user: { select: { id: true, userFirstName: true, userLastName: true, userAccountType: true } },
-      brand: { select: { id: true, brandName: true } },
     },
   },
-  category: { select: { id: true, categoryName: true } },
+  brand: { select: { id: true, brandName: true } },
+  inventory: { select: { id: true, inventoryName: true } },
   // Orden explícito por sortOrder: el id refleja el orden de SUBIDA, no el que
   // el usuario dejó al arrastrar las previsualizaciones
+  images: { orderBy: { sortOrder: 'asc' } },
   technicalSheets: { orderBy: { sortOrder: 'asc' } },
+};
+
+const includeComplete = {
+  consumableMaterial: { include: relacionesDelPadre },
+  category: { select: { id: true, categoryName: true } },
 };
 
 // El create/update entran por consumableMaterial (tabla padre), así que la
 // relación se anida al revés que en includeComplete
 const includeDesdePadre = {
-  returnable: {
-    include: {
-      category: true,
-      technicalSheets: { orderBy: { sortOrder: 'asc' } },
-    },
-  },
-  user: { select: { id: true, userFirstName: true, userLastName: true } },
-  brand: true,
+  ...relacionesDelPadre,
+  returnable: { include: { category: true } },
 };
 
 export const returnableMaterialRepository = {
@@ -45,29 +49,23 @@ export const returnableMaterialRepository = {
     });
   },
 
-  async create(consumableData, returnableData, sheets = []) {
+  async create(consumableData, returnableData, accountableIds, images, sheets) {
     return prisma.consumableMaterial.create({
       data: {
         ...consumableData,
-        returnable: {
-          create: {
-            ...returnableData,
-            technicalSheets: { create: sheets },
-          },
-        },
+        accountables: { create: accountableIds.map((userId) => ({ userId })) },
+        images: { create: images },
+        technicalSheets: { create: sheets },
+        returnable: { create: returnableData },
       },
       include: includeDesdePadre,
     });
   },
 
-  // sheetOps llega ya resuelto por el service: qué filas se borran, cuáles
-  // cambian de posición y cuáles se crean. Aquí solo se ejecutan.
-  //
-  // Todo va en una transacción porque un fallo a medias dejaría el material con
-  // fichas borradas y las nuevas sin insertar.
-  async update(id, consumableData, returnableData, sheetOps = {}) {
-    const { deleteIds = [], reorder = [], create = [] } = sheetOps;
-
+  // Las operaciones sobre imágenes y fichas llegan ya resueltas por el service.
+  // Todo va en una transacción: un fallo a medias dejaría el material con
+  // archivos borrados y los nuevos sin insertar.
+  async update(id, consumableData, returnableData, accountableIds, imageOps = {}, sheetOps = {}) {
     const operaciones = [
       prisma.consumableMaterial.update({
         where: { id },
@@ -80,39 +78,39 @@ export const returnableMaterialRepository = {
       }),
     ];
 
-    if (deleteIds.length) {
+    // accountableIds undefined = la edición no tocó los cuentadantes.
+    // Se reemplaza el conjunto completo: la tabla no guarda nada más que el
+    // vínculo, así que no hay dato que perder al recrearlo.
+    if (accountableIds !== undefined) {
+      operaciones.push(prisma.materialAccountable.deleteMany({ where: { materialId: id } }));
       operaciones.push(
-        prisma.returnableMaterialFile.deleteMany({
-          where: { id: { in: deleteIds }, materialId: id },
+        prisma.materialAccountable.createMany({
+          data: accountableIds.map((userId) => ({ materialId: id, userId })),
         }),
       );
     }
 
-    reorder.forEach(({ id: fileId, sortOrder }) => {
-      operaciones.push(
-        prisma.returnableMaterialFile.update({
-          where: { id: fileId },
-          data: { sortOrder },
-        }),
-      );
-    });
+    const aplicar = (ops, delegate) => {
+      const { deleteIds = [], reorder = [], create = [] } = ops;
+      if (deleteIds.length) {
+        operaciones.push(delegate.deleteMany({ where: { id: { in: deleteIds }, materialId: id } }));
+      }
+      reorder.forEach(({ id: filaId, sortOrder }) => {
+        operaciones.push(delegate.update({ where: { id: filaId }, data: { sortOrder } }));
+      });
+      if (create.length) {
+        operaciones.push(delegate.createMany({ data: create.map((f) => ({ ...f, materialId: id })) }));
+      }
+    };
 
-    if (create.length) {
-      operaciones.push(
-        prisma.returnableMaterialFile.createMany({
-          data: create.map((f) => ({ ...f, materialId: id })),
-        }),
-      );
-    }
+    aplicar(imageOps, prisma.consumableMaterialImage);
+    aplicar(sheetOps, prisma.materialFile);
 
     await prisma.$transaction(operaciones);
 
     // Relectura tras la transacción: el update del padre devuelve el estado
-    // ANTERIOR a tocar las fichas
-    return prisma.consumableMaterial.findUnique({
-      where: { id },
-      include: includeDesdePadre,
-    });
+    // ANTERIOR a tocar cuentadantes, imágenes y fichas
+    return prisma.consumableMaterial.findUnique({ where: { id }, include: includeDesdePadre });
   },
 
   async toggle(id, isActive) {
@@ -123,6 +121,13 @@ export const returnableMaterialRepository = {
     return prisma.returnableMaterial.findUnique({
       where: { id },
       include: includeComplete,
+    });
+  },
+
+  async findValidAccountables(ids) {
+    return prisma.user.findMany({
+      where: { id: { in: ids }, isActive: true, userAccountType: 'Cuentadante' },
+      select: { id: true },
     });
   },
 };

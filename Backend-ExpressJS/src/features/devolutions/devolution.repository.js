@@ -86,8 +86,21 @@ export const devolutionRepository = {
         // y este punto el material pudo cambiar por otra operación
         const material = await tx.consumableMaterial.findUnique({ where: { id: item.materialId } });
 
+        // El estado del material solo se puede APLICAR si el material es una
+        // unidad única identificable, es decir, si está serializado (placa SENA,
+        // `quantity` null). En un material por cantidad la fila representa el
+        // lote entero: marcarlo "Baja" porque se devolvió una unidad dañada
+        // ensuciaría también las unidades sanas que siguen en bodega.
+        //
+        // Para esos materiales el estado queda registrado en la devolución
+        // (`devolution_request_items.material_status`) y se consulta desde el
+        // listado de préstamos filtrando por devoluciones.
+        const serializado = material.quantity == null;
+
         if (item.materialStatus === 'Disponible') {
-          // Único caso que devuelve cantidad al inventario
+          // Único caso que devuelve cantidad al inventario. En un serializado
+          // esto además lo saca de "En préstamo", que es el cambio de estado
+          // que sí corresponde siempre.
           await applyRestore(tx, material, item.restoreQty);
           movimientos.push({
             materialId: material.id,
@@ -95,20 +108,26 @@ export const devolutionRepository = {
             antes: material.quantity,
             despues: material.quantity == null ? null : material.quantity + item.restoreQty,
             estado: 'Disponible',
+            aplicadoAlMaterial: true,
           });
         } else {
-          // Mantenimiento, Baja, Traslado o No disponible: solo cambia el estado.
-          // La cantidad NO se reintegra (el material no vuelve a estar prestable).
-          await tx.consumableMaterial.update({
-            where: { id: material.id },
-            data: { status: item.materialStatus },
-          });
+          // Mantenimiento, Baja, Traslado o No disponible: la cantidad NO se
+          // reintegra en ningún caso (esas unidades no vuelven a estar
+          // prestables), y el estado solo se escribe si es serializado.
+          if (serializado) {
+            await tx.consumableMaterial.update({
+              where: { id: material.id },
+              data: { status: item.materialStatus },
+            });
+          }
           movimientos.push({
             materialId: material.id,
             materialName: material.materialName,
             antes: material.quantity,
             despues: material.quantity,
             estado: item.materialStatus,
+            aplicadoAlMaterial: serializado,
+            cantidadDevuelta: item.restoreQty,
           });
         }
 

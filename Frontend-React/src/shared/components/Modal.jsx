@@ -10,10 +10,20 @@
 //   Solo con Cancelar o con la X, que en ese caso va FUERA del modal, en una
 //   esquina, para no restarle espacio al contenido.
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { IconButton } from "./IconButton";
+
+// Pila de modales abiertos. Todos escuchan Escape en `document`, así que sin
+// esto una tecla cerraba TODOS los que hubiera apilados a la vez: pulsar Escape
+// sobre "Cambiar contraseña" cerraba también el perfil que había debajo, y con
+// él lo escrito. Cada modal solo atiende a Escape si es el ÚLTIMO que se abrió.
+//
+// Es una variable de módulo y no un contexto a propósito: los modales se montan
+// en portales desde sitios distintos del árbol (el Navbar, una tabla, otro
+// modal) y no comparten ningún ancestro común que pudiera proveerlo.
+const pilaDeModales = [];
 
 const SIZES = {
     sm: "max-w-md",
@@ -39,11 +49,25 @@ export default function Modal({
 }) {
     // Escape cierra siempre: es la vía de escape estándar y no destruye datos
     // por accidente (requiere una acción deliberada del teclado)
+    // Identidad estable de ESTA instancia mientras esté montada
+    const idModal = useRef({});
+
     useEffect(() => {
         if (!isOpen) return;
-        const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
+        const yo = idModal.current;
+        pilaDeModales.push(yo);
+        const onKey = (e) => {
+            if (e.key !== "Escape") return;
+            // Solo el de más arriba responde
+            if (pilaDeModales[pilaDeModales.length - 1] !== yo) return;
+            onClose?.();
+        };
         document.addEventListener("keydown", onKey);
-        return () => document.removeEventListener("keydown", onKey);
+        return () => {
+            document.removeEventListener("keydown", onKey);
+            const i = pilaDeModales.indexOf(yo);
+            if (i !== -1) pilaDeModales.splice(i, 1);
+        };
     }, [isOpen, onClose]);
 
     // Bloquea el scroll del fondo mientras el modal está abierto

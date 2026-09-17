@@ -5,8 +5,14 @@ export { default as CancelButton } from "./components/CancelButton";
 export { Alert } from "./components/utils/alert.js";
 export { PermissionsProvider, usePermissions } from "./context/PermissionsContext.jsx";
 export { default as RequirePermission } from "./components/auth/RequirePermission.jsx";
+export { default as RequirePasswordChange } from "./components/auth/RequirePasswordChange.jsx";
 export { default as Card } from "./components/Card";
 export { default as Checkbox } from "./components/Checkbox";
+export { default as CreateAndAssignTrigger } from "./components/CreateAndAssignTrigger";
+// (sesión 4) Nuevos componentes compartidos
+export { default as SupportContactButton } from "./components/SupportContactButton";
+export { default as DataPolicyCheckbox } from "./components/DataPolicyCheckbox";
+export { default as MultiStepModal } from "./components/MultiStepModal";
 export { default as DataTable } from "./components/DataTable";
 
 export { 
@@ -24,13 +30,12 @@ export { default as ListPageHeader } from "./components/ListPageHeader";
 export { default as Modal } from "./components/Modal";
 export { default as SearchField } from "./components/SearchField";
 export { default as Select } from "./components/Select";
+export { default as StatusFilterSelect } from "./components/StatusFilterSelect";
 export { default as Switch } from "./components/Switch";
 export { default as TextArea } from "./components/TextArea";
 
 // Shared - Hooks
 
-export { useColumnCount } from "./hooks/useColumnCount";
-export { useMediaQuery } from "./hooks/useMediaQuery";
 
 // Shared - Layouts
 

@@ -31,7 +31,7 @@ export const userController = {
 
   async toggle(req, res, next) {
     try {
-      const data = await userService.toggle(Number(req.params.id));
+      const data = await userService.toggle(Number(req.params.id), req.body ?? {});
       const mensaje = data.isActive ? 'Usuario activado.' : 'Usuario desactivado.';
       res.json({ mensaje, data });
     } catch (err) { next(err); }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import taskService from "../services/taskService";
+import taskService from "@/shared/services/taskService";
 import TaskViewLeft from "../components/TaskViewLeft";
 import TaskViewRight from "../components/TaskViewRight";
 

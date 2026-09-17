@@ -14,7 +14,25 @@ const loanInclude = {
       },
     },
   },
-  signatures: { include: { user: true } },
+  // (p48) `user: true` devolvía la fila COMPLETA del usuario en cada GET de
+  // préstamos: hash de la contraseña, jti de la sesión activa, dirección y
+  // teléfonos incluidos. Se cambia por un select explícito, que además es lo que
+  // pide la vista: bajo el nombre del receptor van su tipo y número de documento.
+  signatures: {
+    include: {
+      user: {
+        select: {
+          id: true,
+          userFirstName: true,
+          userLastName: true,
+          userEmail: true,
+          userDocumentNumber: true,
+          userPhoto: true,
+          documentType: { select: { id: true, documentName: true } },
+        },
+      },
+    },
+  },
 };
 
 export const loanRepository = {
@@ -30,9 +48,13 @@ export const loanRepository = {
     return prisma.loan.findUnique({ where: { id }, include: loanInclude });
   },
 
-  // header: { apprenticeGroup, useJustification, returnDate }
+  // header: { apprenticeGroup, loanType, useJustification, returnDate }
   // materials: [{ materialId, borrowedQuantity }]
-  // parties: { lenderId, receiverId }
+  // parties: { lenderId, receiverId, receiverEmail }
+  //
+  // (p48) El receptor puede no estar registrado: entonces su firma no apunta a
+  // ningún usuario y el enlace viaja a `receiverEmail`. El prestador siempre es
+  // un usuario del sistema (es cuentadante).
   async create({ header, materials, parties }) {
     return prisma.$transaction(async (tx) => {
       const loan = await tx.loan.create({ data: header });
@@ -48,7 +70,12 @@ export const loanRepository = {
       await tx.loanSignature.createMany({
         data: [
           { loanId: loan.id, userId: parties.lenderId, party: 'Prestador' },
-          { loanId: loan.id, userId: parties.receiverId, party: 'Receptor' },
+          {
+            loanId: loan.id,
+            party: 'Receptor',
+            userId: parties.receiverId ?? null,
+            externalEmail: parties.receiverEmail ?? null,
+          },
         ],
       });
 
@@ -99,18 +126,64 @@ export const loanRepository = {
         await applyLend(tx, mat, m.borrowedQuantity);
       }
       // 4) actualizar participantes (firmas)
+      //
+      // Editar solo se permite con el préstamo ya `Activo`, es decir, con las DOS
+      // partes firmadas. Si se cambia de firmante, esa firma deja de ser válida:
+      // la persona nueva no ha aceptado nada. Antes se reasignaba el usuario y se
+      // conservaban `signed`/`signedAt`, así que el nuevo receptor aparecía como
+      // "firmó el <fecha del anterior>" y nunca recibía el correo.
+      //
+      // Por eso se compara con lo que había: si la parte cambió, su firma se
+      // reinicia y el préstamo vuelve a `Pendiente_confirmacion`, que es el
+      // estado que el flujo de firma ya sabe resolver.
+      const firmasPrevias = await tx.loanSignature.findMany({ where: { loanId: id } });
+      const previa = (party) => firmasPrevias.find((f) => f.party === party);
+
+      const cambio = (party, userId, email) => {
+        const antes = previa(party);
+        if (!antes) return true;
+        return (antes.userId ?? null) !== (userId ?? null)
+            || (antes.externalEmail ?? null) !== (email ?? null);
+      };
+
+      const cambioPrestador = cambio('Prestador', parties.lenderId, null);
+      // (p48) Se escriben SIEMPRE los dos campos del receptor: editar un préstamo
+      // para pasarlo de registrado a externo (o al revés) debe limpiar el que
+      // deja de aplicar, o quedarían los dos puestos a la vez.
+      const cambioReceptor = cambio('Receptor', parties.receiverId, parties.receiverEmail);
+
+      const reinicio = { signed: false, signedAt: null };
+
       await tx.loanSignature.update({
         where: { loanId_party: { loanId: id, party: 'Prestador' } },
-        data: { userId: parties.lenderId },
+        data: { userId: parties.lenderId, ...(cambioPrestador ? reinicio : {}) },
       });
       await tx.loanSignature.update({
         where: { loanId_party: { loanId: id, party: 'Receptor' } },
-        data: { userId: parties.receiverId },
+        data: {
+          userId: parties.receiverId ?? null,
+          externalEmail: parties.receiverEmail ?? null,
+          ...(cambioReceptor ? reinicio : {}),
+        },
       });
-      // 5) actualizar cabecera
-      await tx.loan.update({ where: { id }, data: header });
 
-      return tx.loan.findUnique({ where: { id }, include: loanInclude });
+      // 5) actualizar cabecera. Con una firma reiniciada el préstamo no puede
+      // seguir `Activo`: eso significaría que las dos partes firmaron.
+      const huboCambioDeParte = cambioPrestador || cambioReceptor;
+      await tx.loan.update({
+        where: { id },
+        data: huboCambioDeParte ? { ...header, status: 'Pendiente_confirmacion' } : header,
+      });
+
+      return {
+        loan: await tx.loan.findUnique({ where: { id }, include: loanInclude }),
+        // Quién tiene que volver a firmar; el service usa esto para reenviar el
+        // correo con el enlace
+        partesReiniciadas: [
+          ...(cambioPrestador ? ['Prestador'] : []),
+          ...(cambioReceptor ? ['Receptor'] : []),
+        ],
+      };
     });
   },
 

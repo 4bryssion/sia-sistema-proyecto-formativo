@@ -1,4 +1,4 @@
-// Devoluciones en dos fases (P47). Retornar dejó de ser una página: es el modal
-// que abre el listado de préstamos.
-export { default as ReturnLoanModal } from "./components/ReturnLoanModal";
-export { default as devolutionService } from "./services/devolutionService";
+// (sesión 4) La feature quedó VACÍA: sus dos modales, su service y su hook los usaba
+// el módulo de préstamos, así que se mudaron a shared/ por la regla de que nada de un
+// módulo puede vivir fuera de él. Se conserva la carpeta porque el dominio existe y
+// aquí volverá lo que sea exclusivo de devoluciones.

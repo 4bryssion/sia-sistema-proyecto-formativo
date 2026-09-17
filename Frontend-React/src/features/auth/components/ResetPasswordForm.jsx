@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Input, Button, Alert } from "@/shared";
 import { resetPasswordSchema } from "../schemas/resetPasswordSchema.js";
-import { resetPassword } from "../services/authService.js";
+import { resetPassword } from "@/shared/services/authService";
 import AuthCard from "./AuthCard.jsx";
 
 export default function ResetPasswordForm() {
@@ -43,7 +43,6 @@ export default function ResetPasswordForm() {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-        if (errors.form) setErrors((prev) => ({ ...prev, form: undefined }));
     };
 
     const handleSubmit = async (e) => {
@@ -72,7 +71,6 @@ export default function ResetPasswordForm() {
         } catch (error) {
             Alert.close();
             Alert.error("Error al actualizar la contraseña", error.message);
-            setErrors({ form: error.message });
         }
     };
 
@@ -106,11 +104,6 @@ export default function ResetPasswordForm() {
                     error={errors.confirmPassword}
                 />
 
-                {errors.form && (
-                    <p className="font-secondary text-caption text-error text-center">
-                        {errors.form}
-                    </p>
-                )}
 
                 {successMessage && (
                     <p className="font-secondary text-caption text-center text-(--color-primary-950)">

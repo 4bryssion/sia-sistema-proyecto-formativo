@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Pencil, EllipsisVertical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Dropdown, DropdownTrigger, DropdownItem, DropdownContent, Checkbox, Switch, Alert, usePermissions } from "@/shared";
-import taskService from "../services/taskService.js";
+import taskService from "@/shared/services/taskService";
 
 export default function TaskRowActions({ tasks, onChanged }) {
   const { can } = usePermissions();

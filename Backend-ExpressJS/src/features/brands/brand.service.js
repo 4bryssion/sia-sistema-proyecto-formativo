@@ -2,8 +2,14 @@ import { brandRepository } from './brand.repository.js';
 import { notify } from '../notifications/notification.service.js';
 
 export const brandService = {
-  async getAll() {
-    return brandRepository.findAll();
+  // Mismo contrato de `status` que materiales e inventarios:
+  // active (por defecto) | inactive | all
+  async getAll(status) {
+    const filter =
+      status === 'inactive' ? false :
+      status === 'all'      ? undefined :
+      true;
+    return brandRepository.findAll(filter);
   },
 
   async getById(id) {

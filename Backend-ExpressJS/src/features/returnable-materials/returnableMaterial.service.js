@@ -1,79 +1,84 @@
-import path from 'path';
 import { notify } from '../notifications/notification.service.js';
-import fs from 'fs';
 import { returnableMaterialRepository } from './returnableMaterial.repository.js';
+import { deleteFiles, parseOrden, resolverOrden } from '../../shared/orderedFiles.js';
 
-const deleteFiles = (archivos) => {
-  archivos.forEach((filePath) => {
-    if (filePath) {
-      const ruta = path.join('uploads', path.basename(filePath));
-      fs.unlink(ruta, (err) => {
-        if (err) console.error('Error eliminando archivo:', err);
-      });
-    }
-  });
-};
-
-// Tope de fichas técnicas por material. Multer ya corta en 3 al subir, pero la
-// edición puede combinar fichas conservadas + nuevas y ahí no interviene multer.
+// Topes por material. Multer ya corta al subir, pero la edición puede combinar
+// archivos conservados + nuevos y ahí no interviene multer.
+const MAX_IMAGENES = 3;
 const MAX_FICHAS = 3;
+// En el devolutivo la ficha técnica SÍ es obligatoria (a diferencia del material
+// de consumo): es documentación del equipo y todos los ya registrados la tienen.
+const MIN_FICHAS = 1;
+const MIN_IMAGENES = 1;
 
-// Fila de returnable_material_files a partir del archivo que entrega multer
-const aFicha = (file, sortOrder) => ({
-  fileUrl:   `/uploads/${file.filename}`,
-  fileName:  file.originalname,
-  mimeType:  file.mimetype,
+const aImagen = (file, sortOrder) => ({
+  imageUrl: `/uploads/${file.filename}`,
+  fileName: file.originalname,
+  mimeType: file.mimetype,
   sortOrder,
 });
 
-// Orden final de las fichas tal como quedó en el formulario. Viaja como JSON
-// dentro del multipart (un FormData no puede llevar un array sin serializarlo).
-//
-// Cada elemento es:
-// - un número → id de una ficha ya guardada que se conserva
-// - "new:<i>" → el archivo en la posición i de los subidos en technical_sheet
-//
-// Con solo la lista de ids conservados no bastaba: si el usuario arrastra un
-// archivo nuevo al principio, al guardar habría saltado al final.
-// Las fichas guardadas que NO aparezcan en la lista se eliminan.
-const parseSheetOrder = (raw) => {
-  if (raw === undefined || raw === '') return null;   // null = el form no tocó las fichas
-  try {
-    const orden = JSON.parse(raw);
-    if (!Array.isArray(orden)) throw new Error();
-    return orden;
-  } catch {
-    throw new Error('El orden de las fichas técnicas es inválido.');
-  }
-};
+const aFicha = (file, sortOrder) => ({
+  fileUrl:  `/uploads/${file.filename}`,
+  fileName: file.originalname,
+  mimeType: file.mimetype,
+  sortOrder,
+});
 
-// Índice del archivo recién subido al que apunta un elemento "new:<i>"
-const indiceDeNuevo = (item) => {
-  if (typeof item !== 'string') return null;
-  const match = /^new:(\d+)$/.exec(item);
-  return match ? Number(match[1]) : null;
+// Los cuentadantes viajan como JSON dentro del multipart, igual que imageOrder y
+// sheetOrder: un FormData no puede llevar un array sin serializarlo.
+const parseAccountables = (raw) => {
+  if (raw === undefined || raw === '') return undefined; // la edición no los tocó
+  let lista;
+  try {
+    lista = JSON.parse(raw);
+    if (!Array.isArray(lista)) throw new Error();
+  } catch {
+    throw new Error('La lista de cuentadantes es inválida.');
+  }
+  const ids = [...new Set(lista.map(Number))];
+  if (ids.some((n) => !Number.isInteger(n) || n <= 0)) {
+    throw new Error('La lista de cuentadantes contiene identificadores inválidos.');
+  }
+  return ids;
 };
 
 const parseCampos = (body) => ({
   ...body,
-  userId:      body.userId      ? Number(body.userId)      : undefined,
-  brandId:     body.brandId     ? Number(body.brandId)     : undefined,
-  categoryId:  body.categoryId  ? Number(body.categoryId)  : undefined,
-  unitPrice:   body.unitPrice   ? Number(body.unitPrice)   : undefined,
-  totalPrice:  body.totalPrice  ? Number(body.totalPrice)  : undefined,
+  // (p48) La marca es opcional, así que hay que poder QUITÁRSELA a un material
+  // que ya la tenía: el campo vacío significa "no tiene" y viaja como null.
+  // Con `undefined` (que es lo que hay que mandar para "no lo toqué") Prisma
+  // ignora la columna y la marca vieja se quedaba pegada para siempre.
+  brandId:      body.brandId === '' ? null : (body.brandId ? Number(body.brandId) : undefined),
+  inventoryId:  body.inventoryId ? Number(body.inventoryId) : undefined,
+  categoryId:   body.categoryId  ? Number(body.categoryId)  : undefined,
+  unitPrice:    body.unitPrice   ? Number(body.unitPrice)   : undefined,
+  totalPrice:   body.totalPrice  ? Number(body.totalPrice)  : undefined,
   purchaseDate: body.purchaseDate ? new Date(body.purchaseDate).toISOString() : undefined,
-  quantity:    body.quantity !== undefined && body.quantity !== ''
-                 ? Number(body.quantity)
-                 : undefined,
+  entryDate:    body.entryDate    ? new Date(body.entryDate).toISOString()    : undefined,
+  // (p48) Vacío = "no tiene cantidad", o sea material serializado. Es lo que
+  // permite convertir uno por cantidad en uno con placa SENA y al revés. Antes
+  // el vacío daba `undefined` ("no lo toqué"), así que la cantidad vieja se
+  // quedaba pegada y el material acababa con placa Y cantidad a la vez.
+  quantity:     body.quantity === ''
+                  ? null
+                  : (body.quantity !== undefined ? Number(body.quantity) : undefined),
+  // Mismo criterio para la placa: vacía significa "quítasela"
+  senaPlate:    body.senaPlate === '' ? null : body.senaPlate,
   // Solo la categoría "Muebles y enseres" pide dimensiones; el resto manda el
   // campo vacío y debe quedar NULL, no como cadena vacía, para que la consulta
-  // "materiales sin dimensiones" siga teniendo sentido
-  dimensions:  body.dimensions === '' ? null : body.dimensions,
+  // "materiales sin dimensiones" siga teniendo sentido.
+  // (p48) model y serial siguen el mismo criterio: ahora son opcionales y un
+  // campo vacío significa "no tiene", no "cadena vacía". Además serial es único,
+  // y dos cadenas vacías chocarían entre sí mientras que dos NULL no.
+  dimensions:   body.dimensions === '' ? null : body.dimensions,
+  model:        body.model === '' ? null : body.model,
+  serial:       body.serial === '' ? null : body.serial,
 });
 
 const separar = (data) => {
-  // technicalSheet salió de aquí: las fichas ya no son una columna del material
-  // sino filas de returnable_material_files (p46)
+  // technicalSheets salió de aquí en p46 (dejaron de ser una columna) y en p48
+  // pasaron a colgar del padre junto con las imágenes y los cuentadantes
   const camposDevolutivo = ['categoryId', 'model', 'serial', 'dimensions'];
   const devolutivo = {};
   const consumo = {};
@@ -88,6 +93,14 @@ const separar = (data) => {
   return { consumo, devolutivo };
 };
 
+const validarCuentadantes = async (ids) => {
+  if (!ids.length) throw new Error('Debe asignar al menos un cuentadante.');
+  const validos = await returnableMaterialRepository.findValidAccountables(ids);
+  if (validos.length !== ids.length) {
+    throw new Error('Alguno de los cuentadantes seleccionados no existe, está inactivo o no es cuentadante.');
+  }
+};
+
 export const returnableMaterialService = {
   async getAll(status = 'active') {
     return returnableMaterialRepository.findAll(status);
@@ -100,37 +113,43 @@ export const returnableMaterialService = {
   },
 
   async create(bodyData, files) {
-    const imagen = files?.image?.[0];
-    const fichas = files?.technical_sheet ?? [];
+    const imagenes = files?.image ?? [];
+    const fichas   = files?.technical_sheet ?? [];
 
     // Rutas de TODO lo subido: si la validación falla, ningún archivo debe
     // quedar huérfano en /uploads
-    const subidos = [
-      ...(imagen ? [`/uploads/${imagen.filename}`] : []),
-      ...fichas.map((f) => `/uploads/${f.filename}`),
-    ];
+    const subidos = [...imagenes, ...fichas].map((f) => `/uploads/${f.filename}`);
+    const abortar = (mensaje) => { deleteFiles(subidos); throw new Error(mensaje); };
 
-    if (!imagen) {
-      deleteFiles(subidos);
-      throw new Error('La imagen es requerida.');
-    }
-    if (!fichas.length) {
-      deleteFiles(subidos);
-      throw new Error('La ficha técnica es requerida.');
-    }
-    if (fichas.length > MAX_FICHAS) {
-      deleteFiles(subidos);
-      throw new Error(`Solo se permiten hasta ${MAX_FICHAS} fichas técnicas.`);
-    }
+    if (imagenes.length < MIN_IMAGENES) abortar('La imagen es requerida.');
+    if (imagenes.length > MAX_IMAGENES) abortar(`Solo se permiten hasta ${MAX_IMAGENES} imágenes.`);
+    if (fichas.length < MIN_FICHAS)     abortar('La ficha técnica es requerida.');
+    if (fichas.length > MAX_FICHAS)     abortar(`Solo se permiten hasta ${MAX_FICHAS} fichas técnicas.`);
 
     const data = parseCampos(bodyData);
-    data.image = `/uploads/${imagen.filename}`;
+    const accountableIds = parseAccountables(data.accountableIds);
+    delete data.accountableIds;
+    // En create el orden es el de subida: si llegaran, se descartan
+    delete data.imageOrder;
+    delete data.sheetOrder;
+
+    if (accountableIds === undefined) abortar('Debe asignar al menos un cuentadante.');
+    try {
+      await validarCuentadantes(accountableIds);
+    } catch (err) {
+      abortar(err.message);
+    }
 
     const { consumo, devolutivo } = separar(data);
-    const sheets = fichas.map((f, i) => aFicha(f, i));
 
     try {
-      const created = await returnableMaterialRepository.create(consumo, devolutivo, sheets);
+      const created = await returnableMaterialRepository.create(
+        consumo,
+        devolutivo,
+        accountableIds,
+        imagenes.map((f, i) => aImagen(f, i)),
+        fichas.map((f, i) => aFicha(f, i)),
+      );
       // El repositorio crea desde la tabla PADRE: lo que vuelve ya es el
       // material de consumo (con `returnable` dentro), no un envoltorio.
       // Leerlo como `created.consumableMaterial` dejaba la notificación con el
@@ -149,93 +168,80 @@ export const returnableMaterialService = {
   },
 
   async update(id, bodyData, files) {
-    const currentMaterial = await returnableMaterialService.getById(id);
+    const actual = await returnableMaterialService.getById(id);
+    // (p48) imágenes, fichas y cuentadantes cuelgan del padre
+    const padre = actual.consumableMaterial ?? {};
 
-    const nuevasFichas = files?.technical_sheet ?? [];
-    const nuevasRutas  = nuevasFichas.map((f) => `/uploads/${f.filename}`);
+    const nuevasImagenes = files?.image ?? [];
+    const nuevasFichas   = files?.technical_sheet ?? [];
+    const nuevasRutas    = [...nuevasImagenes, ...nuevasFichas].map((f) => `/uploads/${f.filename}`);
 
     const data = parseCampos(bodyData);
-    if (files?.image?.[0]) data.image = `/uploads/${files.image[0].filename}`;
 
-    // sheetOrder no es un campo del material: se saca antes de separar para que
-    // no acabe en el update de Prisma
-    const orden = parseSheetOrder(data.sheetOrder);
+    // Estos tres no son columnas del material: se sacan antes de separar para
+    // que no acaben en el update de Prisma
+    const ordenImagenes  = parseOrden(data.imageOrder, 'las imágenes');
+    const ordenFichas    = parseOrden(data.sheetOrder, 'las fichas técnicas');
+    const accountableIds = parseAccountables(data.accountableIds);
+    delete data.imageOrder;
     delete data.sheetOrder;
+    delete data.accountableIds;
 
     const { consumo, devolutivo } = separar(data);
 
-    const actuales = currentMaterial.technicalSheets ?? [];
-
-    // Sin sheetOrder (edición que no tocó los archivos) se conserva todo tal
-    // cual y lo nuevo se agrega al final
-    const ordenEfectivo = orden ?? [
-      ...actuales.map((f) => f.id),
-      ...nuevasFichas.map((_, i) => `new:${i}`),
-    ];
-
-    // Se recorre el orden pedido y se resuelve cada posición contra lo que
-    // realmente existe: así una referencia inválida (id borrado en otra pestaña,
-    // "new:5" sin archivo) se ignora en vez de romper la edición
-    const conservadas = [];
-    const creadas = [];
-    ordenEfectivo.forEach((item) => {
-      const nuevoIdx = indiceDeNuevo(item);
-      if (nuevoIdx !== null) {
-        const file = nuevasFichas[nuevoIdx];
-        if (file) creadas.push({ file, sortOrder: conservadas.length + creadas.length });
-        return;
-      }
-      const existente = actuales.find((f) => f.id === Number(item));
-      if (existente) conservadas.push({ ...existente, sortOrder: conservadas.length + creadas.length });
-    });
-
-    // sortOrder correcto: se asigna por la posición final, no por el tipo
-    const finales = [...conservadas, ...creadas]
-      .sort((a, b) => a.sortOrder - b.sortOrder)
-      .map((item, i) => ({ ...item, sortOrder: i }));
-
-    const eliminadas = actuales.filter((f) => !conservadas.some((c) => c.id === f.id));
-
-    // Archivo subido que el orden no menciona: quedaría en /uploads sin fila que
-    // lo apunte
-    const huerfanos = nuevasFichas
-      .filter((f) => !creadas.some((c) => c.file === f))
-      .map((f) => `/uploads/${f.filename}`);
-    if (huerfanos.length) deleteFiles(huerfanos);
-
-    if (finales.length === 0) {
-      deleteFiles(nuevasRutas);
-      throw new Error('El material debe conservar al menos una ficha técnica.');
-    }
-    if (finales.length > MAX_FICHAS) {
-      deleteFiles(nuevasRutas);
-      throw new Error(`Solo se permiten hasta ${MAX_FICHAS} fichas técnicas.`);
-    }
-
-    const sheetOps = {
-      deleteIds: eliminadas.map((f) => f.id),
-      // Solo se tocan las filas cuya posición cambió de verdad
-      reorder: finales
-        .filter((item) => item.file === undefined)
-        .map(({ id, sortOrder }) => ({ id, sortOrder }))
-        .filter(({ id, sortOrder }) => actuales.find((f) => f.id === id)?.sortOrder !== sortOrder),
-      create: finales
-        .filter((item) => item.file !== undefined)
-        .map(({ file, sortOrder }) => aFicha(file, sortOrder)),
-    };
-
     try {
-      const resultado = await returnableMaterialRepository.update(id, consumo, devolutivo, sheetOps);
-      if (files?.image?.[0] && currentMaterial.consumableMaterial?.image)
-        deleteFiles([currentMaterial.consumableMaterial.image]);
-      // El archivo del disco se borra DESPUÉS de que la transacción confirmó:
-      // si fallara, la fila seguiría apuntando a un archivo inexistente
-      if (eliminadas.length) deleteFiles(eliminadas.map((f) => f.fileUrl));
+      if (accountableIds !== undefined) await validarCuentadantes(accountableIds);
+
+      // Un material sin placa necesita cantidad, y al revés. Joi lo comprueba al
+      // CREAR, pero al editar solo ve los campos que llegan: aquí se compara el
+      // resultado final —lo que se manda mezclado con lo que ya estaba— porque
+      // es el único punto donde se conoce el estado completo.
+      const placaFinal    = consumo.senaPlate !== undefined ? consumo.senaPlate : padre.senaPlate;
+      const cantidadFinal = consumo.quantity  !== undefined ? consumo.quantity  : padre.quantity;
+      if (!placaFinal && (cantidadFinal === null || cantidadFinal === undefined)) {
+        throw new Error('Un material sin placa SENA necesita una cantidad: escribe la cantidad o asígnale una placa.');
+      }
+
+      const imagenes = resolverOrden({
+        actuales: padre.images ?? [],
+        nuevos: nuevasImagenes,
+        orden: ordenImagenes,
+        aFila: aImagen,
+        campoUrl: 'imageUrl',
+        max: MAX_IMAGENES,
+        min: MIN_IMAGENES,
+        etiqueta: 'las imágenes',
+      });
+
+      const fichas = resolverOrden({
+        actuales: padre.technicalSheets ?? [],
+        nuevos: nuevasFichas,
+        orden: ordenFichas,
+        aFila: aFicha,
+        campoUrl: 'fileUrl',
+        max: MAX_FICHAS,
+        min: MIN_FICHAS,
+        etiqueta: 'las fichas técnicas',
+      });
+
+      // Archivos subidos que ningún orden menciona: quedarían en /uploads sin fila
+      const huerfanos = [...imagenes.rutasHuerfanas, ...fichas.rutasHuerfanas];
+      if (huerfanos.length) deleteFiles(huerfanos);
+
+      const resultado = await returnableMaterialRepository.update(
+        id, consumo, devolutivo, accountableIds, imagenes.ops, fichas.ops,
+      );
+
+      // Los archivos del disco se borran DESPUÉS de que la transacción confirmó:
+      // si fallara, las filas seguirían apuntando a archivos inexistentes
+      const eliminados = [...imagenes.rutasEliminadas, ...fichas.rutasEliminadas];
+      if (eliminados.length) deleteFiles(eliminados);
+
       // Igual que en create: el repositorio devuelve el material de consumo
       const cmNew = resultado ?? {};
       const cambioCantidad =
-        consumo.quantity !== undefined && Number(consumo.quantity) !== Number(currentMaterial?.consumableMaterial?.quantity)
-          ? ` Cantidad: ${currentMaterial?.consumableMaterial?.quantity ?? 1} → ${cmNew.quantity ?? 1}.`
+        consumo.quantity !== undefined && Number(consumo.quantity) !== Number(padre.quantity)
+          ? ` Cantidad: ${padre.quantity ?? 1} → ${cmNew.quantity ?? 1}.`
           : '';
       notify({
         title: cambioCantidad ? 'Cantidad de material modificada' : 'Material devolutivo modificado',
@@ -246,7 +252,6 @@ export const returnableMaterialService = {
     } catch (err) {
       // Solo se limpian los archivos RECIÉN subidos: los que ya estaban en BD
       // siguen siendo válidos porque la transacción no llegó a confirmarse
-      if (files?.image?.[0]) deleteFiles([data.image]);
       if (nuevasRutas.length) deleteFiles(nuevasRutas);
       throw err;
     }

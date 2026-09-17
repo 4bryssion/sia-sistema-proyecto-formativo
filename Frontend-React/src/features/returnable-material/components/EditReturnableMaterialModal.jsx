@@ -3,72 +3,39 @@
 // Al ser un formulario NO se cierra con clic fuera —se perdería lo escrito—:
 // solo con Cancelar o con la X, que va por fuera del modal en una esquina.
 //
-// Diferencia deliberada con los modales de editar usuario y material de consumo:
-// allí la columna izquierda es la imagen (una sola caja de 96px) y cabe de sobra
-// en 220px. Aquí hay DOS file inputs y cada uno enseña hasta tres
-// previsualizaciones: la tira mide ~400px y en una columna lateral empujaría los
-// campos fuera del modal. Por eso los archivos van en una banda superior a todo
-// el ancho y los campos debajo; la segmentación (archivos primero, luego datos)
-// es la misma, solo cambia la dirección.
+// Los archivos van en una banda superior a todo el ancho y los campos debajo:
+// hay DOS file inputs y cada uno enseña hasta tres previsualizaciones, así que
+// la tira mide ~400px y en una columna lateral empujaría los campos fuera del
+// modal. (p48) El de material de consumo hace ya lo mismo, con la misma banda
+// compartida: los dos módulos tienen el mismo contenido de archivos.
 
 import { useEffect, useState } from "react";
-import { Modal, Input, Select, TextArea, Button, FileInput, Alert, useMediaQuery } from "@/shared";
+import { Modal, Input, Select, TextArea, Button, Alert } from "@/shared";
 import { Save } from "lucide-react";
-import returnableMaterialService from "../services/returnableMaterialService";
+import MaterialFilesBand from "@/shared/components/materials/MaterialFilesBand";
+import returnableMaterialService from "@/shared/services/returnableMaterialService";
 import categoryService from "../services/categoryService";
-import brandService from "@/features/brands/services/brandService";
-import userService from "@/features/users/services/userService";
 import { returnableMaterialUpdateSchema } from "../schemas/returnableMaterialSchema";
-import { STATUS_FILTER_OPTIONS } from "../utils/statusLabel";
-import {
-  MAX_IMAGES,
-  MAX_TECHNICAL_SHEETS,
-  IMAGE_ACCEPT,
-  TECHNICAL_SHEET_ACCEPT,
-  requiresDimensions,
-  categoryNameOf,
-} from "../utils/materialFiles";
-
-const API_FILES = "http://localhost:5000";
-
-// Huecos reservados en las dos tiras: la del material devolutivo apunta a tres
-// imágenes y tres fichas, aunque hoy la imagen sea una sola
-const FILE_SLOTS = 3;
-
-// Dirección de las previsualizaciones dentro de cada file input:
-// - hasta sm: debajo de la caja (a 360px una fila de caja + tira no cabe)
-// - desde sm: a la derecha, en fila
-const FILES_DIRECTION = "flex-col-reverse sm:flex-row-reverse";
-
-// Un archivo ya guardado, descrito como lo espera FileInput (que distingue File
-// de descriptor remoto para no revocar una URL que no creó)
-const remoteSheet = (sheet) => ({
-  id:   sheet.id,
-  url:  `${API_FILES}${sheet.fileUrl}`,
-  name: sheet.fileName,
-  type: sheet.mimeType,
-});
-
-const remoteImage = (url) => ({
-  url:  `${API_FILES}${url}`,
-  name: url.split("/").pop(),
-  type: "image/*",
-});
-
-const isNewFile = (item) => item instanceof File;
+import { STATUS_FILTER_OPTIONS } from "@/shared/utils/materialStatusLabel";
+import { calcularTotal } from "@/shared/utils/materialTotal";
+import { useMaterialCatalogs, ensureOption, ensureOptions } from "@/shared/hooks/useMaterialCatalogs";
+import { accountableIds } from "@/shared/utils/accountables";
+import { remoteImage, remoteSheet, buildFileOrder } from "@/shared/utils/materialFiles";
+import { requiresDimensions, categoryNameOf } from "../utils/categoryRules";
 
 export default function EditReturnableMaterialModal({ isOpen, materialId, onClose, onSaved }) {
-  const [brandOptions, setBrandOptions]       = useState([]);
+  const { brandOptions, inventoryOptions, accountableOptions } = useMaterialCatalogs(isOpen);
+
   const [categoryOptions, setCategoryOptions] = useState([]);
-  const [userOptions, setUserOptions]         = useState([]);
-  const [form, setForm]                       = useState(null);
-  // Las dos tiras mezclan lo ya guardado (descriptores) con lo recién elegido
-  // (File): así arrastrar y eliminar funcionan igual sin importar el origen
-  const [images, setImages]                   = useState([]);
-  const [sheets, setSheets]                   = useState([]);
-  const [errors, setErrors]                   = useState({});
-  const [saving, setSaving]                   = useState(false);
-  const [loadError, setLoadError]             = useState(null);
+  const [form, setForm]     = useState(null);
+  const [images, setImages] = useState([]);
+  const [sheets, setSheets] = useState([]);
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState(null);
+  // Marca e inventario tal como venían: si alguno se desactivó después no
+  // estará entre las opciones y hay que reponerlo para no perderlo al guardar
+  const [origen, setOrigen] = useState({ brand: null, inventory: null, accountables: [] });
 
   useEffect(() => {
     if (!isOpen || !materialId) return;
@@ -83,60 +50,48 @@ export default function EditReturnableMaterialModal({ isOpen, materialId, onClos
       setLoadError(null);
       try {
         const m  = await returnableMaterialService.getById(materialId);
+        // (p48) Cuentadantes, imágenes y fichas cuelgan de la tabla PADRE
         const cm = m.consumableMaterial;
         setForm({
-          materialName: cm.materialName ?? "",
-          brandId:      String(cm.brandId ?? ""),
-          categoryId:   String(m.categoryId ?? ""),
-          userId:       String(cm.userId ?? ""),
-          senaPlate:    cm.senaPlate ?? "",
+          materialName:   cm.materialName ?? "",
+          brandId:        String(cm.brandId ?? ""),
+          inventoryId:    String(cm.inventoryId ?? ""),
+          accountableIds: accountableIds(cm.accountables),
+          categoryId:     String(m.categoryId ?? ""),
+          senaPlate:      cm.senaPlate ?? "",
           // Con placa SENA (serializado, quantity null en BD) se muestra 1 fijo
-          quantity:     cm.quantity != null ? String(cm.quantity) : (cm.senaPlate ? "1" : ""),
-          location:     cm.location ?? "",
-          status:       cm.status ?? "",
-          unitPrice:    String(cm.unitPrice ?? ""),
-          totalPrice:   String(cm.totalPrice ?? ""),
-          purchaseDate: cm.purchaseDate ? cm.purchaseDate.slice(0, 10) : "",
-          description:  cm.description ?? "",
-          model:        m.model ?? "",
-          serial:       m.serial ?? "",
-          dimensions:   m.dimensions ?? "",
+          quantity:       cm.quantity != null ? String(cm.quantity) : (cm.senaPlate ? "1" : ""),
+          location:       cm.location ?? "",
+          status:         cm.status ?? "",
+          unitPrice:      String(cm.unitPrice ?? ""),
+          totalPrice:     String(cm.totalPrice ?? ""),
+          purchaseDate:   cm.purchaseDate ? cm.purchaseDate.slice(0, 10) : "",
+          entryDate:      cm.entryDate ? cm.entryDate.slice(0, 10) : "",
+          description:    cm.description ?? "",
+          model:          m.model ?? "",
+          serial:         m.serial ?? "",
+          dimensions:     m.dimensions ?? "",
         });
-        setImages(cm.image ? [remoteImage(cm.image)] : []);
-        setSheets((m.technicalSheets ?? []).map(remoteSheet));
+        setOrigen({
+          brand: cm.brand ?? null,
+          inventory: cm.inventory ?? null,
+          accountables: cm.accountables ?? [],
+        });
+        setImages((cm.images ?? []).map(remoteImage));
+        setSheets((cm.technicalSheets ?? []).map(remoteSheet));
       } catch (err) {
         setLoadError(err.response?.data?.error ?? "Error al cargar el material");
       }
     })();
 
-    brandService.getAll()
-      .then((b) => setBrandOptions(b.map((x) => ({ value: String(x.id), label: x.brandName }))))
-      .catch(() => {});
-
+    // Catálogo propio de devolutivo; el resto los trae useMaterialCatalogs
     categoryService.getAll()
       .then((c) => setCategoryOptions(c.map((x) => ({ value: String(x.id), label: x.categoryName }))))
-      .catch(() => {});
-
-    // El SADMIN ya viene excluido por el backend (systemIdentities.js)
-    userService.getAll()
-      .then((users) =>
-        setUserOptions(
-          users
-            .filter((u) => u.userAccountType === "Cuentadante")
-            .map((u) => ({ value: String(u.id), label: `${u.userFirstName} ${u.userLastName}` })),
-        ),
-      )
       .catch(() => {});
   }, [isOpen, materialId]);
 
   const categoryName = categoryNameOf(categoryOptions, form?.categoryId);
   const showDimensions = requiresDimensions(categoryName);
-
-  // Debajo de sm el ancho útil del modal es ~280px: no caben la caja y las tres
-  // previsualizaciones. Ahí se ve una y las flechas recorren el resto; desde sm
-  // se ven las tres, que es lo que pide el diseño.
-  const isSm = useMediaQuery("(min-width: 40rem)");
-  const previewCount = isSm ? undefined : 1;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -150,10 +105,8 @@ export default function EditReturnableMaterialModal({ isOpen, materialId, onClos
       // Valor total auto: cantidad × valor unitario (cantidad vacía ⇒ 1);
       // el usuario puede sobrescribirlo manualmente
       if (name === "quantity" || name === "unitPrice" || name === "senaPlate") {
-        const rawQ = next.quantity;
-        const q = rawQ === "" ? 1 : Number(rawQ);
-        const u = Number(name === "unitPrice" ? value : prev.unitPrice);
-        if (q > 0 && u > 0) next.totalPrice = String(q * u);
+        const total = calcularTotal(next.quantity, name === "unitPrice" ? value : prev.unitPrice);
+        if (total !== null) next.totalPrice = total;
       }
       // Al pasar a una categoría que no pide dimensiones se limpia lo escrito
       if (name === "categoryId" && !requiresDimensions(categoryNameOf(categoryOptions, value))) {
@@ -177,7 +130,7 @@ export default function EditReturnableMaterialModal({ isOpen, materialId, onClos
     // Reglas que el schema no ve: los archivos viven fuera de `form` y las
     // dimensiones dependen del nombre de la categoría
     const extraErrors = {};
-    if (!images.length) extraErrors.image = "El material debe conservar una imagen";
+    if (!images.length) extraErrors.image = "El material debe conservar al menos una imagen";
     if (!sheets.length) extraErrors.technicalSheet = "El material debe conservar al menos una ficha técnica";
     if (showDimensions && !result.data.dimensions) {
       extraErrors.dimensions = "Las dimensiones son obligatorias para muebles y enseres";
@@ -192,27 +145,37 @@ export default function EditReturnableMaterialModal({ isOpen, materialId, onClos
 
     const fd = new FormData();
     Object.entries(result.data).forEach(([key, val]) => {
-      // Con placa SENA la cantidad NO se envía (el "1" del input es solo visual)
-      if (key === "quantity" && result.data.senaPlate) return;
-      // Dimensiones vacías SÍ se envían: es como se borra la medida al cambiar
-      // de categoría (el backend las convierte en NULL)
-      if (key === "dimensions") { fd.append(key, val ?? ""); return; }
+      // Placa y cantidad se envían SIEMPRE, incluso vacías: el vacío es como se
+      // quitan (el backend los convierte en null). Con placa, la cantidad viaja
+      // vacía —el "1" del input es solo visual— porque un material serializado
+      // se identifica justamente por tener quantity null.
+      // Antes se omitían cuando estaban vacías, así que borrar la placa no hacía
+      // nada y poner una a un material con cantidad dejaba las dos a la vez.
+      if (key === "quantity")  { fd.append(key, result.data.senaPlate ? "" : (val ?? "")); return; }
+      if (key === "senaPlate") { fd.append(key, val ?? ""); return; }
+      // Un FormData no puede llevar un array: los cuentadantes viajan como JSON
+      if (key === "accountableIds") { fd.append(key, JSON.stringify(val)); return; }
+      // Estos tres vacíos SÍ se envían: es como se borran (el backend los
+      // convierte en NULL). Dimensiones al cambiar de categoría; marca, modelo
+      // y serial porque desde p48 son opcionales y deben poder quitarse.
+      if (key === "dimensions" || key === "brandId" || key === "model" || key === "serial") {
+        fd.append(key, val ?? "");
+        return;
+      }
       if (val !== undefined && val !== "") fd.append(key, val);
     });
 
-    // Solo se sube la imagen si de verdad se eligió otra
-    const nuevaImagen = images.find(isNewFile);
-    if (nuevaImagen) fd.append("image", nuevaImagen);
-
     // El orden final se manda explícito: mezcla ids ya guardados con
     // referencias "new:<i>" a los archivos de esta petición, para que arrastrar
-    // una ficha nueva al principio no la mande al final al guardar
-    const nuevasFichas = sheets.filter(isNewFile);
-    const sheetOrder = sheets.map((item) =>
-      isNewFile(item) ? `new:${nuevasFichas.indexOf(item)}` : item.id,
-    );
-    fd.append("sheetOrder", JSON.stringify(sheetOrder));
-    nuevasFichas.forEach((file) => fd.append("technical_sheet", file));
+    // uno nuevo al principio no lo mande al final al guardar. Lo que no aparezca
+    // en la lista, el backend lo elimina.
+    const imagenes = buildFileOrder(images);
+    fd.append("imageOrder", JSON.stringify(imagenes.order));
+    imagenes.nuevos.forEach((file) => fd.append("image", file));
+
+    const fichas = buildFileOrder(sheets);
+    fd.append("sheetOrder", JSON.stringify(fichas.order));
+    fichas.nuevos.forEach((file) => fd.append("technical_sheet", file));
 
     try {
       Alert.loading("Actualizando material...");
@@ -226,7 +189,6 @@ export default function EditReturnableMaterialModal({ isOpen, materialId, onClos
       const det = err.response?.data?.detalles;
       const msg = det?.length ? det.join(" · ") : (err.response?.data?.error ?? "Error al actualizar");
       Alert.error("Error al actualizar el material", msg);
-      setErrors({ form: msg });
     } finally {
       setSaving(false);
     }
@@ -237,7 +199,7 @@ export default function EditReturnableMaterialModal({ isOpen, materialId, onClos
       isOpen={isOpen}
       onClose={onClose}
       title="Editar material devolutivo"
-      // xl y más columnas cuanto más ancho: el modal reparte los 15 campos en
+      // xl y más columnas cuanto más ancho: el modal reparte los campos en
       // 2 columnas desde sm, 3 desde lg y 4 en 1400. Cada columna que se suma
       // quita filas, que es lo único que baja el alto — y con ello el scroll.
       size="xl"
@@ -263,55 +225,14 @@ export default function EditReturnableMaterialModal({ isOpen, materialId, onClos
       ) : (
         <form onSubmit={handleSubmit} className="grid gap-6">
 
-          {/* Banda de archivos.
-              Una sola columna hasta lg: cada file input con sus tres huecos mide
-              ~408px (caja + 3 previsualizaciones + gaps) y no encoge, así que a
-              768px dos columnas se pisaban. Recién a partir de lg hay ancho para
-              las dos.
-              Debajo de sm ni siquiera cabe uno: ahí la tira baja a una
-              previsualización con flechas y se coloca bajo la caja. */}
-          <div className="grid gap-6 lg:grid-cols-2 lg:gap-8 border-b border-border pb-6">
-            <div className="flex flex-col gap-2">
-              <FileInput
-                accept={IMAGE_ACCEPT}
-                multiple={MAX_IMAGES > 1}
-                maxFiles={MAX_IMAGES}
-                label="Imagen del material"
-                replaceLabel="Reemplazar imagen"
-                required
-                slots={FILE_SLOTS}
-                directionClassName={FILES_DIRECTION}
-                visibleCount={previewCount}
-                value={images}
-                onChange={setImages}
-                error={errors.image}
-              />
-              <p className="font-secondary text-caption text-text-muted">
-                {MAX_IMAGES === 1
-                  ? "Una imagen (JPG o PNG). El espacio de las otras dos queda reservado."
-                  : `Hasta ${MAX_IMAGES} imágenes (JPG o PNG).`}
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <FileInput
-                accept={TECHNICAL_SHEET_ACCEPT}
-                multiple
-                maxFiles={MAX_TECHNICAL_SHEETS}
-                label="Fichas técnicas"
-                required
-                slots={FILE_SLOTS}
-                directionClassName={FILES_DIRECTION}
-                visibleCount={previewCount}
-                value={sheets}
-                onChange={setSheets}
-                error={errors.technicalSheet}
-              />
-              <p className="font-secondary text-caption text-text-muted">
-                Hasta {MAX_TECHNICAL_SHEETS} archivos PDF o Excel. Arrastra para reordenar.
-              </p>
-            </div>
-          </div>
+          <MaterialFilesBand
+            images={images}
+            sheets={sheets}
+            onImagesChange={setImages}
+            onSheetsChange={setSheets}
+            imageError={errors.image}
+            sheetError={errors.technicalSheet}
+          />
 
           {/* Campos. 3 columnas desde 1400 para bajar el número de filas y que
               el modal quepa sin scroll */}
@@ -324,15 +245,26 @@ export default function EditReturnableMaterialModal({ isOpen, materialId, onClos
               onChange={handleChange}
               error={errors.materialName}
             />
+            {/* (p48) La marca dejó de ser obligatoria */}
             <Select
-              label="Marca"
+              label="Marca (opcional)"
               variant="search"
               name="brandId"
-              required
-              options={brandOptions}
+              options={ensureOption(brandOptions, form.brandId, origen.brand?.brandName)}
               value={form.brandId}
               onChange={handleChange}
               error={errors.brandId}
+            />
+            {/* (p48) El inventario sí lo es */}
+            <Select
+              label="Inventario"
+              variant="search"
+              name="inventoryId"
+              required
+              options={ensureOption(inventoryOptions, form.inventoryId, origen.inventory?.inventoryName)}
+              value={form.inventoryId}
+              onChange={handleChange}
+              error={errors.inventoryId}
             />
             <Select
               label="Categoría"
@@ -344,18 +276,17 @@ export default function EditReturnableMaterialModal({ isOpen, materialId, onClos
               onChange={handleChange}
               error={errors.categoryId}
             />
+            {/* (p48) Modelo y serial pasaron a opcionales */}
             <Input
-              label="Modelo"
+              label="Modelo (opcional)"
               name="model"
-              required
               value={form.model}
               onChange={handleChange}
               error={errors.model}
             />
             <Input
-              label="Serial"
+              label="Serial (opcional)"
               name="serial"
-              required
               value={form.serial}
               onChange={handleChange}
               error={errors.serial}
@@ -379,15 +310,17 @@ export default function EditReturnableMaterialModal({ isOpen, materialId, onClos
                 error={errors.dimensions}
               />
             )}
+            {/* (p48) Varios cuentadantes, con casillas y buscador */}
             <Select
-              label="Cuentadante"
+              label="Cuentadantes"
               variant="search"
-              name="userId"
+              multiple
+              name="accountableIds"
               required
-              options={userOptions}
-              value={form.userId}
+              options={ensureOptions(accountableOptions, origen.accountables)}
+              value={form.accountableIds}
               onChange={handleChange}
-              error={errors.userId}
+              error={errors.accountableIds}
             />
             <Input
               label="Ubicación"
@@ -445,6 +378,17 @@ export default function EditReturnableMaterialModal({ isOpen, materialId, onClos
               onChange={handleChange}
               error={errors.purchaseDate}
             />
+            {/* (p48) Fecha de ingreso al almacén: nunca anterior a la de compra */}
+            <Input
+              label="Fecha de ingreso"
+              name="entryDate"
+              required
+              type="date"
+              min={form.purchaseDate || undefined}
+              value={form.entryDate}
+              onChange={handleChange}
+              error={errors.entryDate}
+            />
 
             <TextArea
               className="sm:col-span-2 lg:col-span-3 1400:col-span-4"
@@ -457,11 +401,6 @@ export default function EditReturnableMaterialModal({ isOpen, materialId, onClos
               error={errors.description}
             />
 
-            {errors.form && (
-              <p className="font-secondary text-error text-caption sm:col-span-2 lg:col-span-3 1400:col-span-4">
-                {errors.form}
-              </p>
-            )}
           </div>
         </form>
       )}

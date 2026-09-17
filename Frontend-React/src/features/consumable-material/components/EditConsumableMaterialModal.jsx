@@ -1,31 +1,40 @@
 // Editar material de consumo — modal (reemplaza a /view/consumable-materials/:id/edit).
 //
-// Misma estructura que EditUserModal: columna de imagen a la izquierda y rejilla
-// de campos a la derecha. Al ser un formulario NO se cierra con clic fuera —se
-// perdería lo escrito—: solo con Cancelar o con la X, que va por fuera del modal
-// en una esquina. La imagen nueva se previsualiza dentro de la misma caja del
-// file input, que sigue siendo pulsable para cambiarla las veces que haga falta.
+// Al ser un formulario NO se cierra con clic fuera —se perdería lo escrito—:
+// solo con Cancelar o con la X, que va por fuera del modal en una esquina.
+//
+// (p48) Este modal se acercó al de devolutivo: la imagen suelta de la columna
+// izquierda dio paso a la banda superior de archivos compartida, con las hasta 3
+// imágenes y las hasta 3 fichas técnicas. La segmentación es la misma que allí
+// (archivos primero, datos debajo) porque ahora tienen el mismo contenido.
 
 import { useEffect, useState } from "react";
-import { Modal, Input, Select, TextArea, Button, FileInput, Alert } from "@/shared";
+import { Modal, Input, Select, TextArea, Button, Alert } from "@/shared";
 import { Save } from "lucide-react";
-import consumableMaterialService from "../services/consumableMaterialService";
-import brandService from "@/features/brands/services/brandService";
-import userService from "@/features/users/services/userService";
+import MaterialFilesBand from "@/shared/components/materials/MaterialFilesBand";
+import consumableMaterialService from "@/shared/services/consumableMaterialService";
 import { consumableMaterialUpdateSchema } from "../schemas/consumableMaterialSchema";
-import { STATUS_FILTER_OPTIONS } from "../utils/statusLabel";
-
-const API_FILES = "http://localhost:5000";
+import { STATUS_FILTER_OPTIONS } from "@/shared/utils/materialStatusLabel";
+import { calcularTotal } from "@/shared/utils/materialTotal";
+import { useMaterialCatalogs, ensureOption, ensureOptions } from "@/shared/hooks/useMaterialCatalogs";
+import { accountableIds } from "@/shared/utils/accountables";
+import { remoteImage, remoteSheet, buildFileOrder } from "@/shared/utils/materialFiles";
 
 export default function EditConsumableMaterialModal({ isOpen, materialId, onClose, onSaved }) {
-  const [material, setMaterial]         = useState(null);
-  const [brandOptions, setBrandOptions] = useState([]);
-  const [userOptions, setUserOptions]   = useState([]);
-  const [form, setForm]                 = useState(null);
-  const [image, setImage]               = useState([]);
-  const [errors, setErrors]             = useState({});
-  const [saving, setSaving]             = useState(false);
-  const [loadError, setLoadError]       = useState(null);
+  const { brandOptions, inventoryOptions, accountableOptions } = useMaterialCatalogs(isOpen);
+
+  const [form, setForm]     = useState(null);
+  // Las dos tiras mezclan lo ya guardado (descriptores) con lo recién elegido
+  // (File): así arrastrar y eliminar funcionan igual sin importar el origen
+  const [images, setImages] = useState([]);
+  const [sheets, setSheets] = useState([]);
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState(null);
+  // Marca e inventario del material tal como venían: si alguno se desactivó
+  // después, no estará entre las opciones y hay que reponerlo para no borrarlo
+  // sin querer al guardar
+  const [origen, setOrigen] = useState({ brand: null, inventory: null, accountables: [] });
 
   useEffect(() => {
     if (!isOpen || !materialId) return;
@@ -34,45 +43,39 @@ export default function EditConsumableMaterialModal({ isOpen, materialId, onClos
       // Estado limpio en cada apertura: si no, al abrir un segundo material se
       // verían por un instante los datos del anterior
       setForm(null);
-      setImage([]);
+      setImages([]);
+      setSheets([]);
       setErrors({});
       setLoadError(null);
       try {
         const m = await consumableMaterialService.getById(materialId);
-        setMaterial(m);
         setForm({
-          materialName: m.materialName ?? "",
-          brandId:      String(m.brandId ?? ""),
-          senaPlate:    m.senaPlate ?? "",
-          location:     m.location ?? "",
+          materialName:   m.materialName ?? "",
+          brandId:        String(m.brandId ?? ""),
+          inventoryId:    String(m.inventoryId ?? ""),
+          accountableIds: accountableIds(m.accountables),
+          senaPlate:      m.senaPlate ?? "",
           // Con placa SENA (serializado, quantity null en BD) se muestra 1 fijo
-          quantity:     m.quantity != null ? String(m.quantity) : (m.senaPlate ? "1" : ""),
-          status:       m.status ?? "",
-          unitPrice:    String(m.unitPrice ?? ""),
-          totalPrice:   String(m.totalPrice ?? ""),
-          purchaseDate: m.purchaseDate ? m.purchaseDate.slice(0, 10) : "",
-          userId:       String(m.userId ?? ""),
-          description:  m.description ?? "",
+          quantity:       m.quantity != null ? String(m.quantity) : (m.senaPlate ? "1" : ""),
+          location:       m.location ?? "",
+          status:         m.status ?? "",
+          unitPrice:      String(m.unitPrice ?? ""),
+          totalPrice:     String(m.totalPrice ?? ""),
+          purchaseDate:   m.purchaseDate ? m.purchaseDate.slice(0, 10) : "",
+          entryDate:      m.entryDate ? m.entryDate.slice(0, 10) : "",
+          description:    m.description ?? "",
         });
+        setOrigen({
+          brand: m.brand ?? null,
+          inventory: m.inventory ?? null,
+          accountables: m.accountables ?? [],
+        });
+        setImages((m.images ?? []).map(remoteImage));
+        setSheets((m.technicalSheets ?? []).map(remoteSheet));
       } catch (err) {
         setLoadError(err.response?.data?.error ?? "Error al cargar el material");
       }
     })();
-
-    brandService.getAll()
-      .then((brands) => setBrandOptions(brands.map((b) => ({ value: String(b.id), label: b.brandName }))))
-      .catch(() => {});
-
-    // El SADMIN ya viene excluido por el backend (systemIdentities.js)
-    userService.getAll()
-      .then((users) =>
-        setUserOptions(
-          users
-            .filter((u) => u.userAccountType === "Cuentadante")
-            .map((u) => ({ value: String(u.id), label: `${u.userFirstName} ${u.userLastName}` })),
-        ),
-      )
-      .catch(() => {});
   }, [isOpen, materialId]);
 
   const handleChange = (e) => {
@@ -87,10 +90,8 @@ export default function EditConsumableMaterialModal({ isOpen, materialId, onClos
       // Valor total auto: cantidad × valor unitario (cantidad vacía ⇒ 1);
       // el usuario puede sobrescribirlo manualmente
       if (name === "quantity" || name === "unitPrice" || name === "senaPlate") {
-        const rawQ = next.quantity;
-        const q = rawQ === "" ? 1 : Number(rawQ);
-        const u = Number(name === "unitPrice" ? value : prev.unitPrice);
-        if (q > 0 && u > 0) next.totalPrice = String(q * u);
+        const total = calcularTotal(next.quantity, name === "unitPrice" ? value : prev.unitPrice);
+        if (total !== null) next.totalPrice = total;
       }
       return next;
     });
@@ -107,16 +108,48 @@ export default function EditConsumableMaterialModal({ isOpen, materialId, onClos
       return;
     }
 
+    // Los archivos viven fuera de `form`, así que el schema no los ve. El
+    // backend exige que quede al menos una imagen y una ficha
+    const extraErrors = {};
+    if (!images.length) extraErrors.image = "El material debe conservar al menos una imagen";
+    if (!sheets.length) extraErrors.technicalSheet = "El material debe conservar al menos una ficha técnica";
+    if (Object.keys(extraErrors).length) {
+      setErrors(extraErrors);
+      return;
+    }
+
     setErrors({});
     setSaving(true);
 
     const fd = new FormData();
     Object.entries(result.data).forEach(([key, val]) => {
-      // Con placa SENA la cantidad NO se envía (el "1" del input es solo visual)
-      if (key === "quantity" && result.data.senaPlate) return;
+      // Placa y cantidad se envían SIEMPRE, incluso vacías: el vacío es como se
+      // quitan (el backend los convierte en null). Con placa, la cantidad viaja
+      // vacía —el "1" del input es solo visual— porque un material serializado
+      // se identifica justamente por tener quantity null.
+      // Antes se omitían cuando estaban vacías, así que borrar la placa no hacía
+      // nada y poner una a un material con cantidad dejaba las dos a la vez.
+      if (key === "quantity")  { fd.append(key, result.data.senaPlate ? "" : (val ?? "")); return; }
+      if (key === "senaPlate") { fd.append(key, val ?? ""); return; }
+      // Un FormData no puede llevar un array: los cuentadantes viajan como JSON
+      if (key === "accountableIds") { fd.append(key, JSON.stringify(val)); return; }
+      // La marca vacía SÍ se envía: es como se le quita la marca a un material
+      // (el backend la convierte en NULL). Ya es un campo opcional (p48)
+      if (key === "brandId") { fd.append(key, val ?? ""); return; }
       if (val !== undefined && val !== "") fd.append(key, val);
     });
-    if (image.length) fd.append("image", image[0]);
+
+    // El orden final se manda explícito: mezcla ids ya guardados con
+    // referencias "new:<i>" a los archivos de esta petición, para que arrastrar
+    // uno nuevo al principio no lo mande al final al guardar. Lo que no aparezca
+    // en la lista, el backend lo elimina.
+    const imagenes = buildFileOrder(images);
+    fd.append("imageOrder", JSON.stringify(imagenes.order));
+    imagenes.nuevos.forEach((file) => fd.append("image", file));
+
+    const fichas = buildFileOrder(sheets);
+    fd.append("sheetOrder", JSON.stringify(fichas.order));
+    fichas.nuevos.forEach((file) => fd.append("technical_sheet", file));
 
     try {
       Alert.loading("Actualizando material...");
@@ -130,7 +163,6 @@ export default function EditConsumableMaterialModal({ isOpen, materialId, onClos
       const det = err.response?.data?.detalles;
       const msg = det?.length ? det.join(" · ") : (err.response?.data?.error ?? "Error al actualizar");
       Alert.error("Error al actualizar el material", msg);
-      setErrors({ form: msg });
     } finally {
       setSaving(false);
     }
@@ -141,8 +173,8 @@ export default function EditConsumableMaterialModal({ isOpen, materialId, onClos
       isOpen={isOpen}
       onClose={onClose}
       title="Editar material de consumo"
-      // xl y 3 columnas desde 1400: con 2 columnas el formulario necesitaba 6
-      // filas y sacaba scroll a 811px de alto, y en 1400 el scroll está prohibido
+      // xl y más columnas cuanto más ancho: cada columna que se suma quita
+      // filas, que es lo único que baja el alto — y con ello el scroll.
       size="xl"
       // Formulario: un clic fuera no puede descartar lo escrito
       closeOnBackdrop={false}
@@ -164,42 +196,20 @@ export default function EditConsumableMaterialModal({ isOpen, materialId, onClos
       ) : !form ? (
         <p className="text-text-muted font-secondary">Cargando material...</p>
       ) : (
-        <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[220px_1fr]">
+        <form onSubmit={handleSubmit} className="grid gap-6">
 
-          {/* Imagen. La actual se mantiene visible aunque se elija otra, para
-              poder comparar y descartar la nueva sin perder la referencia. */}
-          <div className="flex flex-col items-center gap-4 lg:border-r lg:border-border lg:pr-6">
-            <p className="font-main text-body font-bold text-text-primary text-center">
-              {material?.materialName}
-            </p>
+          <MaterialFilesBand
+            images={images}
+            sheets={sheets}
+            onImagesChange={setImages}
+            onSheetsChange={setSheets}
+            imageError={errors.image}
+            sheetError={errors.technicalSheet}
+          />
 
-            {material?.image && (
-              <div className="flex flex-col items-center gap-1">
-                <span className="font-secondary text-caption text-text-muted">Imagen actual</span>
-                {/* Exactamente el mismo marcado que EditUserModal, para que los
-                    modales de edición se vean idénticos entre módulos */}
-                <img
-                  src={`${API_FILES}${material.image}`}
-                  alt={material.materialName}
-                  className="w-24 h-24 object-contain rounded-xl border border-border"
-                />
-              </div>
-            )}
-
-            <FileInput
-              accept="image/*"
-              multiple={false}
-              label="Cambiar imagen"
-              replaceLabel="Reemplazar imagen"
-              previewPosition="inline"
-              value={image}
-              onChange={setImage}
-            />
-          </div>
-
-          {/* Campos. 3 columnas desde 1400 para bajar de 6 filas a 4 y que el
-              modal quepa sin scroll en pantallas de 811px de alto */}
-          <div className="grid gap-4 sm:grid-cols-2 1400:grid-cols-3 justify-items-center sm:justify-items-stretch">
+          {/* Campos. Más columnas cuanto más ancho para bajar el número de filas
+              y que el modal quepa sin scroll */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 1400:grid-cols-4 justify-items-center sm:justify-items-stretch">
             <Input
               label="Nombre del material"
               name="materialName"
@@ -208,15 +218,26 @@ export default function EditConsumableMaterialModal({ isOpen, materialId, onClos
               onChange={handleChange}
               error={errors.materialName}
             />
+            {/* (p48) La marca dejó de ser obligatoria */}
             <Select
-              label="Marca"
+              label="Marca (opcional)"
               variant="search"
               name="brandId"
-              required
-              options={brandOptions}
+              options={ensureOption(brandOptions, form.brandId, origen.brand?.brandName)}
               value={form.brandId}
               onChange={handleChange}
               error={errors.brandId}
+            />
+            {/* (p48) El inventario sí lo es */}
+            <Select
+              label="Inventario"
+              variant="search"
+              name="inventoryId"
+              required
+              options={ensureOption(inventoryOptions, form.inventoryId, origen.inventory?.inventoryName)}
+              value={form.inventoryId}
+              onChange={handleChange}
+              error={errors.inventoryId}
             />
             <Input
               label="Placa SENA (opcional)"
@@ -225,15 +246,25 @@ export default function EditConsumableMaterialModal({ isOpen, materialId, onClos
               onChange={handleChange}
               error={errors.senaPlate}
             />
-            <Input
-              label="Cantidad"
-              name="quantity"
-              type="number"
-              value={form.quantity}
+            {/* (p48) Varios cuentadantes, con casillas y buscador */}
+            <Select
+              label="Cuentadantes"
+              variant="search"
+              multiple
+              name="accountableIds"
+              required
+              options={ensureOptions(accountableOptions, origen.accountables)}
+              value={form.accountableIds}
               onChange={handleChange}
-              error={errors.quantity}
-              disabled={!!form.senaPlate}
-              title={form.senaPlate ? "Material serializado: la cantidad es siempre 1" : undefined}
+              error={errors.accountableIds}
+            />
+            <Input
+              label="Ubicación"
+              name="location"
+              required
+              value={form.location}
+              onChange={handleChange}
+              error={errors.location}
             />
             <Select
               label="Estado"
@@ -245,12 +276,14 @@ export default function EditConsumableMaterialModal({ isOpen, materialId, onClos
               error={errors.status}
             />
             <Input
-              label="Ubicación"
-              name="location"
-              required
-              value={form.location}
+              label="Cantidad"
+              name="quantity"
+              type="number"
+              value={form.quantity}
               onChange={handleChange}
-              error={errors.location}
+              error={errors.quantity}
+              disabled={!!form.senaPlate}
+              title={form.senaPlate ? "Material serializado: la cantidad es siempre 1" : undefined}
             />
             <Input
               label="Valor unitario"
@@ -281,19 +314,20 @@ export default function EditConsumableMaterialModal({ isOpen, materialId, onClos
               onChange={handleChange}
               error={errors.purchaseDate}
             />
-            <Select
-              label="Cuentadante"
-              variant="search"
-              name="userId"
+            {/* (p48) Fecha de ingreso al almacén: nunca anterior a la de compra */}
+            <Input
+              label="Fecha de ingreso"
+              name="entryDate"
               required
-              options={userOptions}
-              value={form.userId}
+              type="date"
+              min={form.purchaseDate || undefined}
+              value={form.entryDate}
               onChange={handleChange}
-              error={errors.userId}
+              error={errors.entryDate}
             />
 
             <TextArea
-              className="sm:col-span-2 1400:col-span-3"
+              className="sm:col-span-2 lg:col-span-3 1400:col-span-4"
               widthClass="w-full"
               label="Descripción"
               name="description"
@@ -303,9 +337,6 @@ export default function EditConsumableMaterialModal({ isOpen, materialId, onClos
               error={errors.description}
             />
 
-            {errors.form && (
-              <p className="text-error text-caption sm:col-span-2 1400:col-span-3">{errors.form}</p>
-            )}
           </div>
         </form>
       )}

@@ -52,7 +52,8 @@ export const IconButton = React.forwardRef(function IconButton (
         // utilidades de color de Tailwind con la misma especificidad se resuelven
         // por el orden del CSS generado, no por el orden en el atributo class.
         onColor: `
-            text-[var(--color-gray-900)]
+            text-black
+            sm:text-[var(--color-gray-900)]
             hover:bg-white/20
             focus-visible:ring-white
         `,

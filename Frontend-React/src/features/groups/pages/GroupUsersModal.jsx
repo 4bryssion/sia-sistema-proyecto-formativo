@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button, Input, Alert } from "@/shared";
-import userService from "@/features/users/services/userService";
+import userService from "@/shared/services/userService";
 
 /**
  * Modal de solo lectura con los usuarios que pertenecen a un grupo.
@@ -51,7 +51,7 @@ export default function GroupUsersModal({ isOpen, onClose, group }) {
         className="w-full max-w-2xl rounded-xl bg-white p-6 text-neutral-900"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-1 text-xl font-semibold">Usuarios del grupo</h2>
+        <h2 className="mb-1 text-h3 font-semibold">Usuarios del grupo</h2>
         <p className="mb-4 text-caption text-text-secondary font-secondary">
           {group?.groupName} — {filtered.length} usuario(s)
         </p>

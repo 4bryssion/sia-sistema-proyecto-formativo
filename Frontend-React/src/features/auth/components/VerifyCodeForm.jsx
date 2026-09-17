@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Input, Button, Alert } from "@/shared";
 import { recoverCodeSchema } from "../schemas/recoverPasswordSchema.js";
-import { forgotPassword, verifyResetCode } from "../services/authService.js";
+import { forgotPassword, verifyResetCode } from "@/shared/services/authService";
 import AuthCard from "./AuthCard.jsx";
 
 // Anti-spam del reenvío: mismo criterio que tenía la vista anterior unificada
@@ -73,7 +73,6 @@ export default function VerifyCodeForm() {
         } catch (error) {
             Alert.close();
             Alert.error("Código inválido", error.message);
-            setErrors({ form: error.message });
         }
     };
 
@@ -100,11 +99,6 @@ export default function VerifyCodeForm() {
                     error={errors.userCodeRecover}
                 />
 
-                {errors.form && (
-                    <p className="font-secondary text-caption text-error text-center">
-                        {errors.form}
-                    </p>
-                )}
 
                 {/* type="button" explícito: dentro de un <form> el default es submit
                     y dispararía la verificación en vez del reenvío */}

@@ -13,7 +13,7 @@
 // escribir en sessionStorage durante el render es un efecto secundario.
 
 import { useEffect, useState } from "react";
-import { logout } from "@/features/auth/services/logoutService";
+import { logout } from "@/shared/services/logoutService";
 
 export default function GuestRoute({ children }) {
   // Se evalúa una sola vez al montar: si se leyera sessionStorage en cada render,

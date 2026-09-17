@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import returnableMaterialService from "../services/returnableMaterialService";
+import returnableMaterialService from "@/shared/services/returnableMaterialService";
 
 export function useReturnableMaterials(status = "active") {
   const [materials, setMaterials] = useState([]);

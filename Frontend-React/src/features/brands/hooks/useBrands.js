@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import brandService from "../services/brandService";
+import brandService from "@/shared/services/brandService";
 
-export function useBrands() {
+// `status` es el mismo query param del backend: active | inactive | all.
+// El listado lo controla con el select de la barra; por defecto muestra las
+// activas, igual que los módulos principales.
+export function useBrands(status = "active") {
   const [brands, setBrands]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
@@ -9,7 +12,7 @@ export function useBrands() {
   const fetchBrands = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await brandService.getAll();
+      const data = await brandService.getAll({ status });
       setBrands(data);
       setError(null);
     } catch (err) {
@@ -17,7 +20,7 @@ export function useBrands() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [status]);
 
   useEffect(() => { fetchBrands(); }, [fetchBrands]);
 

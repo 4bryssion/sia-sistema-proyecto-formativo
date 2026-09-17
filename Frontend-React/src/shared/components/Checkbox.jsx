@@ -9,7 +9,7 @@ export default function Checkbox({
     // Tamaño del texto del label. Va sobre el <span> y no sobre el <label> para
     // que el consumidor pueda sobrescribirlo: dos utilidades de tamaño en el
     // mismo elemento se resolverían por el orden del CSS, no por el del atributo.
-    labelClassName = "text-sm",
+    labelClassName = "text-medium",
 
 }) {
 

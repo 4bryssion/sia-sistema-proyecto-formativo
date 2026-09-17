@@ -16,7 +16,8 @@
 //   flechas para recorrer las demás. Es una decisión de responsividad que CSS no
 //   puede tomar: ocultar las sobrantes no basta, porque las flechas necesitan
 //   saber cuántas caben para calcular el desplazamiento. El consumidor lo
-//   calcula por breakpoint con `useMediaQuery`.
+//   lo fija el consumidor con un número; ya no se calcula midiendo el ancho
+//   (los hooks useMediaQuery/useColumnCount se eliminaron en la sesión 4).
 // - `slots` reserva el hueco de N previsualizaciones aunque todavía no haya
 //   tantos archivos, para que la caja no salte de tamaño al ir cargándolos.
 
@@ -25,6 +26,7 @@ import { Infinity as InfinityLoader } from "ldrs/react";
 import "ldrs/react/Infinity.css";
 import { ImageUp, FileUp, X, ArrowLeftRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { IconButton } from "./IconButton";
+import { Alert } from "./utils/alert.js";
 
 // Tamaño único de caja y de cada previsualización (96px = w-24/h-24)
 const BOX = "w-24 h-24";
@@ -124,7 +126,21 @@ export default function FileInput({
         await new Promise((r) => setTimeout(r, 400));
 
         const data = multiple ? [...value, ...list] : [list[0]];
-        onChange(data.slice(0, limit));
+        const aceptados = data.slice(0, limit);
+
+        // `slice` conserva los PRIMEROS, así que al estar en el tope lo que se
+        // descarta es justo lo que el usuario acaba de elegir. Antes ocurría en
+        // silencio y parecía que el archivo se había agregado: por la regla del
+        // proyecto, todo mensaje al usuario pasa por Alert.
+        const descartados = data.length - aceptados.length;
+        if (descartados > 0) {
+            Alert.error(
+                `Solo caben ${limit} archivo${limit === 1 ? "" : "s"}`,
+                `No se agregó ${descartados === 1 ? "el archivo" : `${descartados} de los archivos`} que acabas de elegir. Quita alguno de los que ya están y vuelve a intentarlo.`,
+            );
+        }
+
+        onChange(aceptados);
 
         setIsLoading(false);
     };

@@ -10,7 +10,8 @@ import {    AuthLayout,
     GuestRoute
 
 ,
-    PermissionsProvider
+    PermissionsProvider,
+    RequirePasswordChange
 } from "@/shared"
 
 // Import pages
@@ -67,8 +68,6 @@ import {
 import {
     ListLoanPage,
     CreateLoanPage,
-    ViewLoanPage,
-    EditLoanPage,
     SignLoanPage,
 
 } from "@/features/loans";
@@ -79,6 +78,14 @@ import {
     CreateBrandPage,
     ListBrandPage
 } from "@/features/brands";
+
+
+// Módulo inventories (p48): gemelo de brands. Se llega desde el dropdown de
+// Configuración del navbar, debajo de Marcas.
+import {
+    CreateInventoryPage,
+    ListInventoryPage
+} from "@/features/inventories";
 
 
 // Módulo groups:
@@ -144,7 +151,12 @@ const router = createBrowserRouter([
 
     {
         path: "/dashboard",
-        element: <ProtectedRoute><PermissionsProvider><DashboardLayout /></PermissionsProvider></ProtectedRoute>,
+        // (p48) RequirePasswordChange va dentro de ProtectedRoute —sin sesión no
+        // hay nada que bloquear— y dentro de PermissionsProvider, porque al
+        // desbloquear tiene que pedirle que rehaga los permisos: con la
+        // contraseña temporal sin cambiar, su petición se comió un 403 y la
+        // lista quedó vacía
+        element: <ProtectedRoute><PermissionsProvider><RequirePasswordChange><DashboardLayout /></RequirePasswordChange></PermissionsProvider></ProtectedRoute>,
         children: [
             // Notificaciones / logs del sistema (P43)
             {
@@ -214,6 +226,16 @@ const router = createBrowserRouter([
                 element: <RequirePermission codename="create_brand"><CreateBrandPage /></RequirePermission>,
             },
 
+            // Módulo inventories:
+            {
+                path: "inventories",
+                element: <RequirePermission codename="list_inventories"><ListInventoryPage /></RequirePermission>,
+            },
+            {
+                path: "inventories/create",
+                element: <RequirePermission codename="create_inventory"><CreateInventoryPage /></RequirePermission>,
+            },
+
             // Módulo groups:
             {
                 path: "groups",
@@ -238,7 +260,7 @@ const router = createBrowserRouter([
     // Queda más limpio y legible
     {
         path: "/view",
-        element: <ProtectedRoute><PermissionsProvider><ViewLayout /></PermissionsProvider></ProtectedRoute>,
+        element: <ProtectedRoute><PermissionsProvider><RequirePasswordChange><ViewLayout /></RequirePasswordChange></PermissionsProvider></ProtectedRoute>,
         children: [
             // Módulo users: sin rutas de ver ni editar — ahora son modales
             // (ViewUserModal / EditUserModal), abiertos desde la tabla y, en el
@@ -262,14 +284,8 @@ const router = createBrowserRouter([
             // modales abiertos desde la tabla de listar
 
             // Módulo loans:
-            {
-                path: "loans/:id",
-                element: <RequirePermission codename="list_loans"><ViewLoanPage/></RequirePermission>,
-            },
-            {
-                path: "loans/:id/edit",
-                element: <RequirePermission codename="update_loan"><EditLoanPage/></RequirePermission>,
-            },
+            // Módulo loans: visualizar, editar y retornar son modales que abre la
+            // tabla de listar; ya no tienen ruta propia
             // Módulo loan-returns: retornar es un modal abierto desde la tabla
             // de listar préstamos, ya no tiene ruta propia
 

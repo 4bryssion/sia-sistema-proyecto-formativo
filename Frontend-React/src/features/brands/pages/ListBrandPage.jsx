@@ -1,4 +1,5 @@
-import { DataTable, IconButton } from "@/shared";
+import { useState } from "react";
+import { DataTable, IconButton, StatusFilterSelect } from "@/shared";
 import { brandColumns } from "../table/BrandsColumns";
 import { useBrands } from "../hooks/useBrands";
 import BrandRegisterForm from "../components/BrandRegisterForm";
@@ -7,7 +8,8 @@ import { useNavigate } from "react-router-dom";
 
 export default function ListBrandPage() {
     const navigate = useNavigate();
-    const { brands, loading, error, refetch } = useBrands();
+    const [status, setStatus] = useState("active");
+    const { brands, loading, error, refetch } = useBrands(status);
 
     return (
         <div className="p-6">
@@ -25,7 +27,10 @@ export default function ListBrandPage() {
                 </div>
 
                 <div className="bg-white p-6">
-                    <h1 className="text-h2 font-bold mb-6">Marcas</h1>
+                    <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                        <h1 className="font-main text-h2 font-bold">Marcas</h1>
+                        <StatusFilterSelect value={status} onChange={setStatus} />
+                    </div>
 
                     {loading ? (
                         <p className="text-gray-600">Cargando marcas...</p>

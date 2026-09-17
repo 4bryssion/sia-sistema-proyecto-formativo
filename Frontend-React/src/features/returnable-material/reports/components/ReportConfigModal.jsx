@@ -1,181 +1,60 @@
-// Hook para manejo de estado local en componentes funcionales
-import { useState } from "react";
+// Envoltorio del modal compartido de reportes
+// (shared/components/reports/ReportConfigModal). Aquí solo vive lo propio del
+// módulo: sus campos, su alcance y a qué generador llamar. El formulario —
+// formato, casillas de campos, alcance y botones— es el mismo para los cinco
+// módulos y estaba copiado cinco veces.
 
-
-// Configuración de campos disponibles para el reporte
+import { useState, useEffect } from "react";
+import ReportConfigModal from "@/shared/components/reports/ReportConfigModal";
 import { returnableReportFields } from "../config/returnableReportFields";
-
-
-// Caso de uso que orquesta la generación del reporte
 import { generateReturnableReport } from "../services/generateReturnableReport";
+import inventoryService from "@/shared/services/inventoryService";
 
+const SCOPE_OPTIONS = [
+    { value: "all", label: "Todos los materiales" },
+    {
+        value: "placa_sena",
+        label: "Filtrar por placa SENA",
+        input: { label: "Placa SENA", placeholder: "Ingrese la placa SENA" },
+    },
+];
 
-// Componentes UI reutilizables (design system)
-import {
-    Button,
-    Input,
-    Select,
-    Checkbox
-} from "@/shared";
+export default function ReturnableReportConfigModal({ isOpen, onClose, materials = [], statusLabel }) {
+    const [inventoryOptions, setInventoryOptions] = useState([]);
 
+    // status "all": mismo motivo que en consumibles — el reporte puede cubrir
+    // material de un inventario desactivado después
+    useEffect(() => {
+        if (!isOpen) return;
+        inventoryService.getAll({ status: "all" })
+            .then((inv) => setInventoryOptions(inv.map((i) => ({ value: String(i.id), label: i.inventoryName }))))
+            .catch(() => {});
+    }, [isOpen]);
 
-
-// Componente modal para configuración de reportes de materiales retornables
-export default function ReportConfigModal({ isOpen, onClose, materials = [], statusLabel }) {
-    // Estado del formato de salida
-    const [format, setFormat] = useState("pdf");
-
-
-    // Estado del alcance del reporte
-    const [scope, setScope] = useState("all");
-
-
-    // Estado para filtro por placa SENA
-    const [documentNumber, setDocumentNumber] = useState("");
-
-
-    // Estado de campos seleccionados (inicialización lazy)
-    const [selectedFields, setSelectedFields] = useState(
-        () => returnableReportFields.filter((f) => f.default), // Solo campos marcados por defecto
-    );
-
-
-    // Control de render: si el modal no está abierto, no se monta en el DOM
-    if (!isOpen) return null;
-
-
-    // Handler para activar/desactivar campos del reporte
-    const handleFieldToggle = (field) => {
-        // Verifica si el campo ya está seleccionado
-        const exists = selectedFields.find((f) => f.key === field.key);
-
-
-        if (exists) {
-            // Elimina el campo si ya existe
-            setSelectedFields(selectedFields.filter((f) => f.key !== field.key));
-        } else {
-            // Agrega el campo si no existe
-            setSelectedFields([...selectedFields, field]);
-        }
-    };
-
-
-    // Handler principal para generar el reporte
-    const handleGenerateReport = () => {
-        // Invoca el caso de uso con la configuración actual
+    const handleGenerate = ({ format, selectedFields, scope, scopeValue, inventoryIds }) => {
         generateReturnableReport({
             materials,
             format,
             selectedFields,
             scope,
-            documentNumber,
+            documentNumber: scopeValue,
             statusLabel,
+            inventoryIds,
+            inventoryLabels: inventoryOptions
+                .filter((o) => inventoryIds.includes(o.value))
+                .map((o) => o.label),
         });
-
-
-        // Cierra el modal después de generar el reporte
-        onClose();
     };
 
-
     return (
-    // Overlay del modal
-    <div
-        className="
-            fixed inset-0 z-50 flex items-center justify-center bg-black/40
-        "
-    >
-        {/* Contenedor del modal */}
-        <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-lg"
-        >
-        {/* Título */}
-        <h2 className="mb-6 text-xl font-semibold">
-            Generar reporte de materiales retornables
-        </h2>
-
-
-        {/* Selección de formato */}
-        <div className="mb-4">
-            <Select
-            label="Formato del reporte"
-            value={format}
-            onChange={(e) => setFormat(e.target.value)}
-            options={[
-                { id: "pdf", label: "PDF", value: "pdf" },
-                { id: "excel", label: "Excel", value: "excel" },
-            ]}
-            />
-        </div>
-
-
-        {/* Selección de campos */}
-        <div className="mb-4">
-            <p className="mb-2 font-medium">Campos del reporte</p>
-
-
-            {/* Grid de checkboxes */}
-            <div className="grid grid-cols-2 gap-2">
-            {returnableReportFields.map((field) => {
-                // Determina si el campo está seleccionado
-                const checked = selectedFields.some((f) => f.key === field.key);
-
-
-                return (
-                <Checkbox
-                    key={field.key} // Key única para renderizado
-                    id={field.key} // Id accesible
-                    name={field.key} // Nombre del campo
-                    label={field.label} // Texto visible
-                    checked={checked} // Estado controlado
-                    onChange={() => handleFieldToggle(field)} // Toggle
-                />
-                );
-            })}
-            </div>
-        </div>
-
-
-        {/* Selección de alcance */}
-        <div className="mb-4">
-            <Select
-            label="Alcance del reporte"
-            value={scope}
-            onChange={(e) => setScope(e.target.value)}
-            options={[
-                { id: "all", label: "Todos los materiales retornables", value: "all" },
-                { id: "placa_sena", label: "Filtrar por placa SENA", value: "placa_sena" },
-            ]}
-            />
-        </div>
-
-
-        {/* Campo condicional para filtro por placa SENA */}
-        {scope === "placa_sena" && (
-            <div className="mb-4">
-            <Input
-                label="Placa SENA"
-                value={documentNumber}
-                onChange={(e) => setDocumentNumber(e.target.value)}
-                placeholder="Ingrese la placa SENA"
-            />
-            </div>
-        )}
-
-
-        {/* Acciones del modal */}
-        <div className="flex justify-end gap-2 mt-6">
-            {/* Botón cancelar */}
-            <Button variant="secondary" onClick={onClose}>
-            Cancelar
-            </Button>
-
-
-            {/* Botón generar reporte */}
-            <Button variant="primary" onClick={handleGenerateReport}>
-            Generar reporte
-            </Button>
-        </div>
-        </div>
-    </div>
+        <ReportConfigModal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Generar reporte de materiales devolutivos"
+            fields={returnableReportFields}
+            scopeOptions={SCOPE_OPTIONS}
+            inventoryOptions={inventoryOptions}
+            onGenerate={handleGenerate}
+        />
     );
 }

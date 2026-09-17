@@ -1,38 +1,21 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { userSchema, todayLocalISO } from "../schemas/userSchema.js";
-import { Input, Button, Select, FileInput, IconButton, Checkbox, Alert } from "@/shared";
-import { Plus } from "lucide-react";
-import userService from "../services/userService.js";
-import documentTypeService from "../services/documentTypeService.js";
-import groupService from "@/features/groups/services/groupService";
-import { CreateGroupModal } from "@/features/groups";
+import { userSchema, todayLocalISO } from "@/shared/schemas/userSchema";
+import {
+  Input, Button, Select, FileInput, Alert,
+  CreateAndAssignTrigger, DataPolicyCheckbox,
+} from "@/shared";
+import userService from "@/shared/services/userService";
+import documentTypeService from "@/shared/services/documentTypeService";
+import groupService from "@/shared/services/groupService";
+import CreateGroupModal from "@/shared/components/groups/CreateGroupModal";
 import { generatePassword } from "../utils/generatePassword.js";
 
-// Trigger "Crear y asignar nuevo grupo": IconButton (+) con texto; abre CreateGroupModal.
-// Las clases de display y de alineación las aporta el consumidor vía className para
-// evitar conflictos entre utilidades de display en los distintos breakpoints.
-function GroupModalTrigger({ onClick, className = "", checkbox }) {
-  return (
-    <div className={`flex-col gap-3 ${className}`}>
-      <div className="flex items-center gap-2">
-        <IconButton ariaLabel="Crear y asignar nuevo grupo" onClick={onClick} hitSize={44} iconSize={26}>
-          <Plus strokeWidth={2.5} />
-        </IconButton>
-        <button
-          type="button"
-          onClick={onClick}
-          className="text-medium font-secondary text-left cursor-pointer underline-offset-2 hover:underline"
-        >
-          Crear y asignar nuevo grupo
-        </button>
-      </div>
-
-      {/* Misma caja que el trigger, debajo: evita romper el diseño responsive */}
-      {checkbox}
-    </div>
-  );
-}
+// El disparador "Crear y asignar nuevo grupo" estaba escrito aquí a mano; ahora
+// es el componente compartido CreateAndAssignTrigger, el mismo que usan los dos
+// formularios de material para marca e inventario. Su tamaño mayor de icono y de
+// texto se conserva con props, y la casilla que colgaba debajo sigue colgando
+// (ahora la de tratamiento de datos) usando su hueco `children`.
 
 const ACCOUNT_TYPE_OPTIONS = [
   { id: "Solidario", value: "Solidario", label: "Solidario" },
@@ -42,66 +25,23 @@ const ACCOUNT_TYPE_OPTIONS = [
 // ---------------------------------------------------------------------------
 // Retícula del formulario — colocación AUTOMÁTICA.
 //
-// Ningún campo declara su celda. Antes había una tabla con la columna y la fila
-// de cada uno de los 13 campos en cada breakpoint (39 pares de coordenadas
-// escritas a mano): cualquier campo que se agregara, quitara o reordenara
-// obligaba a recalcularlo todo, y bastaba una coordenada mal puesta para dejar
-// un hueco o pisar una celda. Ahora lo resuelve el navegador:
-//
-//   grid-flow-col + un número de filas por breakpoint = relleno por columnas.
-//   Los campos se colocan en el ORDEN EN QUE ESTÁN EN EL JSX: llenan una columna
-//   y saltan a la siguiente, que es justamente el recorrido pedido.
-//
-// La columna de la imagen es el único elemento colocado a mano, y de la forma
-// más simple posible: col-start-1 + row-span-full. Al abarcar TODAS las filas no
-// comparte ninguna con los inputs, así que su altura —vacía o con foto cargada—
-// nunca estira una fila ni abre huecos en las demás columnas. Ese era el origen
-// de los espacios raros entre inputs.
-//
-// El reparto en varias columnas arranca en lg. Hasta md el formulario es de una
-// sola columna: a 768px, tres columnas dejaban los campos demasiado apretados.
-//
-// Filas por breakpoint = elementos a repartir ÷ columnas de inputs:
-//   lg   → 3 columnas (1 imagen + 2): 13 inputs + botón = 14 → 7 filas
-//   1400 → 4 columnas (1 imagen + 3): 13 inputs + botón = 14 → 5 filas
-// (desde lg el trigger vive dentro de la columna de la imagen, por eso no cuenta)
 // ---------------------------------------------------------------------------
-// repeat(n,auto) y no grid-rows-n: la utilidad numérica de Tailwind genera filas
-// de 1fr, o sea TODAS de la misma altura. Bastaría que un campo mostrara un
-// mensaje de error para que las demás filas crecieran con él. Con `auto` cada
-// fila mide lo que necesita su contenido.
-const FORM_GRID = `
-  grid gap-x-5 gap-y-6 w-full grid-cols-1 justify-items-center
-  lg:max-w-max lg:grid-flow-col lg:grid-cols-3 lg:grid-rows-[repeat(7,auto)]
-  1400:grid-cols-4 1400:grid-rows-[repeat(5,auto)]
-`;
-
-// Columna de la imagen: abarca todas las filas para no compartir ninguna con
-// los inputs. self-start evita que se estire al alto completo de la columna.
-const MEDIA_COLUMN = `
-  flex flex-col items-center gap-6 justify-self-center
-  lg:col-start-1 lg:row-span-full lg:self-start 1400:gap-8
-`;
-
-// Este formulario reparte en columnas desde lg, no desde md como la mayoría, así
-// que el tope de 320px de los campos también debe empezar en lg: hasta md hay una
-// sola columna y los campos deben aprovechar todo el ancho, igual que en móvil.
-const FIELD_WIDTH = "w-full lg:max-w-[320px]";
-
-// Envoltorios locales para no repetir la prop en los trece campos. Al declararse
-// fuera del componente no se recrean en cada render (React los vería como un tipo
-// distinto y remontaría los inputs, perdiendo el foco al escribir).
-const Field = (props) => <Input widthClass={FIELD_WIDTH} {...props} />;
-const FieldSelect = (props) => <Select widthClass={FIELD_WIDTH} {...props} />;
-
-// Dirección de las previsualizaciones del FileInput por breakpoint.
-// El nombre de la clase describe hacia dónde crece la previsualización RESPECTO
-// de la caja; como en el DOM la previsualización va antes que la caja, "abajo"
-// se consigue con col-reverse y "a la izquierda" con row normal.
-//   sm            → a la izquierda
-//   el resto      → hacia abajo (empuja el contenido, no se superpone)
-// md no necesita clase propia: hereda la de base, y lg y 1400 heredan la de md.
-const PREVIEW_DIRECTION = "flex-col-reverse sm:flex-row md:flex-col-reverse";
+// Distribución del formulario — retícula de CSS, sin cuentas en JavaScript.
+//
+// Antes esto era `grid-flow-col` con un número de filas escrito por breakpoint
+// (`grid-rows-[repeat(7,auto)]` en lg, 5 en 1400). Ese número salía de dividir
+// "13 campos + botón" entre las columnas, así que agregar o quitar un campo
+// obligaba a recalcularlo a mano y, si no se hacía, el reparto se rompía. Se
+// eliminó (sesión 4) junto con los hooks que medían el ancho: el proyecto
+// prohíbe hardcodear la responsividad.
+//
+// Ahora los campos van en una retícula normal que crece de 1 a 3 columnas y se
+// llena por filas. Agregar un campo no obliga a tocar nada más.
+//
+// La columna de la imagen sale de la retícula y pasa a ser HERMANA del bloque de
+// campos: así su altura —vacía o con foto— nunca estira una fila ni abre huecos,
+// que era el motivo por el que antes necesitaba `col-start-1 + row-span-full`.
+// ---------------------------------------------------------------------------
 
 export default function UserRegisterForm() {
   const navigate = useNavigate();
@@ -119,6 +59,10 @@ export default function UserRegisterForm() {
     userSecondPhone: "",
     userAccountType: "",
     groupId: "",
+    // (p48) Las dos fechas son obligatorias. La de inicio arranca en HOY porque
+    // es el caso normal —se registra a alguien que empieza ahora—, pero se puede
+    // mover al pasado para alguien que ya venía vinculado.
+    userStartDate: todayLocalISO(),
     userEndDate: "",
     userEmail: "",
     userEmailInstitutional: "",
@@ -128,8 +72,10 @@ export default function UserRegisterForm() {
     // Se genera aquí, en el inicializador perezoso de useState, y no en un
     // efecto: así existe desde el primer render y no provoca un render extra.
     userPassword: generatePassword(),
-    // Instructor de planta / administrador: sin fecha de finalización obligatoria
-    isStaffInstructor: false,
+    // (p48) Tratamiento de datos personales: sin aceptar no se crea el usuario.
+    // Sustituye a la casilla "es instructor de planta", que desapareció junto con
+    // la excepción de fecha de finalización que la justificaba.
+    dataPolicyAccepted: false,
     image: [],
   });
   const [errors, setErrors] = useState({});
@@ -187,10 +133,7 @@ export default function UserRegisterForm() {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => {
-      const next = { ...prev, [name]: type === "checkbox" ? checked : value };
-      // Al marcar "instructor de planta" la fecha deja de aplicar y se limpia
-      if (name === "isStaffInstructor" && checked) next.userEndDate = "";
-      return next;
+      return { ...prev, [name]: type === "checkbox" ? checked : value };
     });
   };
 
@@ -206,19 +149,17 @@ export default function UserRegisterForm() {
       setErrors(fieldErrors);
       return;
     }
-    if (!formData.image || formData.image.length === 0) {
-      setErrors({ image: "La foto es requerida" });
-      return;
-    }
-
     const d = result.data;
     const fd = new FormData();
     fd.append("userFirstName", d.userFirstName);
     fd.append("userLastName", d.userLastName);
     fd.append("documentTypeId", d.documentTypeId);
     fd.append("userDocumentNumber", d.userDocumentNumber);
-    // Instructor de planta: sin fecha de finalización → no se envía el campo
-    if (d.userEndDate) fd.append("userEndDate", d.userEndDate);
+    // (p48) Las dos fechas van siempre: son obligatorias en el backend
+    fd.append("userStartDate", d.userStartDate);
+    fd.append("userEndDate", d.userEndDate);
+    // (p48) El backend lo exige como `true` y persiste la FECHA de aceptación
+    fd.append("dataPolicyAccepted", "true");
     fd.append("userEmail", d.userEmail);
     fd.append("userPhone", d.userPhone);
     fd.append("userAddress", d.userAddress);
@@ -228,7 +169,8 @@ export default function UserRegisterForm() {
     if (d.userEmailInstitutional)
       fd.append("userEmailInstitutional", d.userEmailInstitutional);
     if (d.userSecondPhone) fd.append("userSecondPhone", d.userSecondPhone);
-    fd.append("image", formData.image[0]);
+    // (p48) La foto pasó a ser OPCIONAL: sin ella, la interfaz muestra un icono
+    if (formData.image?.length) fd.append("image", formData.image[0]);
 
     // Confirmación previa: datos correctos + envío de credenciales (CLAUDE.md §20)
     const confirm = await Alert.confirm(
@@ -282,29 +224,37 @@ export default function UserRegisterForm() {
           ? "El correo personal ya está asignado a otra cuenta."
           : msg
       );
-      setErrors({ form: msg });
     }
   };
 
-  // El checkbox se pasa como prop al trigger para que ambos compartan caja y se
-  // muevan juntos entre breakpoints.
+  // La casilla cuelga del disparador para que ambos compartan caja y se muevan
+  // juntos entre breakpoints.
   // Se renderiza en dos instancias (una dentro de la columna de la imagen, para
-  // 1400; otra suelta, para el resto), así que cada una necesita su propio id:
-  // dos elementos con el mismo id romperían la asociación label/input.
-  const staffCheckbox = (id) => (
-    <Checkbox
+  // lg en adelante; otra suelta, para el resto), así que cada una necesita su
+  // propio id: dos elementos con el mismo id romperían la asociación label/input.
+  const dataPolicy = (id) => (
+    <DataPolicyCheckbox
       id={id}
-      name="isStaffInstructor"
-      label="Es instructor de planta"
-      labelClassName="text-medium"
-      // self-stretch + justify-center: el checkbox queda centrado en su propio
-      // espacio en cualquier breakpoint. self-stretch es necesario porque el
-      // contenedor usa items-start/items-center según el tamaño, y eso encogería
-      // el label a su contenido dejando el centrado sin efecto.
-      className="self-stretch justify-center"
-      checked={formData.isStaffInstructor}
+      name="dataPolicyAccepted"
+      checked={formData.dataPolicyAccepted}
       onChange={handleChange}
+      error={errors.dataPolicyAccepted}
+      className="self-stretch"
     />
+  );
+
+  // El disparador compartido, con la casilla colgando debajo
+  const groupTrigger = (id, className) => (
+    <CreateAndAssignTrigger
+      label="Crear y asignar nuevo grupo"
+      onClick={() => setIsGroupModalOpen(true)}
+      className={className}
+      hitSize={44}
+      iconSize={26}
+      textClassName="text-medium"
+    >
+      {dataPolicy(id)}
+    </CreateAndAssignTrigger>
   );
 
   return (
@@ -315,20 +265,21 @@ export default function UserRegisterForm() {
           ancho disponible al que crecer y los inputs se quedaban en su tamaño
           natural. Mientras hay una sola columna (hasta md) la tarjeta ocupa todo
           el ancho; desde lg, que ya reparte en columnas, se ajusta al contenido. */}
-      <div className="bg-white rounded-xl shadow-sm p-8 mx-6 w-full md:mx-12 lg:w-fit 1400:mx-0">
-      <form className={FORM_GRID} onSubmit={handleSubmit}>
+      <div className="bg-white rounded-xl shadow-sm p-8 mx-6 w-full md:mx-12 1400:mx-0 1400:w-fit">
+      <form className="flex flex-col items-center gap-8 lg:flex-row lg:items-start" onSubmit={handleSubmit}>
 
-        {/* Columna de la imagen: el ÚNICO elemento con posición explícita.
-            Desde lg lleva dentro el trigger, así queda al comienzo de la
-            izquierda y la previsualización lo empuja hacia abajo sin tocar
-            el resto de la retícula. */}
-        <div className={MEDIA_COLUMN}>
+        {/* Columna de la imagen: hermana del bloque de campos, NO parte de la
+            retícula. Desde lg lleva dentro el trigger, así queda al comienzo de
+            la izquierda y la previsualización lo empuja hacia abajo sin tocar
+            ninguna fila de campos. */}
+        <div className="flex flex-col items-center gap-6 shrink-0 self-start lg:w-45 1400:gap-8">
+          {/* (p48) La foto dejó de ser obligatoria: sin ella el sistema muestra
+              un icono de usuario en su lugar */}
           <FileInput
             accept="image/*"
             multiple={false}
-            label="Cargar imagen"
-            required
-            directionClassName={PREVIEW_DIRECTION}
+            label="Cargar imagen (opcional)"
+            directionClassName="flex-col-reverse sm:flex-row md:flex-col-reverse"
             value={formData.image}
             onChange={(files) =>
               setFormData((prev) => ({ ...prev, image: files }))
@@ -336,14 +287,15 @@ export default function UserRegisterForm() {
             error={errors.image}
           />
 
-          <GroupModalTrigger
-            onClick={() => setIsGroupModalOpen(true)}
-            checkbox={staffCheckbox("isStaffInstructorAside")}
-            className="hidden lg:flex items-start"
-          />
+          {groupTrigger("dataPolicyAside", "hidden lg:flex items-start")}
         </div>
 
-        <Field
+        {/* Campos: retícula que crece de 1 a 3 columnas. `items-start` impide
+            que un campo estire a sus vecinos de fila. */}
+        <div className="grid w-full grid-cols-1 items-start gap-x-5 gap-y-6 justify-items-center lg:w-auto lg:grid-cols-2 1400:grid-cols-3">
+
+        <Input
+          widthClass="w-full lg:max-w-[320px]"
           label="Nombre"
           name="userFirstName"
           required
@@ -352,7 +304,8 @@ export default function UserRegisterForm() {
           error={errors.userFirstName}
           placeholder="Ej: Sofía"
         />
-        <Field
+        <Input
+          widthClass="w-full lg:max-w-[320px]"
           label="Apellido"
           name="userLastName"
           required
@@ -361,7 +314,8 @@ export default function UserRegisterForm() {
           error={errors.userLastName}
           placeholder="Ej: Cardona"
         />
-        <FieldSelect
+        <Select
+          widthClass="w-full lg:max-w-[320px]"
           label="Tipo de documento"
           name="documentTypeId"
           required
@@ -370,7 +324,8 @@ export default function UserRegisterForm() {
           onChange={handleChange}
           error={errors.documentTypeId}
         />
-        <Field
+        <Input
+          widthClass="w-full lg:max-w-[320px]"
           label="Número de documento"
           name="userDocumentNumber"
           required
@@ -379,7 +334,8 @@ export default function UserRegisterForm() {
           error={errors.userDocumentNumber}
           placeholder="Ej: 1078546789"
         />
-        <Field
+        <Input
+          widthClass="w-full lg:max-w-[320px]"
           label="Teléfono"
           name="userPhone"
           required
@@ -389,7 +345,8 @@ export default function UserRegisterForm() {
           error={errors.userPhone}
           placeholder="Ej: 3125667890"
         />
-        <Field
+        <Input
+          widthClass="w-full lg:max-w-[320px]"
           label="Teléfono secundario (opcional)"
           name="userSecondPhone"
           type="tel"
@@ -398,7 +355,8 @@ export default function UserRegisterForm() {
           error={errors.userSecondPhone}
           placeholder="Ej: 6041234567 (opcional)"
         />
-        <FieldSelect
+        <Select
+          widthClass="w-full lg:max-w-[320px]"
           label="Tipo de usuario"
           name="userAccountType"
           required
@@ -407,7 +365,8 @@ export default function UserRegisterForm() {
           onChange={handleChange}
           error={errors.userAccountType}
         />
-        <FieldSelect
+        <Select
+          widthClass="w-full lg:max-w-[320px]"
           label="Grupo"
           name="groupId"
           required
@@ -416,18 +375,35 @@ export default function UserRegisterForm() {
           onChange={handleChange}
           error={errors.groupId}
         />
-        <Field
+        {/* (p48) La vigencia del vínculo gobierna el acceso: antes de la fecha
+            de inicio el login rechaza, y cumplida la de finalización el usuario
+            se desactiva solo. La de inicio SÍ admite fechas pasadas (alguien que
+            ya venía vinculado), por eso no lleva `min`. */}
+        <Input
+          widthClass="w-full lg:max-w-[320px]"
+          label="Fecha de inicio"
+          name="userStartDate"
+          type="date"
+          required
+          title="Antes de esta fecha el usuario no podrá iniciar sesión"
+          value={formData.userStartDate}
+          onChange={handleChange}
+          error={errors.userStartDate}
+        />
+        <Input
+          widthClass="w-full lg:max-w-[320px]"
           label="Fecha de finalización"
           name="userEndDate"
           type="date"
-          min={todayLocalISO()}
-          required={!formData.isStaffInstructor}
-          disabled={formData.isStaffInstructor}
+          min={formData.userStartDate || todayLocalISO()}
+          required
+          title="Al cumplirse, el usuario se desactiva automáticamente"
           value={formData.userEndDate}
           onChange={handleChange}
           error={errors.userEndDate}
         />
-        <Field
+        <Input
+          widthClass="w-full lg:max-w-[320px]"
           label="Correo personal"
           name="userEmail"
           required
@@ -437,7 +413,8 @@ export default function UserRegisterForm() {
           error={errors.userEmail}
           placeholder="Ej: sofia@correo.com"
         />
-        <Field
+        <Input
+          widthClass="w-full lg:max-w-[320px]"
           label="Correo institucional (opcional)"
           name="userEmailInstitutional"
           type="email"
@@ -446,7 +423,8 @@ export default function UserRegisterForm() {
           error={errors.userEmailInstitutional}
           placeholder="Ej: scardona@soy.sena.edu.co (opcional)"
         />
-        <Field
+        <Input
+          widthClass="w-full lg:max-w-[320px]"
           label="Dirección"
           name="userAddress"
           required
@@ -458,7 +436,8 @@ export default function UserRegisterForm() {
         {/* Contraseña automática: el campo es solo informativo. El value real
             vive en formData.userPassword y nunca se muestra; readOnly (y no
             disabled) para que siga siendo legible y no se vea apagado. */}
-        <Field
+        <Input
+          widthClass="w-full lg:max-w-[320px]"
           label="Contraseña"
           name="userPasswordDisplay"
           required
@@ -473,27 +452,22 @@ export default function UserRegisterForm() {
             que vive dentro de la columna de la imagen (al comienzo de la
             izquierda). Aquí queda entre la contraseña y el botón por su posición
             en el JSX: centrado en base y md, pegado al comienzo en sm. */}
-        <GroupModalTrigger
-          onClick={() => setIsGroupModalOpen(true)}
-          checkbox={staffCheckbox("isStaffInstructor")}
-          className="flex items-center justify-self-center self-center
-                     sm:items-start sm:justify-self-start
-                     md:items-center md:justify-self-center
-                     lg:hidden"
-        />
-
-        <div className="flex items-center justify-center self-center">
-          <Button variant="primary" size="md" type="submit">
-            Crear Usuario
-          </Button>
         </div>
       </form>
 
-      {/* El error general va FUERA de la retícula: dentro ocuparía una celda y
-          movería todo el reparto de columnas justo cuando aparece */}
-      {errors.form && (
-        <p className="text-error text-caption mt-4 text-center">{errors.form}</p>
-      )}
+      {/* Trigger (hasta md) y botón, fuera de la retícula para que su posición no
+          dependa del reparto. Desde lg se usa la instancia que vive dentro de la
+          columna de la imagen. */}
+      <div className="mt-8 flex flex-col items-center gap-6 sm:items-start md:items-center lg:hidden">
+        {groupTrigger("dataPolicy", "flex items-center")}
+      </div>
+
+      <div className="mt-6 flex justify-center">
+        <Button variant="primary" size="md" type="submit" onClick={handleSubmit}>
+          Crear Usuario
+        </Button>
+      </div>
+
 
       <CreateGroupModal
         isOpen={isGroupModalOpen}

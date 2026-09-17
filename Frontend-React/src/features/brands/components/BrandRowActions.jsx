@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pencil } from "lucide-react";
 import { Switch, Alert, usePermissions } from "@/shared";
-import brandService from "../services/brandService.js";
+import brandService from "@/shared/services/brandService";
 import EditBrandPage from "../pages/EditBrandPage.jsx";
 
 export default function BrandRowActions({ brand, onChanged }) {

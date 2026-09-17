@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { brandSchema } from "../schemas/brandSchema.js";
-import brandService from "../services/brandService.js";
+import { brandSchema } from "@/shared/schemas/brandSchema";
+import brandService from "@/shared/services/brandService";
 
 import logo from "@/assets/logos/logo-sena-verde.png";
 import { Input, Button, Alert } from "@/shared";
@@ -37,13 +37,12 @@ export default function BrandRegisterForm({ onSuccess }) {
         } catch (error) {
             const msg = error.response?.data?.error ?? "Error al crear la marca";
             Alert.error("Error al crear la marca", msg);
-            setErrors({ form: msg });
         }
     };
 
     return (
         <div className="mt-12">
-            <h1 className="text-text-inverse text-2xl mb-6 text-center">
+            <h1 className="font-main text-text-inverse text-h2 mb-6 text-center">
                 Agregar marca
             </h1>
 
@@ -60,9 +59,6 @@ export default function BrandRegisterForm({ onSuccess }) {
                     error={errors.brandName}
                 />
 
-                {errors.form && (
-                    <p className="text-error text-caption">{errors.form}</p>
-                )}
 
                 <div className="flex items-center justify-center gap-6">
                     <Button variant="primary" size="sm" type="submit">

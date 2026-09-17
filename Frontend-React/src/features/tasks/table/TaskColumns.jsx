@@ -1,7 +1,7 @@
 import { Checkbox } from "@/shared";
 import TaskRowActions from "../components/TaskRowActions";
 import { TASK_STATUS_LABELS } from "../constants/taskStatus";
-import taskService from "../services/taskService"; // ajusta según el export real
+import taskService from "@/shared/services/taskService"; // ajusta según el export real
 import { useState } from "react";
 
 function StatusCheckboxCell({ task, onChanged }) {

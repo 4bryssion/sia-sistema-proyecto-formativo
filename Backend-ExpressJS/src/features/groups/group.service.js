@@ -2,8 +2,14 @@ import { groupRepository } from './group.repository.js';
 import { permissionRepository } from '../permissions/permission.repository.js';
 
 export const groupService = {
-  async getAll() {
-    return groupRepository.findAll();
+  // Mismo contrato de `status` que marcas, inventarios y materiales:
+  // active (por defecto) | inactive | all
+  async getAll(status) {
+    const filter =
+      status === 'inactive' ? false :
+      status === 'all'      ? undefined :
+      true;
+    return groupRepository.findAll(filter);
   },
 
   async getById(id) {

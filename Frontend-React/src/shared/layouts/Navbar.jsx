@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { logout } from "@/features/auth/services/logoutService";
+import { logout } from "@/shared/services/logoutService";
 
 import {
     Bell,
@@ -15,8 +15,8 @@ import { IconButton, Dropdown, DropdownTrigger, DropdownItem, DropdownContent, g
 
 // Import directo (no vía @/features/users) para no arrastrar el índice completo
 // del módulo de usuarios dentro del layout
-import ViewUserModal from "@/features/users/components/ViewUserModal";
-import EditUserModal from "@/features/users/components/EditUserModal";
+import ViewUserModal from "@/shared/components/users/ViewUserModal";
+import EditUserModal from "@/shared/components/users/EditUserModal";
 
 import logo from "@/assets/logos/logo-sena-negro.png";
 
@@ -85,7 +85,7 @@ export default function Navbar(){
 
                         <h1
                             className={`
-                                font-heading
+                                font-main font-bold
                                 text-h1 hidden sm:flex
                             `}
                         >
@@ -197,7 +197,7 @@ export default function Navbar(){
                                             </DropdownItem>
                                             )}
 
-                                            {(can("list_brands") || can("list_groups")) && (
+                                            {(can("list_brands") || can("list_inventories") || can("list_groups")) && (
                                             <DropdownItem
                                                 className="block w-full"
                                                 keepOpen={true}
@@ -231,6 +231,15 @@ export default function Navbar(){
                                             <DropdownItem>
                                                 <Link to="/dashboard/brands" className="block w-full">
                                                     Marcas
+                                                </Link>
+                                            </DropdownItem>
+                                            )}
+
+                                            {/* Inventarios va inmediatamente debajo de Marcas (p48) */}
+                                            {can("list_inventories") && (
+                                            <DropdownItem>
+                                                <Link to="/dashboard/inventories" className="block w-full">
+                                                    Inventarios
                                                 </Link>
                                             </DropdownItem>
                                             )}

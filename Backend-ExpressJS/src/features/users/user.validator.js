@@ -5,6 +5,11 @@ const baseSchema = {
   userLastName: Joi.string().max(100),
   documentTypeId: Joi.number().integer().positive(),
   userDocumentNumber: Joi.string().max(20),
+  // (p48) Vigencia del vínculo. La de inicio SÍ admite fechas pasadas (se puede
+  // registrar a alguien que ya venía trabajando); la de finalización no puede ser
+  // anterior a la de inicio, y eso se comprueba en el service, que es donde se
+  // conoce el valor guardado en una edición parcial.
+  userStartDate: Joi.date().iso(),
   userEndDate: Joi.date().iso(),
   userEmail: Joi.string().email({ tlds: { allow: false } }).lowercase().max(150),
   userEmailInstitutional: Joi.string().email({ tlds: { allow: false } }).lowercase().max(150).allow('', null),
@@ -20,8 +25,14 @@ export const createUserSchema = Joi.object({
   userLastName: baseSchema.userLastName.required(),
   documentTypeId: baseSchema.documentTypeId.required(),
   userDocumentNumber: baseSchema.userDocumentNumber.required(),
-  // Opcional: instructores de planta y administradores no tienen fecha de finalización
-  userEndDate: baseSchema.userEndDate.optional().allow(null, ''),
+  // (p48) Las dos fechas son obligatorias: se eliminó la excepción de "instructor
+  // de planta", que era lo único que permitía dejar la finalización vacía.
+  userStartDate: baseSchema.userStartDate.required(),
+  userEndDate: baseSchema.userEndDate.required(),
+  // (p48) Tratamiento de datos personales: sin aceptar, no se crea el usuario.
+  // `valid(true)` en vez de `boolean().required()` para que un `false` explícito
+  // se rechace en la validación y no llegue al service como un caso más.
+  dataPolicyAccepted: Joi.boolean().valid(true).required(),
   userEmail: baseSchema.userEmail.required(),
   userPhone: baseSchema.userPhone.required(),
   userAddress: baseSchema.userAddress.required(),
@@ -33,6 +44,15 @@ export const updateUserSchema = Joi.object({
   ...baseSchema,
   userPassword: Joi.string().min(8),
 }).min(1);
+
+// (p48) El toggle dejó de tener el body vacío: al REACTIVAR hay que mandar la
+// nueva vigencia. Al desactivar el body va vacío y por eso ningún campo es
+// obligatorio aquí; que estén presentes al reactivar lo exige el service, que es
+// quien sabe hacia qué estado va el usuario.
+export const toggleUserSchema = Joi.object({
+  userStartDate: Joi.date().iso(),
+  userEndDate: Joi.date().iso(),
+});
 
 export const validate = (schema) => (req, res, next) => {
   const { error } = schema.validate(req.body, { abortEarly: false });

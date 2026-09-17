@@ -1,11 +1,14 @@
 import { Switch, Alert } from "@/shared";
 import UserRowActions from "../components/UserRowActions";
-import { getTopGroupName } from "../utils/topGroup";
-import userService from "../services/userService";
+import { getTopGroupName } from "@/shared/utils/topGroup";
+import userService from "@/shared/services/userService";
 
 // onView / onEdit: abren los modales de ListUserPage. Antes estas acciones
 // navegaban a /view/users/:id, rutas que ya no existen.
-export const UserColumns = (onChanged, can = () => true, onView, onEdit) => [
+// onReactivate: lo maneja ListUserPage, que es quien monta el modal de fechas.
+// Reactivar NO se puede resolver aquí: el backend exige `userStartDate` y
+// `userEndDate` nuevas y hay que pedírselas al usuario.
+export const UserColumns = (onChanged, can = () => true, onView, onEdit, onReactivate) => [
   // Sin columna de ID: el registro se identifica por su nombre; el id solo
   // viaja internamente para abrir el modal o llamar al servicio.
   {
@@ -44,6 +47,14 @@ export const UserColumns = (onChanged, can = () => true, onView, onEdit) => [
     cell: ({ getValue }) => getValue() ?? "—",
   },
   {
+    id: "fechaInicio",
+    header: "Fecha de inicio",
+    // (p48) Campo propio del usuario, no la fecha de creación del registro:
+    // antes de ella el login rechaza aunque las credenciales sean correctas
+    accessorFn: (row) =>
+      row.userStartDate ? new Date(row.userStartDate).toLocaleDateString("es-CO", { timeZone: "UTC" }) : "—",
+  },
+  {
     id: "fechaFin",
     header: "Fecha de finalización",
     accessorFn: (row) =>
@@ -55,15 +66,35 @@ export const UserColumns = (onChanged, can = () => true, onView, onEdit) => [
     cell: ({ row }) => {
       const u = row.original;
       const handleToggle = async () => {
-        // Confirmación obligatoria antes de activar/desactivar (soft-delete)
+        // (p48) Las dos direcciones dejaron de ser simétricas:
+        //
+        // - REACTIVAR exige fechas nuevas, así que no se resuelve con una
+        //   confirmación: abre el modal que las pide.
+        // - DESACTIVAR antes de tiempo ADELANTA la fecha de finalización a hoy.
+        //   Es un efecto que el usuario no pidió y que no se puede deshacer sin
+        //   volver a escribir las fechas, así que se avisa ANTES en el propio
+        //   texto de la confirmación.
+        if (!u.isActive) {
+          onReactivate?.(u);
+          return;
+        }
+
+        const hoy = new Date().toLocaleDateString("en-CA");
+        const finFuturo =
+          u.userEndDate &&
+          new Date(u.userEndDate).toLocaleDateString("en-CA", { timeZone: "UTC" }) > hoy;
+
         const result = await Alert.warning(
-          `¿${u.isActive ? "Desactivar" : "Activar"} usuario?`,
-          `${u.userFirstName} ${u.userLastName} quedará ${u.isActive ? "inactivo y no podrá iniciar sesión" : "activo nuevamente"}.`
+          "¿Desactivar usuario?",
+          `${u.userFirstName} ${u.userLastName} quedará inactivo y no podrá iniciar sesión.` +
+            (finFuturo
+              ? " Su fecha de finalización se adelantará a hoy, así que para reactivarlo habrá que indicar una vigencia nueva."
+              : ""),
         );
         if (!result.isConfirmed) return;
         try {
           await userService.toggle(u.id);
-          Alert.success(`Usuario ${u.isActive ? "desactivado" : "activado"}`);
+          Alert.success("Usuario desactivado");
         } catch (err) {
           Alert.error("Error al cambiar estado", err.response?.data?.error ?? "");
         } finally { onChanged?.(); }
