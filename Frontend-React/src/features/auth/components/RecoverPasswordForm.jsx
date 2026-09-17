@@ -8,7 +8,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input, Button, Alert } from "@/shared";
 import { recoverEmailSchema } from "../schemas/recoverPasswordSchema.js";
-import { forgotPassword } from "../services/authService.js";
+import { forgotPassword } from "@/shared/services/authService";
 import AuthCard from "./AuthCard.jsx";
 
 export default function RecoverPasswordForm() {
@@ -43,7 +43,6 @@ export default function RecoverPasswordForm() {
         } catch (error) {
             Alert.close();
             Alert.error("No se pudo enviar el código", error.message);
-            setErrors({ form: error.message });
         } finally {
             setSending(false);
         }
@@ -68,11 +67,6 @@ export default function RecoverPasswordForm() {
                     error={errors.userEmail}
                 />
 
-                {errors.form && (
-                    <p className="font-secondary text-caption text-error text-center">
-                        {errors.form}
-                    </p>
-                )}
             </div>
 
             {/* El botón solo existe cuando hay algo escrito: al borrar el correo

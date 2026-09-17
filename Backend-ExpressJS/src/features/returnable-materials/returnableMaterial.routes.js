@@ -8,10 +8,10 @@ import { requirePermission } from '../../middleware/permission.middleware.js';
 
 const router = Router();
 
-// La imagen sigue siendo una sola (columna `image` del material padre);
-// la ficha técnica admite hasta 3 archivos, guardados en returnable_material_files
+// (p48) La imagen dejó de ser una sola: hasta 3, en consumable_material_images.
+// La ficha técnica también admite hasta 3, ahora en material_files (tabla padre).
 const uploadFields = uploadFiles.fields([
-  { name: 'image', maxCount: 1 },
+  { name: 'image', maxCount: 3 },
   { name: 'technical_sheet', maxCount: 3 },
 ]);
 
@@ -33,7 +33,7 @@ router.use((err, req, res, next) => {
         err.field === 'technical_sheet'
           ? 'Solo se permiten hasta 3 fichas técnicas.'
           : err.field === 'image'
-            ? 'Solo se permite una imagen del material.'
+            ? 'Solo se permiten hasta 3 imágenes del material.'
             : 'Campo de archivo inesperado.',
       LIMIT_FILE_COUNT:      'Se enviaron demasiados archivos.',
     };

@@ -5,9 +5,9 @@ import clsx from "clsx";
 const baseStyles = "search flex items-center rounded-xl px-3 transition-all border";
 
 const sizeStyles = {
-    sm: "h-9 text-sm",
-    md: "h-11 text-sm",
-    lg: "h-12 text-base",
+    sm: "h-9 text-medium",
+    md: "h-11 text-medium",
+    lg: "h-12 text-body",
 };
 
 const variantStyles = {
@@ -86,7 +86,7 @@ const SearchField = forwardRef(
                     aria-label={ariaLabel}
                     autoComplete={autoComplete}
                     onChange={(e) => onChange(e.target.value)}
-                    className="search__input flex-1 bg-transparent px-2 outline-none"
+                    className="search__input flex-1 bg-transparent px-2 outline-none font-secondary"
                 />
                 
                 {!!value && !disabled && (

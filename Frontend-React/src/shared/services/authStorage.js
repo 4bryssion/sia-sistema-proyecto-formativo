@@ -38,3 +38,34 @@ export function clearCurrentUserName() {
 export function getCurrentUserLabel() {
   return getCurrentUserName() ?? getCurrentUser()?.email ?? "—";
 }
+
+// (p48) Contraseña temporal del primer inicio de sesión.
+//
+// El login devuelve `mustChangePassword`. Se guarda aquí porque el bloqueo no
+// puede depender de volver a preguntar al backend: con el flag activo TODAS sus
+// rutas responden 403 menos change-password y logout, así que no hay ningún
+// endpoint al que preguntar "¿sigo obligado?".
+//
+// Vive en sessionStorage junto al token y se borra con él: si la sesión termina,
+// el flag deja de tener sentido.
+const MUST_CHANGE_KEY = "mustChangePassword";
+
+// El evento `storage` del navegador solo se dispara en las OTRAS pestañas, nunca
+// en la que escribe. Como el flag lo puede activar el interceptor de axios en
+// cualquier momento (un 403 con mustChangePassword), se avisa con un evento
+// propio para que el bloqueo aparezca sin recargar.
+export const MUST_CHANGE_EVENT = "sii:must-change-password";
+
+export function setMustChangePassword(value) {
+  if (value) sessionStorage.setItem(MUST_CHANGE_KEY, "1");
+  else sessionStorage.removeItem(MUST_CHANGE_KEY);
+  window.dispatchEvent(new CustomEvent(MUST_CHANGE_EVENT, { detail: !!value }));
+}
+
+export function getMustChangePassword() {
+  return sessionStorage.getItem(MUST_CHANGE_KEY) === "1";
+}
+
+export function clearMustChangePassword() {
+  setMustChangePassword(false);
+}

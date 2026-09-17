@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import taskService from "../services/taskService";
+import taskService from "@/shared/services/taskService";
 
 // userId opcional: si viene, trae solo las tareas de ese usuario (GET /tasks/user/:id)
 export function useTasks(userId) {

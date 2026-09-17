@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import consumableMaterialService from "../services/consumableMaterialService";
+import consumableMaterialService from "@/shared/services/consumableMaterialService";
 
 export function useConsumableMaterials(status = "active") {
   const [materials, setMaterials] = useState([]);

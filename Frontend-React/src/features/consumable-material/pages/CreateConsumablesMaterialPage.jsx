@@ -41,7 +41,7 @@ export default function CreateConsumablesMaterialPage(){
 
                 <h1 
                     className="
-                        text-xl font-semibold text-h3 sm:text-h2
+                        font-main font-semibold text-h3 sm:text-h2
                     "
                 >
                     Crear Material Consumible

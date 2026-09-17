@@ -18,6 +18,15 @@ export const authController = {
     } catch (err) { next(err); }
   },
 
+  // (p48) Sirve a los dos casos: "Mi perfil → Cambiar contraseña" y el cambio
+  // obligatorio del primer inicio de sesión.
+  async changePassword(req, res, next) {
+    try {
+      await authService.changePassword(req.user.id, req.body);
+      res.status(200).json({ mensaje: 'Contraseña actualizada correctamente.' });
+    } catch (err) { next(err); }
+  },
+
   async forgotPassword(req, res, next) {
     try {
       await authService.forgotPassword(req.body.email); // no espera el envío de correo (fire-and-forget, ver §5) — esto solo cubre errores de BD

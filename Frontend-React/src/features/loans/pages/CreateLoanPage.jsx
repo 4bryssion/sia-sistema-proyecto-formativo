@@ -32,8 +32,8 @@ export default function CreateLoanPage() {
 
                 <h1
                     className="
-                        text-xl font-semibold
-                        text-h3 sm:text-h2
+                        font-semibold
+                        font-main text-h3 sm:text-h2
                     "
                 >
                     Crear Préstamo

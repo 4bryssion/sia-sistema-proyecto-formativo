@@ -3,7 +3,7 @@ import { DataTable, Button, usePermissions , ListPageHeader } from "@/shared";
 import { TaskColumns } from "../table/TaskColumns.jsx";
 import { useTasks } from "../hooks/useTasks";
 import { useSearchParams } from "react-router-dom";
-import CreateTaskModal from "../components/CreateTaskModal.jsx";
+import CreateTaskModal from "@/shared/components/tasks/CreateTaskModal";
 import ReportConfigModal from "../reports/components/ReportConfigModal.jsx";
 
 export default function ListTaskPage() {

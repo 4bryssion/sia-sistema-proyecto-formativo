@@ -1,9 +1,14 @@
 import prisma from '../../config/prisma.js';
 
 export const brandRepository = {
-  async findAll() {
+  // isActiveFilter undefined = sin filtro (todas). Antes estaba fijo en
+  // `isActive: true`, así que una marca desactivada desaparecía del listado y
+  // el interruptor de reactivarla no tenía forma de mostrarse (p48).
+  async findAll(isActiveFilter) {
+    const where = {};
+    if (isActiveFilter !== undefined) where.isActive = isActiveFilter;
     return prisma.brand.findMany({
-      where: { isActive: true },
+      where,
       orderBy: { brandName: 'asc' },
     });
   },

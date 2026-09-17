@@ -4,7 +4,7 @@ import { Undo2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "@/shared/services/axiosInstance";
 import accessService from "../services/accessService";
-import groupService from "@/features/groups/services/groupService";
+import groupService from "@/shared/services/groupService";
 import AccessLeft from "../components/AccessLeft";
 import AccessRight from "../components/AccessRight";
 
@@ -199,7 +199,7 @@ export default function AccessPage() {
       </div>
 
       {error && (
-        <p className="mb-2 text-sm text-error px-4">{error}</p>
+        <p className="font-secondary mb-2 text-medium text-error px-4">{error}</p>
       )}
 
       <div className="p-6 grid 1400:grid-cols-[380px_1fr] 1400:h-[calc(100vh-160px)]">

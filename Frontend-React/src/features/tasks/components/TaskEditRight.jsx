@@ -3,7 +3,7 @@ import { Input, Select, Button, Alert } from "@/shared";
 import { Save } from "lucide-react";
 import logo from "@/assets/logos/logo-sena-negro.png";
 import { useNavigate } from "react-router-dom";
-import taskService from "../services/taskService";
+import taskService from "@/shared/services/taskService";
 
 const STATUS_OPTIONS = [
   { id: "en_progreso", value: "en_progreso", label: "En progreso" },
@@ -64,7 +64,6 @@ export default function TaskEditRight({ task }) {
     } catch (err) {
       const msg = err.response?.data?.error ?? "Error al actualizar la tarea";
       Alert.error("Error al actualizar la tarea", msg);
-      setErrors({ form: msg });
     } finally {
       setSaving(false);
     }
@@ -121,7 +120,6 @@ export default function TaskEditRight({ task }) {
         </div>
       </div>
 
-      {errors.form && <p className="text-error text-caption mt-4">{errors.form}</p>}
 
       <div className="grid gap-6 mt-6 sm:flex sm:w-80 sm:mx-auto sm:justify-end lg:flex lg:w-full">
         <Button

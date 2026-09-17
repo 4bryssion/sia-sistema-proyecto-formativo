@@ -25,10 +25,14 @@ const HEADER_GRADIENT =
 // - data: datos que se mostrarán
 // - columns: configuración de columnas
 // toolbarExtra: contenido opcional que se coloca a la DERECHA del buscador
+// pageSizeExtra: contenido opcional a la IZQUIERDA del selector de filas. Se
+// separa de toolbarExtra porque son dos zonas distintas de la barra: junto al
+// buscador van los filtros del contenido, y aquí lo que decide QUÉ conjunto se
+// está listando.
 // (filtros de la tabla). Es un slot y no una lista de filtros configurable
 // porque cada módulo filtra por campos distintos; así DataTable no necesita
 // saber nada del dominio.
-export default function DataTable({ data, columns, className = "", toolbarExtra }) {
+export default function DataTable({ data, columns, className = "", toolbarExtra, pageSizeExtra }) {
 
   // ================== ESTADO DE PAGINACIÓN 
   // pageIndex → página actual
@@ -105,6 +109,11 @@ export default function DataTable({ data, columns, className = "", toolbarExtra 
         </div>
 
         {/* =============== SELECTOR DE FILAS  */}
+        {/* Se apilan hasta sm por la misma razón que el buscador: a 360px el
+            contenido extra y el selector no caben en una línea */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 sm:shrink-0">
+        {pageSizeExtra}
+
         {/* Permite cambiar cuántas filas se muestran por página */}
         <select
           value={table.getState().pagination.pageSize}
@@ -117,6 +126,7 @@ export default function DataTable({ data, columns, className = "", toolbarExtra 
             </option>
           ))}
         </select>
+        </div>
 
       </div>
 
@@ -215,7 +225,7 @@ export default function DataTable({ data, columns, className = "", toolbarExtra 
 
         {/* ================== INFORMACIÓN ================== */}
         {/* Cantidad de registros visibles */}
-        <span className="text-sm text-gray-600">
+        <span className="font-secondary text-medium text-gray-600">
           Mostrando {table.getRowModel().rows.length} de{" "}
           {table.getFilteredRowModel().rows.length} registros
         </span>
@@ -254,7 +264,7 @@ export default function DataTable({ data, columns, className = "", toolbarExtra 
 
 
           {/* Información de página actual */}
-          <span className="text-sm px-2">
+          <span className="font-secondary text-medium px-2">
             Página {table.getState().pagination.pageIndex + 1} de{" "}
             {table.getPageCount()}
           </span>
@@ -294,7 +304,7 @@ export default function DataTable({ data, columns, className = "", toolbarExtra 
 
       {/* ================== IR A PÁGINA ================== */}
       {/* Permite navegar directamente a una página específica */}
-      <div className="flex items-center gap-2 text-sm">
+      <div className="font-secondary flex items-center gap-2 text-medium">
 
 
         <span>Ir a página:</span>

@@ -3,7 +3,7 @@ import { groupService } from './group.service.js';
 export const groupController = {
   async getAll(req, res, next) {
     try {
-      res.json(await groupService.getAll());
+      res.json(await groupService.getAll(req.query.status));
     } catch (err) { next(err); }
   },
 

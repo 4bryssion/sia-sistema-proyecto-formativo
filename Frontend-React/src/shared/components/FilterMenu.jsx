@@ -32,7 +32,7 @@ export default function FilterMenu({
                     className={`
                         flex items-center gap-2 h-11 px-3 rounded-xl border
                         w-full sm:w-auto justify-between sm:justify-start
-                        font-secondary text-sm cursor-pointer transition-colors
+                        font-secondary text-medium cursor-pointer transition-colors
                         ${active
                             ? "border-focus-border bg-(--color-cuaternario-200)"
                             : "border-border bg-transparent hover:border-focus-border"}

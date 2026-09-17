@@ -203,13 +203,18 @@ export const devolutionService = {
       });
     }
 
-    // Los que no vuelven al stock también se registran, con su severidad
+    // Los que no vuelven al stock también se registran, con su severidad.
+    // El texto distingue si el estado se pudo aplicar al material o solo quedó
+    // registrado en la devolución: en un material por cantidad la fila es el
+    // lote entero y marcarla ensuciaría las unidades sanas.
     for (const m of movimientos) {
       if (m.estado === 'Disponible') continue;
       notify({
         title: 'Material devuelto sin reintegrar al stock',
         description: recorta(
-          `${m.materialName} quedó en estado ${m.estado} tras la devolución del préstamo #${autorizada.loanId}: su cantidad no vuelve al inventario.`,
+          m.aplicadoAlMaterial
+            ? `${m.materialName} quedó en estado ${m.estado} tras la devolución del préstamo #${autorizada.loanId}: su cantidad no vuelve al inventario.`
+            : `${m.materialName}: ${m.cantidadDevuelta} unidad(es) devueltas como ${m.estado} en el préstamo #${autorizada.loanId}. No vuelven al inventario; el estado queda en la devolución, no en el material (es un lote, no una unidad).`,
         ),
         severity: m.estado === 'Baja' ? 'Critica' : 'Advertencia',
         module: 'loan-returns',

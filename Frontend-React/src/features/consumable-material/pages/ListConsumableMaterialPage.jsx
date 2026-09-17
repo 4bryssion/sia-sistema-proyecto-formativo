@@ -1,10 +1,10 @@
 import { getStatusFilterLabel } from "@/shared/reports/statusLabel";
-import { Button, DataTable, FilterMenu, usePermissions , ListPageHeader } from "@/shared";
+import { Button, DataTable, FilterMenu, usePermissions , ListPageHeader, StatusFilterSelect } from "@/shared";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useConsumableMaterials } from "../hooks/useConsumableMaterials";
 import { consumableMaterialColumns } from "../table/consumableMaterialColumns";
-import { STATUS_FILTER_OPTIONS } from "../utils/statusLabel";
+import { STATUS_FILTER_OPTIONS } from "@/shared/utils/materialStatusLabel";
 import ReportConfigModal from "../reports/components/ReportConfigModal";
 import ViewConsumableMaterialModal from "../components/ViewConsumableMaterialModal";
 import EditConsumableMaterialModal from "../components/EditConsumableMaterialModal";
@@ -30,15 +30,7 @@ export default function ListConsumableMaterialPage() {
   return (
     <div className="p-6">
       <ListPageHeader title="Materiales Consumibles">
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="border rounded px-3 py-2 font-secondary"
-        >
-          <option value="active">Activos</option>
-          <option value="inactive">Inactivos</option>
-          <option value="all">Todos</option>
-        </select>
+        <StatusFilterSelect value={status} onChange={setStatus} />
 
         <Button variant="secondary" onClick={() => setIsReportModalOpen(true)}>
           Generar Reporte

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pencil, Users } from "lucide-react";
 import { Switch, Alert, usePermissions } from "@/shared";
-import groupService from "../services/groupService.js";
+import groupService from "@/shared/services/groupService";
 import EditGroupModal from "../pages/EditGroupModal.jsx";
 import GroupUsersModal from "../pages/GroupUsersModal.jsx";
 

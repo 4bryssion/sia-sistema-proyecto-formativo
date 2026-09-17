@@ -2,7 +2,7 @@ import { brandService } from './brand.service.js';
 
 export const brandController = {
   async getAll(req, res, next) {
-    try { res.json(await brandService.getAll()); }
+    try { res.json(await brandService.getAll(req.query.status)); }
     catch (err) { next(err); }
   },
 

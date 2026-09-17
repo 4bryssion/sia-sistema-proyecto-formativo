@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input, Button, Select, Alert } from "@/shared";
-import { loanSchema, todayLocalISO } from "../schemas/loanSchema.js";
-import loanService from "../services/loanService";
-import userService from "@/features/users/services/userService";
-import consumableMaterialService from "@/features/consumable-material/services/consumableMaterialService";
-import returnableMaterialService from "@/features/returnable-material/services/returnableMaterialService";
+import { loanSchema, todayLocalISO, LOAN_TYPE_OPTIONS } from "../schemas/loanSchema.js";
+import LoanReceiverField from "@/shared/components/loans/LoanReceiverField";
+import loanService from "@/shared/services/loanService";
+import userService from "@/shared/services/userService";
+import consumableMaterialService from "@/shared/services/consumableMaterialService";
+import returnableMaterialService from "@/shared/services/returnableMaterialService";
 import { buildMaterialOptions } from "../utils/materialOptions";
 import LoanMaterialLines from "./LoanMaterialLines.jsx";
 
@@ -14,10 +15,17 @@ export default function LoanRegisterForm() {
 
   const [formData, setFormData] = useState({
     apprenticeGroup: "",
+    // (p48) Naturaleza del préstamo, obligatoria. NO se deduce de si el receptor
+    // está registrado: son dos cosas independientes.
+    loanType: "",
     useJustification: "",
     returnDate: "",
     lenderId: "",
+    // (p48) La casilla arranca MARCADA: lo normal es prestarle a alguien del
+    // sistema, y el caso externo es la excepción
+    receiverRegistered: true,
     receiverId: "",
+    receiverEmail: "",
   });
   const [materials, setMaterials]               = useState([{ materialId: "", borrowedQuantity: "" }]);
   const [userOptions, setUserOptions]           = useState([]);
@@ -53,13 +61,32 @@ export default function LoanRegisterForm() {
         );
         setMaterialOptions(buildMaterialOptions(consumables, returnables));
       } catch {
-        setErrors((prev) => ({ ...prev, form: "No se pudieron cargar usuarios o materiales." }));
+        // Sin usuarios ni materiales el formulario no sirve para nada, así que
+        // el fallo se avisa en vez de dejar los selects vacíos sin explicación
+        Alert.error(
+          "No se pudieron cargar los datos del formulario",
+          "Revisa tu conexión con el servidor e inténtalo de nuevo.",
+        );
       }
     })();
   }, []);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
+    if (type === "checkbox") {
+      // Al cambiar de tipo de receptor se limpia el campo que deja de aplicar:
+      // el backend recibe uno u otro (xor), nunca los dos
+      setFormData((prev) => ({
+        ...prev,
+        [name]: checked,
+        ...(name === "receiverRegistered"
+          ? checked
+            ? { receiverEmail: "" }
+            : { receiverId: "" }
+          : {}),
+      }));
+      return;
+    }
     // El grupo de aprendices es un número pero el campo es de texto (para no
     // arrastrar las flechas del type="number"): se filtra a dígitos al escribir
     const limpio = name === "apprenticeGroup" ? value.replace(/\D/g, "") : value;
@@ -133,11 +160,17 @@ export default function LoanRegisterForm() {
     try {
       const d = result.data;
       await loanService.create({
-        apprenticeGroup: Number(d.apprenticeGroup),
+        // (p48) Grupo opcional: vacío se OMITE para que el backend lo guarde
+        // como null. Mandarlo como 0 inventaría un grupo que no existe.
+        ...(d.apprenticeGroup ? { apprenticeGroup: Number(d.apprenticeGroup) } : {}),
+        loanType: d.loanType,
         useJustification: d.useJustification,
         returnDate: d.returnDate,
         lenderId: Number(d.lenderId),
-        receiverId: Number(d.receiverId),
+        // (p48) Uno u otro, nunca ambos: es lo que exige el `xor` del backend
+        ...(d.receiverRegistered
+          ? { receiverId: Number(d.receiverId) }
+          : { receiverEmail: d.receiverEmail }),
         materials: d.materials.map((m) => ({
           materialId: Number(m.materialId),
           borrowedQuantity: Number(m.borrowedQuantity),
@@ -145,14 +178,15 @@ export default function LoanRegisterForm() {
       });
       Alert.success(
         "Préstamo creado",
-        "Se enviaron los correos de firma al prestador y al receptor."
+        result.data.receiverRegistered
+          ? "Se enviaron los correos de firma al prestador y al receptor."
+          : `Se enviaron los correos de firma al prestador y a ${result.data.receiverEmail}.`
       );
       navigate("/dashboard/loans");
     } catch (error) {
       const detalles = error.response?.data?.detalles;
       const msg = detalles?.join(" · ") ?? error.response?.data?.error ?? "Error al crear el préstamo.";
       Alert.error("Error al crear el préstamo", msg);
-      setErrors({ form: msg });
     } finally {
       setIsSubmitting(false);
     }
@@ -181,25 +215,35 @@ export default function LoanRegisterForm() {
             onChange={handleChange}
             error={errors.lenderId}
           />
-          <Select
-            label="Receptor" variant="search"
-            name="receiverId"
-            required
-            options={userOptions}
-            value={formData.receiverId}
+          <LoanReceiverField
+            registered={formData.receiverRegistered}
+            receiverId={formData.receiverId}
+            receiverEmail={formData.receiverEmail}
+            userOptions={userOptions}
             onChange={handleChange}
-            error={errors.receiverId}
+            errors={errors}
+          />
+          {/* (p48) Tipo de préstamo: independiente de si el receptor está
+              registrado. Un usuario del sistema puede llevarse material a una
+              actividad externa. */}
+          <Select
+            label="Tipo de préstamo"
+            name="loanType"
+            required
+            options={LOAN_TYPE_OPTIONS}
+            value={formData.loanType}
+            onChange={handleChange}
+            error={errors.loanType}
           />
           <Input
-            label="Grupo de aprendices"
+            label="Grupo de aprendices (opcional)"
             name="apprenticeGroup"
-            required
             // De texto y no de número: el type="number" trae las flechas de
             // subir/bajar, que aquí no significan nada (un grupo no es una
             // cantidad que se incremente). Los dígitos los garantiza handleChange.
             type="text"
             inputMode="numeric"
-            placeholder="Ingrese el número del grupo"
+            placeholder="Ingrese el número del grupo (opcional)"
             value={formData.apprenticeGroup}
             onChange={handleChange}
             error={errors.apprenticeGroup}
@@ -239,9 +283,6 @@ export default function LoanRegisterForm() {
         </div>
 
         {/* Mensajes de error generales */}
-        {errors.form && (
-          <p className="md:col-span-2 text-error font-secondary text-center">{errors.form}</p>
-        )}
 
         {/* Botones de acción */}
         <div className="md:col-span-2 flex flex-col sm:flex-row sm:justify-between gap-3 mt-8 sm:mt-4 lg:px-10 w-full">

@@ -27,7 +27,7 @@ export default function AccessRight({
     <div className="w-full min-w-0">
       {/* Header: nombre de entidad + lápiz (solo lectura) o Guardar/Cancelar (edición) */}
       <div className="flex items-center justify-between mb-6 min-h-12">
-        <h2 className="text-lg font-semibold font-main">
+        <h2 className="text-h3 font-semibold font-main">
           {entityName ?? "Seleccione un grupo o usuario"}
         </h2>
 
@@ -51,13 +51,13 @@ export default function AccessRight({
 
       {loading ? (
         <div className="flex items-center justify-center h-40">
-          <p className="text-gray-500 text-sm">Cargando permisos...</p>
+          <p className="font-secondary text-gray-500 text-medium">Cargando permisos...</p>
         </div>
       ) : (
         <div className="grid gap-6 min-w-0 overflow-x-auto">
           {Object.entries(permsByModule).map(([displayName, perms]) => (
             <section key={displayName} className="border rounded-lg p-6 min-w-0">
-              <h2 className="text-lg font-semibold mb-4 font-main">Módulo {displayName}</h2>
+              <h2 className="text-h3 font-semibold mb-4 font-main">Módulo {displayName}</h2>
 
               <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4 min-w-0">
                 {perms.map((perm) => {

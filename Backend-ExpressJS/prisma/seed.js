@@ -9,6 +9,7 @@ const SALT_ROUNDS = 10;
 const contentTypes = [
   { appLabel: 'document-types',       model: 'documentType',       displayName: 'Tipos de documento' },
   { appLabel: 'brands',               model: 'brand',              displayName: 'Marcas' },
+  { appLabel: 'inventories',         model: 'inventory',          displayName: 'Inventarios' },
   { appLabel: 'categories',           model: 'category',           displayName: 'Categorías' },
   { appLabel: 'access',               model: 'permission',         displayName: 'Permisos' },
   { appLabel: 'groups',               model: 'group',              displayName: 'Grupos' },
@@ -37,6 +38,12 @@ const initialPermissions = [
   { permissionName: 'Crear nueva marca',                            permissionCodename: 'create_brand',                 appLabel: 'brands' },
   { permissionName: 'Editar marca existente',                       permissionCodename: 'edit_brand',                   appLabel: 'brands' },
   { permissionName: 'Habilitar/Deshabilitar marca',                 permissionCodename: 'toggle_brand',                 appLabel: 'brands' },
+
+  // Inventarios (p48) — mismo juego de permisos que marcas: es el mismo tipo de catálogo
+  { permissionName: 'Ver listado de inventarios',                   permissionCodename: 'list_inventories',             appLabel: 'inventories' },
+  { permissionName: 'Crear nuevo inventario',                       permissionCodename: 'create_inventory',             appLabel: 'inventories' },
+  { permissionName: 'Editar inventario existente',                  permissionCodename: 'edit_inventory',               appLabel: 'inventories' },
+  { permissionName: 'Habilitar/Deshabilitar inventario',            permissionCodename: 'toggle_inventory',             appLabel: 'inventories' },
 
   // Categorías (gestionado por SADMIN)
   { permissionName: 'Ver listado de categorías',                    permissionCodename: 'list_categories',              appLabel: 'categories' },
@@ -134,6 +141,8 @@ const roleMatrix = {
     'list_notifications',
     // marcas (CRUD)
     'list_brands', 'create_brand', 'edit_brand', 'toggle_brand',
+    // inventarios (CRUD) — mismo alcance que marcas
+    'list_inventories', 'create_inventory', 'edit_inventory', 'toggle_inventory',
     // usuarios
     'list_users', 'create_user', 'edit_user', 'toggle_user', 'report_users',
     // panel de accesos (ver + asignaciones; NO crea/edita/togglea grupos ni permisos)
@@ -158,7 +167,7 @@ const roleMatrix = {
   Instructor: [
     // lectura para selects (usuarios: necesario para prestador/receptor de préstamos,
     // cuentadante de materiales y asignación de tareas — NO incluye crear/editar usuarios)
-    'list_brands', 'list_categories', 'list_users',
+    'list_brands', 'list_categories', 'list_users', 'list_inventories',
     // tareas: el instructor asigna y gestiona tareas
     'list_tasks', 'create_task', 'edit_task', 'toggle_task',
     // materiales de consumo
@@ -272,6 +281,9 @@ async function main() {
       userFirstName: 'Super',
       userLastName: 'Admin',
       userDocumentNumber: '1000000000',
+      // (p48) Ambas fechas son obligatorias. El SuperAdmin es una identidad del
+      // sistema, no una persona con vínculo: arranca hoy y no vence.
+      userStartDate: new Date(),
       userEndDate: new Date('2030-12-31'),
       userEmail: 'superadmin@sia.local',
       userEmailInstitutional: 'superadmin@sena.edu.co',
@@ -280,6 +292,11 @@ async function main() {
       userPhoto: '/uploads/superadmin_default.jpg',
       userPassword: hashedPassword,
       userAccountType: 'Cuentadante',
+      // (p48) No se le fuerza el cambio de contraseña: la suya no llega por correo,
+      // la define ADMIN_PASSWORD, y forzarlo dejaría el sistema sin acceso al primer arranque.
+      mustChangePassword: false,
+      // (p48) Identidad del sistema: no hay una persona que acepte el tratamiento de datos
+      dataPolicyAcceptedAt: new Date(),
     },
   });
   console.log('✓ Usuario SuperAdmin creado/verificado.');

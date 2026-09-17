@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import loanService from "../services/loanService";
+import loanService from "@/shared/services/loanService";
 
 export function useLoans(status = "active") {
   const [loans, setLoans]     = useState([]);

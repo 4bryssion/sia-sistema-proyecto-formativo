@@ -28,7 +28,7 @@ export default function AccessLeft({
   ];
 
   const userOptions = [
-    { value: "", label: "— Selecciona un usuario —" },
+    // { value: "", label: "— Selecciona un usuario —" },
     ...users.map((u) => ({
       value: String(u.id),
       label: `${u.userFirstName} ${u.userLastName}`,
@@ -77,12 +77,15 @@ export default function AccessLeft({
           Usuario individual
         </h3>
 
+        {/* maxMatches 4 y no las 5 por defecto: justo debajo va la lista de
+            grupos del usuario, y con 5 filas el desplegable la tapaba entera */}
         <Select
           variant="search"
           name="userId"
           value={selectedUserId ? String(selectedUserId) : ""}
           onChange={(e) => onUserChange(e.target.value)}
           options={userOptions}
+          maxMatches={4}
           className="w-full min-w-0 justify-self-center"
         />
 
@@ -100,7 +103,7 @@ export default function AccessLeft({
                     </span>
                     <button
                       onClick={() => onRemoveGroup(ug.groupId)}
-                      className="text-error hover:opacity-70 text-xs "
+                      className="font-secondary text-error hover:opacity-70 text-small "
                       title="Remover grupo"
                     >
                       ✕
@@ -109,7 +112,7 @@ export default function AccessLeft({
                 ))}
               </div>
             ) : (
-              <p className="text-text-inverse/60 text-xs text-center">
+              <p className="font-secondary text-text-inverse/60 text-small text-center">
                 Sin grupos asignados
               </p>
             )}

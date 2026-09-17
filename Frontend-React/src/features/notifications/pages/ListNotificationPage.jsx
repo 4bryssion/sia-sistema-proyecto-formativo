@@ -20,7 +20,7 @@ export default function ListNotificationPage() {
           <IconButton ariaLabel="Devolverse" onClick={() => navigate(-1)}>
             <Undo2 strokeWidth={2.8} />
           </IconButton>
-          <h1 className="text-xl font-semibold mb-0 text-h3 sm:text-h2">
+          <h1 className="font-main font-semibold mb-0 text-h3 sm:text-h2">
             Notificaciones del sistema
           </h1>
         </div>

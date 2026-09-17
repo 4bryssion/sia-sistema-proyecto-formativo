@@ -1,10 +1,11 @@
 import { getStatusFilterLabel } from "@/shared/reports/statusLabel";
-import { DataTable, Button, FilterMenu, usePermissions , ListPageHeader } from "@/shared";
+import { DataTable, Button, FilterMenu, usePermissions , ListPageHeader, StatusFilterSelect } from "@/shared";
 import { UserColumns } from "../table/UserColumns";
-import { useUsers } from "../hooks/useUsers";
+import { useUsers } from "@/shared/hooks/useUsers";
 import ReportConfigModal from "../reports/components/ReportConfigModal";
-import ViewUserModal from "../components/ViewUserModal";
-import EditUserModal from "../components/EditUserModal";
+import ViewUserModal from "@/shared/components/users/ViewUserModal";
+import EditUserModal from "@/shared/components/users/EditUserModal";
+import ReactivateUserModal from "@/shared/components/users/ReactivateUserModal";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 
@@ -24,6 +25,9 @@ export default function ListUserPage() {
   // peticiones sin ninguna ganancia.
   const [viewUserId, setViewUserId] = useState(null);
   const [editUserId, setEditUserId] = useState(null);
+  // (p48) Reactivar exige fechas nuevas: se guarda el usuario entero, no el id,
+  // porque el modal enseña su nombre
+  const [userToReactivate, setUserToReactivate] = useState(null);
   const { users, loading, error, refetch } = useUsers(status);
   // El SADMIN ya viene excluido por el backend (systemIdentities.js)
   const visibleUsers = users
@@ -36,15 +40,7 @@ export default function ListUserPage() {
   return (
     <div className="p-6">
       <ListPageHeader title="Usuarios">
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="border rounded px-3 py-2 font-secondary"
-        >
-          <option value="active">Activos</option>
-          <option value="inactive">Inactivos</option>
-          <option value="all">Todos</option>
-        </select>
+        <StatusFilterSelect value={status} onChange={setStatus} />
 
         <Button variant="secondary" onClick={() => setIsReportOpen(true)}>
           Generar Reporte
@@ -64,7 +60,7 @@ export default function ListUserPage() {
       ) : (
         <DataTable
           data={visibleUsers}
-          columns={UserColumns(refetch, can, setViewUserId, setEditUserId)}
+          columns={UserColumns(refetch, can, setViewUserId, setEditUserId, setUserToReactivate)}
           toolbarExtra={
             <FilterMenu
               label="Tipo de usuario"
@@ -77,6 +73,13 @@ export default function ListUserPage() {
       )}
 
       <ReportConfigModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} users={visibleUsers} statusLabel={getStatusFilterLabel(status)} />
+
+      <ReactivateUserModal
+        isOpen={userToReactivate != null}
+        user={userToReactivate}
+        onClose={() => setUserToReactivate(null)}
+        onReactivated={refetch}
+      />
 
       <ViewUserModal
         isOpen={viewUserId != null}

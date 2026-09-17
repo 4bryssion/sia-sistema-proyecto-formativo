@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { DataTable, Button, IconButton } from "@/shared";
+import { DataTable, Button, IconButton, StatusFilterSelect } from "@/shared";
 import { groupColumns } from "../table/groupColumns";
 import { useGroups } from "../hooks/useGroups";
 import { useNavigate } from "react-router-dom";
 import { Undo2 } from "lucide-react";
-import CreateGroupModal from "./CreateGroupModal.jsx";
+import CreateGroupModal from "@/shared/components/groups/CreateGroupModal";
 
 export default function ListGroupPage() {
   const navigate = useNavigate();
-  const { groups, loading, error, refetch } = useGroups();
+  const [status, setStatus] = useState("active");
+  const { groups, loading, error, refetch } = useGroups(status);
   // El grupo SuperAdmin ya viene excluido por el backend (systemIdentities.js)
   const visibleGroups = groups;
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -21,10 +22,12 @@ export default function ListGroupPage() {
           <IconButton ariaLabel="Devolverse" onClick={() => navigate(-1)}>
             <Undo2 strokeWidth={2.8} />
           </IconButton>
-          <h1 className="text-xl font-semibold mb-0 text-h3 sm:text-h2">Grupos</h1>
+          <h1 className="font-main font-semibold mb-0 text-h3 sm:text-h2">Grupos</h1>
         </div>
 
-        <div className="grid sm:flex gap-12 items-center">
+        <div className="grid sm:flex gap-6 items-center">
+          <StatusFilterSelect value={status} onChange={setStatus} />
+
           <Button variant="primary" onClick={() => setIsCreateOpen(true)}>
             Crear Grupo
           </Button>

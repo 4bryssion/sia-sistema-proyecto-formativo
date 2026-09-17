@@ -4,7 +4,8 @@
 
 import axios from "axios";
 import { Alert } from "../components/utils/alert.js";
-import { clearSession } from "@/features/auth/services/logoutService";
+import { clearSession } from "@/shared/services/logoutService";
+import { setMustChangePassword } from "@/shared/services/authStorage";
 
 const api = axios.create({
   baseURL: "http://localhost:5000/api",
@@ -22,12 +23,23 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // 403: el backend rechazó por falta de permisos (autorización real del servidor)
     if (error.response?.status === 403) {
-      Alert.error(
-        "Acción no permitida",
-        error.response?.data?.error ?? "No tienes permisos para realizar esta acción."
-      );
+      // (p48) Hay DOS clases de 403 y confundirlas deja al usuario atascado:
+      //
+      // - Con `mustChangePassword`, el backend está diciendo "cambia primero tu
+      //   contraseña temporal", no "no tienes permisos". Se repone el flag en la
+      //   sesión (pudo perderse al recargar con otra pestaña) para que el
+      //   bloqueo de RequirePasswordChange vuelva a aparecer, y NO se muestra la
+      //   alerta de permisos, que aquí sería un mensaje falso.
+      // - Cualquier otro 403 sí es autorización real del servidor.
+      if (error.response?.data?.mustChangePassword) {
+        setMustChangePassword(true);
+      } else {
+        Alert.error(
+          "Acción no permitida",
+          error.response?.data?.error ?? "No tienes permisos para realizar esta acción."
+        );
+      }
     }
 
     if (error.response?.status === 401) {

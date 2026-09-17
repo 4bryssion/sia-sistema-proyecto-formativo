@@ -1,6 +1,17 @@
 import jwt from "jsonwebtoken";
 import { authRepository } from "../features/auth/auth.repository.js";
 
+// (p48) Rutas que siguen abiertas mientras el usuario tenga la contraseña temporal.
+// Son las dos únicas salidas posibles de ese estado: cambiarla o cerrar sesión.
+// Bloquear también estas dejaría la cuenta atrapada sin forma de avanzar.
+//
+// El bloqueo se hace AQUÍ y no en el frontend porque el frontend solo redirige:
+// quien llame al API directamente con su token se saltaría la obligación.
+const RUTAS_PERMITIDAS_SIN_CAMBIAR_CLAVE = [
+    "/api/auth/change-password",
+    "/api/auth/logout",
+];
+
 export const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers.authorization;
 
@@ -44,6 +55,22 @@ export const authenticateToken = async (req, res, next) => {
             return res.status(401).json({
                 message: "Tu sesión se cerró porque se inició sesión desde otro lugar.",
             });
+        }
+
+        // (p48) Contraseña temporal sin cambiar: el resto del sistema queda cerrado.
+        // 403 y no 401 a propósito — el token es válido y la sesión también, así que
+        // un 401 haría que el interceptor del frontend cerrara la sesión y devolviera
+        // al login, justo lo contrario de lo que se busca.
+        //
+        // La ruta se compara sin query string: `originalUrl` la incluye.
+        if (state.mustChangePassword) {
+            const ruta = req.originalUrl.split("?")[0];
+            if (!RUTAS_PERMITIDAS_SIN_CAMBIAR_CLAVE.includes(ruta)) {
+                return res.status(403).json({
+                    error: "Debes cambiar tu contraseña temporal antes de usar el sistema.",
+                    mustChangePassword: true,
+                });
+            }
         }
     } catch (err) {
         return next(err);

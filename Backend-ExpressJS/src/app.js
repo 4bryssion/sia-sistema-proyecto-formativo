@@ -17,6 +17,9 @@ import documentTypeRoutes from './features/document-types/documentType.routes.js
 
 import brandRoutes from './features/brands/brand.routes.js';
 
+// (p48) Inventarios: catálogo gemelo de marcas al que se asignan los materiales
+import inventoryRoutes from './features/inventories/inventory.routes.js';
+
 import categoryRoutes from './features/categories/category.routes.js';
 
 import permissionRoutes from './features/permissions/permission.routes.js';
@@ -70,6 +73,8 @@ app.use('/api/access', accessRoutes);
 app.use('/api/document-types', documentTypeRoutes);
 
 app.use('/api/brands', brandRoutes);
+
+app.use('/api/inventories',          inventoryRoutes);
 
 app.use('/api/categories',           categoryRoutes);
 

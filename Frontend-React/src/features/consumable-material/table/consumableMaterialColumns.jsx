@@ -1,7 +1,8 @@
 import { Switch, Alert } from "@/shared";
 import ConsumableMaterialRowActions from "../components/ConsumableMaterialRowActions";
-import consumableMaterialService from "../services/consumableMaterialService";
-import { getStatusLabel } from "../utils/statusLabel";
+import consumableMaterialService from "@/shared/services/consumableMaterialService";
+import { getStatusLabel } from "@/shared/utils/materialStatusLabel";
+import { formatAccountables } from "@/shared/utils/accountables";
 
 // onView / onEdit: abren los modales de ListConsumableMaterialPage. Antes
 // estas acciones navegaban a /view/consumable-materials/:id, rutas que ya no existen.
@@ -30,7 +31,18 @@ export const consumableMaterialColumns = (refetch, can = () => true, onView, onE
   {
     id: "brand",
     header: "Marca",
+    // (p48) La marca pasó a opcional: hay material sin ella.
+    // accessorFn para que el buscador global la encuentre: TanStack excluye del
+    // filtro toda columna que no tenga accessor.
+    accessorFn: (row) => row.brand?.brandName ?? "",
     cell: ({ row }) => row.original.brand?.brandName ?? "—",
+  },
+  {
+    id: "inventory",
+    header: "Inventario",
+    // accessorFn para que el buscador global de la tabla encuentre por inventario
+    accessorFn: (row) => row.inventory?.inventoryName ?? "",
+    cell: ({ row }) => row.original.inventory?.inventoryName ?? "—",
   },
   {
     id: "quantity",
@@ -39,12 +51,13 @@ export const consumableMaterialColumns = (refetch, can = () => true, onView, onE
     cell: ({ row }) => row.original.quantity ?? 1,
   },
   {
-    id: "user",
+    id: "accountables",
     header: "Cuentadante",
-    cell: ({ row }) => {
-      const u = row.original.user;
-      return u ? `${u.userFirstName} ${u.userLastName}` : "—";
-    },
+    // (p48) Ya no es un usuario suelto sino una lista. En una celda no caben
+    // todos, así que se muestra el primero y cuántos más; el modal de consulta
+    // los enseña completos.
+    accessorFn: (row) => formatAccountables(row.accountables),
+    cell: ({ row }) => formatAccountables(row.original.accountables),
   },
   {
     id: "status",

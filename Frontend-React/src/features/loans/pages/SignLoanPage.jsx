@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import logo from "@/assets/logos/logo-sena-verde.png";
 import bg from "@/assets/images/background-oscuro.jpg";
 import { Button, Alert } from "@/shared";
-import loanService from "../services/loanService";
+import loanService from "@/shared/services/loanService";
 import { getLoanStatusLabel } from "../utils/loanStatusLabel";
 
 const fmt = (d) => (d ? String(d).slice(0, 10) : "—");

@@ -1,20 +1,49 @@
-import { Pencil, EllipsisVertical, Undo2, ArrowLeft, ArrowLeftRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Pencil, EllipsisVertical, ArrowLeftRight } from "lucide-react";
 
 import { Dropdown, DropdownTrigger, DropdownItem, DropdownContent, Alert, usePermissions } from "@/shared";
 import { getLoanStatusLabel } from "../utils/loanStatusLabel";
+import { getAuthorizeActionLabel } from "@/shared/utils/devolutionLabels";
 
-// onReturn: retornar dejó de ser una página y pasó a ser el modal que mantiene
-// ListLoanPage en una sola instancia. Visualizar y editar siguen navegando
-// mientras no se conviertan (paso 5 del bloque).
-export default function LoanRowActions({ loan, onReturn }) {
+// Las cuatro acciones abren modales que ListLoanPage mantiene en una sola
+// instancia: la fila solo dice qué abrir. Ya no queda navegación aquí.
+export default function LoanRowActions({ loan, devolution, onView, onEdit, onReturn, onAuthorize }) {
   const { can } = usePermissions();
-    const navigate = useNavigate();
 
-    // Navega a la página de visualizar préstamo
-    const handleView = () => {
-        navigate(`/view/loans/${loan.id}`);
-    };
+    // Una fila de devolución no se edita ni se retorna: lo único que se puede
+    // hacer con ella es autorizarla
+    if (devolution) {
+        return (
+            <div className="flex gap-2 justify-end">
+                <Dropdown>
+                    <DropdownTrigger>
+                        <button className="p-1 rounded hover:bg-gray-900 cursor-pointer" aria-label="Más opciones">
+                            <EllipsisVertical size={16} />
+                        </button>
+                    </DropdownTrigger>
+
+                    <DropdownContent className="right-0 w-64">
+                        {devolution.status === "Autorizada" ? (
+                            // Ya autorizada: la fila es histórico, no queda nada
+                            // por hacer con ella
+                            <DropdownItem className="opacity-60">
+                                Devolución ya autorizada
+                            </DropdownItem>
+                        ) : can("authorize_devolution") ? (
+                            <DropdownItem onClick={() => onAuthorize?.(devolution)}>
+                                {getAuthorizeActionLabel(devolution)}
+                            </DropdownItem>
+                        ) : (
+                            <DropdownItem className="opacity-60">
+                                Sin permiso para autorizar
+                            </DropdownItem>
+                        )}
+                    </DropdownContent>
+                </Dropdown>
+            </div>
+        );
+    }
+
+    const handleView = () => onView?.(loan.id);
 
     // Solo préstamos Activos pueden editarse/retornarse: si no, alerta SIN redirigir
     // (antes redirigía a una página vacía con el mensaje del guard)
@@ -26,7 +55,7 @@ export default function LoanRowActions({ loan, onReturn }) {
             );
             return;
         }
-        navigate(`/view/loans/${loan.id}/edit`);
+        onEdit?.(loan.id);
     };
 
     const handleReturn = () => {
@@ -48,7 +77,8 @@ export default function LoanRowActions({ loan, onReturn }) {
             <>
             <button
                 onClick={handleEdit}
-                className="p-1 rounded hover:bg-gray-900"
+                aria-label="Editar préstamo"
+                className="p-1 rounded hover:bg-gray-900 cursor-pointer"
             >
                 <Pencil size={16} />
             </button>
@@ -66,16 +96,14 @@ export default function LoanRowActions({ loan, onReturn }) {
             {/* Botón opciones */}
             <Dropdown>
                 <DropdownTrigger>
-                    <button className="p-1 rounded hover:bg-gray-900">
+                    <button className="p-1 rounded hover:bg-gray-900 cursor-pointer" aria-label="Más opciones">
                         <EllipsisVertical size={16} />
                     </button>
                 </DropdownTrigger>
 
                 <DropdownContent className="right-0">
-                    <DropdownItem>
-                        <button onClick={handleView}>
-                            Visualizar préstamo
-                        </button>
+                    <DropdownItem onClick={handleView}>
+                        Visualizar préstamo
                     </DropdownItem>
                 </DropdownContent>
             </Dropdown>

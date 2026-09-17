@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { authRepository } from './auth.repository.js';
-import { sendPasswordResetCode } from '../../config/mailer.js';
+import { sendPasswordResetCode, sendPasswordChanged } from '../../config/mailer.js';
 
 const authError = (msg) => {
   const err = new Error(msg);
@@ -28,6 +28,16 @@ const hasLiveSession = (user) =>
   Boolean(user.activeSessionExpiresAt) &&
   user.activeSessionExpiresAt > new Date();
 
+// (p48) Vigencia del vínculo. Se comparan fechas de CALENDARIO como texto
+// 'YYYY-MM-DD': new Date('YYYY-MM-DD') parsea en UTC y en UTC-5 desplaza el día
+// (es el bug transversal que ya se corrigió en el resto del proyecto).
+const hoyISO = () => new Date().toLocaleDateString('en-CA');
+const aISO = (fecha) => new Date(fecha).toLocaleDateString('en-CA', { timeZone: 'UTC' });
+const enLetras = (fecha) =>
+  new Date(fecha).toLocaleDateString('es-CO', {
+    timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric',
+  });
+
 const RESET_CODE_TTL_MIN = 15;
 const RESET_TICKET_TTL = '5m';
 const MAX_ATTEMPTS = 5;
@@ -44,6 +54,24 @@ export const authService = {
     if (!isMatch) throw authError('Credenciales inválidas');
 
     if (!user.isActive) throw authError('Usuario inactivo');
+
+    // (p48) Vigencia del vínculo, DESPUÉS de las credenciales por el mismo motivo
+    // que la sesión única: si se comprobara antes, cualquiera podría averiguar la
+    // vigencia de una cuenta ajena probando correos con contraseñas falsas.
+    //
+    // El vencimiento se revisa aquí además de en la tarea programada diaria: la
+    // tarea no corre si el servidor estuvo apagado esa noche, y sin esta segunda
+    // comprobación un vínculo vencido seguiría dejando entrar hasta la siguiente.
+    if (aISO(user.userEndDate) < hoyISO()) {
+      // Se desactiva en el momento para que el listado refleje la realidad y no
+      // haga falta esperar a la próxima ejecución de la tarea
+      await authRepository.deactivateExpiredUser(user.id);
+      throw authError(`Tu vínculo finalizó el ${enLetras(user.userEndDate)}. Comunícate con el administrador.`);
+    }
+
+    if (aISO(user.userStartDate) > hoyISO()) {
+      throw authError(`Tu cuenta estará habilitada a partir del ${enLetras(user.userStartDate)}.`);
+    }
 
     // Sesión única (p45): las credenciales se validan ANTES de mirar la sesión
     // activa. Si se hiciera al revés, cualquiera podría averiguar quién tiene
@@ -67,7 +95,38 @@ export const authService = {
     return {
       token,
       user: { id: user.id, email: user.userEmail },
+      // (p48) El frontend lo usa para redirigir de forma obligatoria a cambiar la
+      // contraseña. No es la barrera de seguridad — esa es authenticateToken, que
+      // cierra el paso al resto del API — sino la señal para la interfaz.
+      mustChangePassword: user.mustChangePassword,
     };
+  },
+
+  // (p48) Cambio de contraseña desde "Mi perfil" y desde el primer inicio forzado.
+  // Es el mismo endpoint para los dos casos: en ambos la persona está autenticada
+  // y debe demostrar que conoce la contraseña actual.
+  async changePassword(userId, { currentPassword, newPassword }) {
+    const user = await authRepository.findCredentialsById(userId);
+    if (!user || !user.isActive) throw authError('La cuenta no está activa.');
+
+    const coincide = await bcrypt.compare(currentPassword, user.userPassword);
+    // 401 y no 400: es un fallo de credenciales, y el limitador de la ruta es lo
+    // que evita que se use para adivinar la contraseña actual a fuerza bruta.
+    if (!coincide) throw authError('La contraseña actual no es correcta.');
+
+    // Comparar los hashes no serviría: bcrypt usa una sal distinta cada vez, así
+    // que la misma contraseña produce hashes diferentes.
+    const esLaMisma = await bcrypt.compare(newPassword, user.userPassword);
+    if (esLaMisma) throw new Error('La nueva contraseña debe ser distinta de la actual.');
+
+    const hashed = await bcrypt.hash(newPassword, 10); // mismo SALT_ROUNDS que user.service.js
+    await authRepository.changePassword(userId, hashed);
+
+    // Fire-and-forget: el cambio ya quedó guardado y un fallo del correo no debe
+    // deshacerlo ni devolver un error al usuario, que hizo todo bien.
+    sendPasswordChanged(user.userEmail, {
+      name: `${user.userFirstName} ${user.userLastName}`,
+    }).catch((err) => console.error('Error enviando aviso de cambio de contraseña:', err.message));
   },
 
   // Cierra la sesión activa del usuario: el token que tenga ese jti deja de ser

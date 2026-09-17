@@ -6,8 +6,9 @@ import {
   codeBox,
   dataBox,
   notice,
-  // `steps` queda disponible en mailTemplates para el paso a paso de cambio de
-  // contraseña, pendiente de definir el flujo de "Mi Perfil → Cambiar contraseña"
+  // (p48) El paso a paso de "Mi perfil → Cambiar contraseña" ya está definido, así
+  // que `steps` por fin se usa en el correo de credenciales
+  steps,
   list,
   button,
   subtitle,
@@ -74,24 +75,67 @@ export const sendPasswordResetCode = async (to, code) => {
 
 // Envío de credenciales de inicio de sesión al crear un usuario (correo personal).
 // Se llama ANTES de responder al cliente para poder informar si el envío falló.
-export const sendUserCredentials = async (to, { name, email, password }) => {
+// Fecha larga en español para los correos. Se fuerza timeZone UTC porque las dos
+// fechas son columnas DATE (sin hora): sin esto, en UTC-5 mostrarían el día anterior.
+const fechaLarga = (fecha) =>
+  new Date(fecha).toLocaleDateString('es-CO', {
+    timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric',
+  });
+
+// Paso a paso de "Mi perfil → Cambiar contraseña". Vive aquí y no en la plantilla
+// porque lo usan dos correos (credenciales y reactivación) y describe una pantalla
+// concreta del sistema, no la maquetación.
+const PASOS_CAMBIO_CLAVE = [
+  'Ingresa al S.I.I con la contraseña temporal de este correo.',
+  'Abre el menú de tu usuario, arriba a la derecha, y entra a <strong>Mi perfil</strong>.',
+  'Pulsa <strong>Cambiar contraseña</strong>.',
+  'Escribe tu contraseña actual (la temporal) y luego la nueva, dos veces.',
+  'Guarda. Te llegará un correo confirmando el cambio.',
+];
+
+// Envío de credenciales de inicio de sesión al crear un usuario (correo personal).
+// Se llama ANTES de responder al cliente para poder informar si el envío falló.
+//
+// (p48) `startDate` decide el tono del correo: si el vínculo empieza en el futuro,
+// la cuenta existe pero NO deja entrar todavía, y decirlo aquí evita que la persona
+// crea que sus credenciales están mal cuando el login la rechace.
+export const sendUserCredentials = async (to, { name, email, password, startDate, endDate }) => {
   const loginUrl = `${process.env.FRONTEND_URL}/auth`;
 
-  // PENDIENTE: el paso a paso para cambiar la contraseña se agrega cuando esté
-  // definido el flujo de "Mi Perfil → Cambiar contraseña". Hasta entonces el
-  // correo solo advierte que la contraseña es temporal.
+  // Comparación por fecha de calendario, no por instante: `startDate` es una
+  // columna DATE y `new Date(...)` la sitúa a medianoche UTC (bug transversal del
+  // proyecto). Con toLocaleDateString('en-CA') ambas quedan como 'YYYY-MM-DD'.
+  const hoy = new Date().toLocaleDateString('en-CA');
+  const inicio = new Date(startDate).toLocaleDateString('en-CA', { timeZone: 'UTC' });
+  const empiezaDespues = inicio > hoy;
+
+  const avisoVigencia = empiezaDespues
+    ? notice(
+        `Tu acceso se habilita el <strong>${fechaLarga(startDate)}</strong>. ` +
+        'Antes de esa fecha el sistema no te dejará iniciar sesión, aunque tus credenciales sean correctas.',
+      )
+    : notice('Tu acceso ya está habilitado: puedes ingresar desde ahora.');
+
   const html = layout({
     title: `Bienvenido al S.I.I, ${name}`,
-    preview: 'Tu cuenta fue creada. Estas son tus credenciales de acceso.',
+    preview: empiezaDespues
+      ? `Tu cuenta fue creada. Podrás ingresar a partir del ${fechaLarga(startDate)}.`
+      : 'Tu cuenta fue creada. Estas son tus credenciales de acceso.',
     body: [
-      p('Tu cuenta en el <strong>Software de Inventario de Infraestructura</strong> ya está activa. Ingresa con estas credenciales:'),
+      p('Tu cuenta en el <strong>Software de Inventario de Infraestructura</strong> ya fue creada. Estas son tus credenciales:'),
       dataBox([
         { label: 'Correo de acceso', value: email },
         { label: 'Contraseña temporal', value: password },
+        { label: 'Acceso habilitado desde', value: fechaLarga(startDate) },
+        { label: 'Acceso habilitado hasta', value: fechaLarga(endDate) },
       ]),
+      avisoVigencia,
       notice(
-        'Esta es una <strong>contraseña temporal</strong>. Por seguridad te recomendamos cambiarla apenas ingreses por primera vez.',
+        'Esta contraseña es <strong>temporal</strong>. En tu primer inicio de sesión el sistema ' +
+        'te pedirá cambiarla y no podrás usar el resto de la aplicación hasta hacerlo.',
       ),
+      subtitle('Cómo cambiar tu contraseña'),
+      steps(PASOS_CAMBIO_CLAVE),
       button(loginUrl, 'Ingresar al S.I.I'),
       small('Si no reconoces esta cuenta, comunícate con el administrador del sistema.'),
     ].join(''),
@@ -106,10 +150,96 @@ Tu cuenta en el S.I.I fue creada. Estas son tus credenciales de inicio de sesió
 
 Correo: ${email}
 Contraseña temporal: ${password}
+Acceso habilitado desde: ${fechaLarga(startDate)}
+Acceso habilitado hasta: ${fechaLarga(endDate)}
 
-Esta contraseña es temporal; te recomendamos cambiarla apenas ingreses por primera vez.
+${empiezaDespues
+  ? `IMPORTANTE: no podrás iniciar sesión antes del ${fechaLarga(startDate)}, aunque tus credenciales sean correctas.`
+  : 'Tu acceso ya está habilitado: puedes ingresar desde ahora.'}
+
+Esta contraseña es temporal. En tu primer inicio de sesión el sistema te pedirá cambiarla
+y no podrás usar el resto de la aplicación hasta hacerlo.
+
+Cómo cambiar tu contraseña:
+${PASOS_CAMBIO_CLAVE.map((paso, i) => `${i + 1}. ${paso.replace(/<[^>]+>/g, '')}`).join('\n')}
 
 Ingresa en: ${loginUrl}`,
+    html,
+  });
+};
+
+// (p48) Reactivación de un usuario desactivado. NO lleva credenciales: la
+// contraseña del usuario sigue siendo la suya, solo cambió su vigencia.
+export const sendUserReactivated = async (to, { name, startDate, endDate }) => {
+  const loginUrl = `${process.env.FRONTEND_URL}/auth`;
+  const hoy = new Date().toLocaleDateString('en-CA');
+  const inicio = new Date(startDate).toLocaleDateString('en-CA', { timeZone: 'UTC' });
+  const empiezaDespues = inicio > hoy;
+
+  const html = layout({
+    title: `Tu cuenta fue reactivada, ${name}`,
+    preview: 'Tu cuenta en el S.I.I volvió a estar activa.',
+    body: [
+      p('Tu cuenta en el <strong>Software de Inventario de Infraestructura</strong> fue reactivada con una nueva vigencia:'),
+      dataBox([
+        { label: 'Acceso habilitado desde', value: fechaLarga(startDate) },
+        { label: 'Acceso habilitado hasta', value: fechaLarga(endDate) },
+      ]),
+      empiezaDespues
+        ? notice(`Podrás iniciar sesión a partir del <strong>${fechaLarga(startDate)}</strong>.`)
+        : notice('Ya puedes iniciar sesión con tu contraseña de siempre.'),
+      small('Si no esperabas esta reactivación, comunícate con el administrador del sistema.'),
+      button(loginUrl, 'Ingresar al S.I.I'),
+    ].join(''),
+  });
+
+  await send({
+    to,
+    subject: 'Tu cuenta fue reactivada — S.I.I',
+    text: `Hola ${name},
+
+Tu cuenta en el S.I.I fue reactivada con una nueva vigencia:
+
+Acceso habilitado desde: ${fechaLarga(startDate)}
+Acceso habilitado hasta: ${fechaLarga(endDate)}
+
+${empiezaDespues
+  ? `Podrás iniciar sesión a partir del ${fechaLarga(startDate)}.`
+  : 'Ya puedes iniciar sesión con tu contraseña de siempre.'}
+
+Ingresa en: ${loginUrl}`,
+    html,
+  });
+};
+
+// (p48) Confirmación de cambio de contraseña. Es una señal de seguridad: si el
+// cambio no lo hizo la persona, este correo es lo que se lo advierte.
+export const sendPasswordChanged = async (to, { name }) => {
+  const cuando = new Date().toLocaleString('es-CO', { dateStyle: 'long', timeStyle: 'short' });
+
+  const html = layout({
+    title: 'Tu contraseña fue cambiada',
+    preview: 'La contraseña de tu cuenta en el S.I.I se actualizó correctamente.',
+    body: [
+      p(`Hola ${name}, la contraseña de tu cuenta en el S.I.I se cambió correctamente.`),
+      dataBox([{ label: 'Fecha del cambio', value: cuando }]),
+      notice(
+        'Si <strong>no fuiste tú</strong> quien hizo este cambio, comunícate de inmediato con el ' +
+        'administrador del sistema: tu cuenta puede estar comprometida.',
+      ),
+      small('No necesitas hacer nada más si el cambio fue tuyo.'),
+    ].join(''),
+  });
+
+  await send({
+    to,
+    subject: 'Tu contraseña fue cambiada — S.I.I',
+    text: `Hola ${name},
+
+La contraseña de tu cuenta en el S.I.I se cambió correctamente el ${cuando}.
+
+Si NO fuiste tú quien hizo este cambio, comunícate de inmediato con el administrador
+del sistema: tu cuenta puede estar comprometida.`,
     html,
   });
 };
@@ -147,7 +277,11 @@ export const sendLoanSignatureRequest = async (
   const datos = [
     { label: 'Fecha del préstamo', value: loanDate },
     { label: 'Fecha de devolución', value: returnDate },
-    { label: 'Grupo de aprendices', value: loan.apprenticeGroup },
+    // (p48) El grupo de aprendices pasó a ser opcional: si no lo tiene, la fila no
+    // se dibuja. Dejarla mostraría "null" en el correo.
+    ...(loan.apprenticeGroup ? [{ label: 'Grupo de aprendices', value: loan.apprenticeGroup }] : []),
+    // (p48) El tipo distingue un préstamo para uso interno de uno que sale del centro
+    ...(loan.loanType ? [{ label: 'Tipo de préstamo', value: loan.loanType }] : []),
     { label: 'Justificación de uso', value: loan.useJustification },
   ];
   if (counterpartName) {
@@ -178,8 +312,9 @@ Materiales:
 ${lines}
 ${counterpartName ? `\n${counterpartLabel ?? 'Otra parte'}: ${counterpartName}` : ''}
 Fecha del préstamo: ${loanDate}
-Fecha de devolución: ${returnDate}
-Grupo de aprendices: ${loan.apprenticeGroup}
+Fecha de devolución: ${returnDate}${loan.apprenticeGroup ? `
+Grupo de aprendices: ${loan.apprenticeGroup}` : ''}${loan.loanType ? `
+Tipo de préstamo: ${loan.loanType}` : ''}
 Justificación: ${loan.useJustification}
 
 Firma aquí (el enlace vence en 7 días): ${signUrl}

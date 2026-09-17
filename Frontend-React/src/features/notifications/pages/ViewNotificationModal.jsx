@@ -19,7 +19,7 @@ export default function ViewNotificationModal({ isOpen, onClose, notification })
         className="w-full max-w-2xl rounded-xl bg-white p-6 text-neutral-900"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-6 text-xl font-semibold">Detalle de la notificación</h2>
+        <h2 className="font-main mb-6 text-h3 font-semibold">Detalle de la notificación</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input label="Título" value={notification.title} readOnly />

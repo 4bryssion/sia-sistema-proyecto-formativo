@@ -71,18 +71,25 @@ model User {
   userFirstName       String                 @map("user_first_name") @db.VarChar(100)
   userLastName        String                 @map("user_last_name") @db.VarChar(100)
   userDocumentNumber  String                 @unique @map("user_document_number") @db.VarChar(20)
-  // Opcional: los instructores de planta / administradores no tienen fecha de
-  // finalización de vínculo. Joi ya la aceptaba opcional y el frontend no la
-  // envía cuando se marca "Es instructor de planta"; la columna era la única
-  // que seguía exigiéndola (migración p44_user_end_date_nullable).
-  userEndDate         DateTime?              @map("user_end_date") @db.Date
+  // (p48) Vigencia del vínculo. Las DOS fechas son obligatorias: se eliminó la
+  // excepción de "instructor de planta", que era lo único que permitía dejar la
+  // finalización vacía (revierte p44_user_end_date_nullable).
+  //
+  // No son solo informativas, gobiernan el acceso:
+  // - userStartDate en el futuro ⇒ el usuario NO puede iniciar sesión hasta esa fecha.
+  // - userEndDate cumplida ⇒ el usuario queda inactivo (tarea programada diaria).
+  userStartDate       DateTime               @map("user_start_date") @db.Date
+  userEndDate         DateTime               @map("user_end_date") @db.Date
   userEmail               String              @unique @map("user_email") @db.VarChar(150)
   userEmailInstitutional String?              @unique @map("user_email_institutional") @db.VarChar(150)
   userPhone           String                 @map("user_phone") @db.VarChar(15)
   userSecondPhone     String?                @map("user_second_phone") @db.VarChar(15)
   userAddress         String                 @map("user_address") @db.VarChar(150)
   isActive            Boolean                @default(true) @map("is_active")
-  userPhoto           String                 @unique @map("user_photo")
+  // (p48) Opcional: sin foto la interfaz muestra un icono de usuario. Sigue siendo
+  // @unique porque cada usuario guarda su PROPIA copia del archivo; en Postgres
+  // varios NULL no colisionan entre sí, así que la restricción no estorba.
+  userPhoto           String?                @unique @map("user_photo")
   userPassword        String                 @map("user_password") @db.VarChar(255)
   userAccountType     AccountType            @default(Solidario) @map("user_account_type")
   createdAt           DateTime               @default(now()) @map("created_at")
@@ -95,7 +102,17 @@ model User {
   // navegador sin hacer logout: pasada esa fecha la sesión se considera libre.
   activeSessionJti       String?             @map("active_session_jti") @db.VarChar(64)
   activeSessionExpiresAt DateTime?           @map("active_session_expires_at")
-  consumableMaterials ConsumableMaterial[]
+  // (p48) Ley 1581 de 2012 — Protección de Datos Personales. Se guarda CUÁNDO se
+  // aceptó, no un booleano: un "sí" sin fecha no sirve como evidencia de
+  // consentimiento. Sin aceptación no se puede crear el usuario.
+  dataPolicyAcceptedAt   DateTime?           @map("data_policy_accepted_at")
+  // (p48) La contraseña de las credenciales enviadas por correo es temporal: en el
+  // primer inicio de sesión el usuario queda obligado a cambiarla y no puede hacer
+  // nada más hasta lograrlo.
+  mustChangePassword     Boolean   @default(true) @map("must_change_password")
+  // (p48) El cuentadante dejó de ser una columna del material: un material puede
+  // tener varios, así que la relación pasa por la tabla intermedia
+  accountableFor      MaterialAccountable[]
   loanSignatures      LoanSignature[]
   // Dos relaciones distintas hacia la misma tabla (quien entrega y quien
   // autoriza): Prisma exige nombrarlas para poder distinguirlas
@@ -142,6 +159,19 @@ model Brand {
   @@map("brands")
 }
 
+// (p48) Inventario al que pertenece un material. Se resuelve igual que Brand —
+// campo en la tabla PADRE, no tabla intermedia — porque un material pertenece a
+// UN inventario: una intermedia solo haría falta si pudiera estar en varios.
+// Al vivir en consumable_materials sirve a los dos tipos de material.
+model Inventory {
+  id                  Int                  @id @default(autoincrement())
+  inventoryName       String               @unique @map("inventory_name") @db.VarChar(100)
+  isActive            Boolean              @default(true) @map("is_active")
+  consumableMaterials ConsumableMaterial[]
+
+  @@map("inventories")
+}
+
 model Category {
   id                  Int                  @id(map: "categories_pkey") @default(autoincrement())
   categoryName        String               @unique @map("category_name") @db.VarChar(100)
@@ -153,23 +183,38 @@ model Category {
 
 model ConsumableMaterial {
   id            Int                 @id(map: "consumable_materials_pkey") @default(autoincrement())
-  userId        Int                 @map("user_id")
-  brandId       Int                 @map("brand_id")
+  // (p48) brandId pasó a opcional: la marca dejó de exigirse al crear el material.
+  brandId       Int?                @map("brand_id")
+  // (p48) Inventario al que se asigna el material. Mismo patrón que la marca:
+  // columna en la tabla padre, no tabla intermedia.
+  inventoryId   Int?                @map("inventory_id")
   senaPlate     String?             @unique @map("sena_plate") @db.VarChar(20)
   materialName  String              @map("material_name") @db.VarChar(100)
-  image         String
   quantity      Int?
   unitPrice     Decimal             @map("unit_price") @db.Decimal(15, 2)
   totalPrice    Decimal             @map("total_price") @db.Decimal(15, 2)
   status        MaterialStatus
   description   String              @db.VarChar(255)
+  // purchaseDate ya existía. entryDate (p48) es cuándo entró al almacén, que no
+  // tiene por qué coincidir con cuándo se compró.
   purchaseDate  DateTime            @map("purchase_date") @db.Date
+  entryDate     DateTime            @map("entry_date") @db.Date
   location      String              @db.VarChar(100)
   isActive      Boolean             @default(true) @map("is_active")
   created_at    DateTime            @default(now())
   updated_at    DateTime            @updatedAt
-  brand         Brand               @relation(fields: [brandId], references: [id], map: "consumable_materials_brand_id_fkey")
-  user          User                @relation(fields: [userId], references: [id], map: "consumable_materials_user_id_fkey")
+  brand         Brand?              @relation(fields: [brandId], references: [id], map: "consumable_materials_brand_id_fkey")
+  inventory     Inventory?          @relation(fields: [inventoryId], references: [id], map: "consumable_materials_inventory_id_fkey")
+  // (p48) El cuentadante dejó de ser la columna user_id: un material puede tener
+  // varios, así que la relación pasa por una tabla intermedia.
+  accountables  MaterialAccountable[]
+  // (p48) La imagen dejó de ser la columna `image`: hasta 3, con el mismo
+  // contrato que las fichas técnicas.
+  images        ConsumableMaterialImage[]
+  // (p48) Fichas técnicas. Colgaban de returnable_materials; se repuntaron a la
+  // tabla PADRE para que el material de consumo también las tenga sin duplicar
+  // la tabla (los dos tipos comparten esta fila por la PK compartida).
+  technicalSheets MaterialFile[]
   loanMaterials LoanMaterial[]
   returnable    ReturnableMaterial?
   devolutionItems DevolutionRequestItem[]
@@ -177,23 +222,63 @@ model ConsumableMaterial {
   @@map("consumable_materials")
 }
 
+// (p48) Cuentadantes de un material. Se eligen con el select de selección
+// múltiple; al ser varios por material no caben en una columna.
+model MaterialAccountable {
+  materialId Int                @map("material_id")
+  userId     Int                @map("user_id")
+  created_at DateTime           @default(now())
+  material   ConsumableMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  user       User               @relation(fields: [userId], references: [id])
+
+  @@id([materialId, userId])
+  @@index([userId])
+  @@map("material_accountables")
+}
+
+// (p48) Imágenes del material: hasta 3. Misma forma que MaterialFile (orden
+// elegido al arrastrar las previsualizaciones) para que el FileInput y el
+// contrato del PUT se comporten igual con imágenes y con fichas.
+model ConsumableMaterialImage {
+  id         Int                @id @default(autoincrement())
+  materialId Int                @map("material_id")
+  imageUrl   String             @map("image_url") @db.VarChar(255)
+  fileName   String             @map("file_name") @db.VarChar(255)
+  mimeType   String             @map("mime_type") @db.VarChar(100)
+  sortOrder  Int                @default(0) @map("sort_order")
+  created_at DateTime           @default(now())
+  material   ConsumableMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@index([materialId])
+  @@map("consumable_material_images")
+}
+
 model ReturnableMaterial {
   id                 Int                @id(map: "returnable_materials_pkey")
   categoryId         Int                @map("category_id")
-  model              String             @db.VarChar(100)
-  serial             String             @unique @db.VarChar(20)
+  // (p48) model y serial pasaron a opcionales: hay material devolutivo que no
+  // trae ninguno de los dos. serial sigue siendo @unique — en Postgres varios
+  // NULL no colisionan, así que la unicidad solo aplica a los que sí lo tienen.
+  // Lo que define "serializado" NO es el serial sino quantity == null (placa SENA),
+  // así que volverlo opcional no toca préstamos, retornos ni devoluciones.
+  model              String?            @db.VarChar(100)
+  serial             String?            @unique @db.VarChar(20)
   // dimensions solo lo pide la categoría "Muebles y enseres"; para el resto
   // queda null y no interfiere en la creación
   dimensions         String?            @db.VarChar(100)
   category           Category           @relation(fields: [categoryId], references: [id], map: "returnable_materials_category_id_fkey")
   consumableMaterial ConsumableMaterial @relation(fields: [id], references: [id], onDelete: Cascade, map: "returnable_materials_id_fkey")
-  // La ficha técnica dejó de ser una columna: son hasta 3 archivos (p46)
-  technicalSheets    ReturnableMaterialFile[]
+  // (p48) technicalSheets se movió a ConsumableMaterial (la tabla padre) para que
+  // el material de consumo también tenga fichas. Se leen desde consumableMaterial.
 
   @@map("returnable_materials")
 }
 
-model ReturnableMaterialFile {
+// (p48) Antes ReturnableMaterialFile / returnable_material_files. Se renombró y se
+// repuntó a la tabla PADRE: la ficha técnica ya no es exclusiva del devolutivo.
+// La migración conserva las filas existentes — los ids son los mismos porque
+// returnable_materials comparte PK con consumable_materials.
+model MaterialFile {
   id         Int                @id @default(autoincrement())
   materialId Int                @map("material_id")
   fileUrl    String             @map("file_url") @db.VarChar(255)
@@ -202,15 +287,20 @@ model ReturnableMaterialFile {
   // Orden elegido al arrastrar las previsualizaciones en el formulario
   sortOrder  Int                @default(0) @map("sort_order")
   created_at DateTime           @default(now())
-  material   ReturnableMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  material   ConsumableMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
 
   @@index([materialId])
-  @@map("returnable_material_files")
+  @@map("material_files")
 }
 
 model Loan {
   id               Int             @id(map: "loans_pkey") @default(autoincrement())
-  apprenticeGroup  Int             @map("apprentice_group")
+  // (p48) Opcional: no todo préstamo se hace para un grupo de aprendices.
+  apprenticeGroup  Int?            @map("apprentice_group")
+  // (p48) Interno / Externo. Es un dato del préstamo y NO se deduce de que el
+  // receptor esté registrado: un usuario del sistema puede llevarse material
+  // para una actividad externa, y alguien de fuera puede recibirlo internamente.
+  loanType         LoanType        @map("loan_type")
   useJustification String          @db.VarChar(255) @map("use_justification")
   returnDate       DateTime        @db.Date @map("return_date")
   loanDate         DateTime        @default(now()) @map("loan_date")
@@ -244,12 +334,18 @@ model LoanMaterial {
 
 model LoanSignature {
   loanId   Int       @map("loan_id")
-  userId   Int       @map("user_id")
+  // (p48) Nullable: el RECEPTOR puede no estar registrado en el sistema. En ese
+  // caso la firma no apunta a ningún usuario y el enlace viaja a externalEmail.
+  // El prestador siempre es un usuario registrado (es cuentadante), así que esa
+  // fila nunca queda sin userId; la regla se hace cumplir en el servicio, no aquí,
+  // porque la restricción depende de `party` y no de la columna sola.
+  userId        Int?      @map("user_id")
+  externalEmail String?   @map("external_email") @db.VarChar(150)
   party    LoanParty
   signed   Boolean   @default(false)
   signedAt DateTime? @map("signed_at")
   loan     Loan      @relation(fields: [loanId], references: [id], onDelete: Cascade)
-  user     User      @relation(fields: [userId], references: [id])
+  user     User?     @relation(fields: [userId], references: [id])
 
   @@id([loanId, party])
   @@map("loan_signatures")
@@ -375,6 +471,12 @@ enum LoanStatus {
 enum LoanParty {
   Prestador
   Receptor
+}
+
+// (p48) Naturaleza del préstamo, independiente de si el receptor está registrado
+enum LoanType {
+  Interno
+  Externo
 }
 
 enum TaskStatus {

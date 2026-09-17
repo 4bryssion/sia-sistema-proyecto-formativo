@@ -1,26 +1,54 @@
-import { getLoanStatusLabel } from "../../utils/loanStatusLabel";
+import { getLoanStatusLabel, getLoanTypeLabel } from "../../utils/loanStatusLabel";
+import { partyLabel, documentoDe, firmaDe } from "@/shared/utils/loanParties";
+import { formatDateOnly, formatAuditDate } from "@/shared/utils/formatDate";
 
-const partyName = (loan, party) => {
-  const sig = loan.signatures?.find((s) => s.party === party);
-  return sig?.user ? `${sig.user.userFirstName} ${sig.user.userLastName}` : "";
+// Se sigue exportando con este nombre porque lo usa el encabezado del reporte
+// cuando se filtra por un solo solicitante
+export const receiverName = (loan) => partyLabel(loan, "Receptor");
+
+const firmaTexto = (loan, party) => {
+  const sig = firmaDe(loan, party);
+  if (!sig) return "";
+  return sig.signed ? `Firmado el ${formatAuditDate(sig.signedAt)}` : "Sin firmar";
 };
 
-const fmtDate = (d) => (d ? String(d).slice(0, 10) : "");
-
-export const receiverName = (loan) => partyName(loan, "Receptor");
-
+// (p48) Campos al día con el módulo: tipo de préstamo, receptor que puede ser
+// externo (y entonces se identifica por su correo) y grupo de aprendices
+// opcional.
 export const loanReportFields = [
+  {
+    key: "id",
+    label: "ID",
+    default: true,
+    // El listado es el único con columna de ID, y el reporte la acompaña: es lo
+    // que permite cotejar una fila del papel con la de la pantalla
+    getter: (l) => String(l.id),
+  },
   {
     key: "receiver",
     label: "Usuario solicitante",
     default: true,
-    getter: (l) => partyName(l, "Receptor"),
+    getter: (l) => partyLabel(l, "Receptor"),
+  },
+  {
+    key: "receiverDocument",
+    label: "Documento del receptor",
+    default: true,
+    // Vacío cuando el receptor es externo: de él solo tenemos el correo, que ya
+    // aparece en la columna del solicitante
+    getter: (l) => documentoDe(l, "Receptor") ?? "",
   },
   {
     key: "lender",
     label: "Aprobado por",
-    default: false,
-    getter: (l) => partyName(l, "Prestador"),
+    default: true,
+    getter: (l) => partyLabel(l, "Prestador"),
+  },
+  {
+    key: "loanType",
+    label: "Tipo de préstamo",
+    default: true,
+    getter: (l) => getLoanTypeLabel(l.loanType),
   },
   {
     key: "materials",
@@ -41,7 +69,8 @@ export const loanReportFields = [
     key: "apprenticeGroup",
     label: "Grupo de aprendices",
     default: true,
-    getter: (l) => l.apprenticeGroup ?? "",
+    // (p48) Opcional: sin grupo la celda va vacía, no en "0"
+    getter: (l) => (l.apprenticeGroup != null ? String(l.apprenticeGroup) : ""),
   },
   {
     key: "status",
@@ -59,12 +88,30 @@ export const loanReportFields = [
     key: "loanDate",
     label: "Fecha de préstamo",
     default: false,
-    getter: (l) => fmtDate(l.loanDate),
+    getter: (l) => formatDateOnly(l.loanDate),
   },
   {
     key: "returnDate",
     label: "Fecha de devolución",
     default: false,
-    getter: (l) => fmtDate(l.returnDate),
+    getter: (l) => formatDateOnly(l.returnDate),
+  },
+  {
+    key: "lenderSignature",
+    label: "Firma del prestador",
+    default: false,
+    getter: (l) => firmaTexto(l, "Prestador"),
+  },
+  {
+    key: "receiverSignature",
+    label: "Firma del receptor",
+    default: false,
+    getter: (l) => firmaTexto(l, "Receptor"),
+  },
+  {
+    key: "isActive",
+    label: "Registro",
+    default: false,
+    getter: (l) => (l.isActive ? "Activo" : "Inactivo"),
   },
 ];

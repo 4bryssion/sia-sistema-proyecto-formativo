@@ -100,7 +100,7 @@ export default function Input({
                         border-border
                         ${prefix ? "pl-8" : "pl-4"}
                         ${canReveal ? "pr-12" : "pr-4"}
-                        text-base
+                        text-body
                         font-secondary
                         
                         hover:border-2
@@ -124,7 +124,7 @@ export default function Input({
                             absolute
                             left-4
                             z-10
-                            text-base
+                            text-body
                             font-secondary
                             text-text-primary
                             pointer-events-none
@@ -143,7 +143,7 @@ export default function Input({
                         className="
                             absolute
                             z-10
-                            text-base
+                            text-body
                             font-secondary
                             text-text-muted
                             pointer-events-none

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { authController } from './auth.controller.js';
-import { validate, loginSchema, forgotPasswordSchema, verifyResetCodeSchema, resetPasswordSchema } from './auth.validator.js';
+import { validate, loginSchema, forgotPasswordSchema, verifyResetCodeSchema, resetPasswordSchema, changePasswordSchema } from './auth.validator.js';
 import { authenticateToken } from '../../middleware/auth.middleware.js';
 
 const router = Router();
@@ -34,6 +34,23 @@ router.post('/login', validate(loginSchema), authController.login);
 // authenticateToken verifica que el token sea válido antes de confirmar el logout.
 // La invalidación real es client-side (descartar el token en el frontend).
 router.post('/logout', authenticateToken, authController.logout);
+
+// (p48) Limitador propio del cambio de contraseña: el endpoint recibe la
+// contraseña ACTUAL, así que sin límite sería un oráculo para adivinarla a fuerza
+// bruta desde una sesión robada. Se cuenta por IP, igual que los otros dos.
+const changePasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos. Intenta de nuevo en unos minutos.' },
+});
+
+// POST /api/auth/change-password — contraseña actual + nueva, con sesión iniciada.
+// Es una de las DOS rutas que authenticateToken deja pasar cuando el usuario
+// todavía tiene la contraseña temporal (la otra es logout): si las bloqueara,
+// no habría forma de salir de ese estado.
+router.post('/change-password', authenticateToken, changePasswordLimiter, validate(changePasswordSchema), authController.changePassword);
 
 // POST /api/auth/forgot-password — envía código de 6 dígitos al correo
 router.post('/forgot-password', forgotPasswordLimiter, validate(forgotPasswordSchema), authController.forgotPassword);

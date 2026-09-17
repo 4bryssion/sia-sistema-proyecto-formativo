@@ -5,11 +5,12 @@ import logo from "@/assets/logos/logo-sena-verde.png";
 
 
 import { Input, 
-    Button, Alert } from "@/shared";
+    Button, Alert, SupportContactButton } from "@/shared";
 
 import { authSchema } from "../schemas/authSchema.js";
-import { login } from "../services/authService.js";
+import { login } from "@/shared/services/authService";
 import { askOtherTabsForSession } from "@/shared/services/sessionChannel.js";
+import { setMustChangePassword } from "@/shared/services/authStorage";
 
 export default function AuthRegisterForm(){
 
@@ -44,7 +45,6 @@ export default function AuthRegisterForm(){
             // Se actualiza únicamente lo que cambió
             [name]: type === "chechbox" ? checked : value,
         }));
-        if (errors.form) setErrors((prev) => ({ ...prev, form: undefined }));
     }
 
     // Handles personalizados:
@@ -92,7 +92,6 @@ export default function AuthRegisterForm(){
                 ? `Ya tienes una sesión iniciada en otra pestaña de este navegador con la cuenta ${otherTab.email}. Ciérrala antes de ingresar con otra.`
                 : "Ya tienes una sesión iniciada en otra pestaña de este navegador. Ciérrala antes de ingresar con otra.";
             Alert.error("Sesión ya iniciada", msg);
-            setErrors({ form: msg });
             return;
         }
 
@@ -103,6 +102,11 @@ export default function AuthRegisterForm(){
             sessionStorage.setItem("token", data.token); // Clave
             sessionStorage.setItem("user", JSON.stringify(data.user)); // { id, email } — usado por Navbar para "Mi perfil"
 
+            // (p48) Contraseña temporal del primer inicio de sesión. Mientras el
+            // flag esté activo el backend responde 403 en TODO el API salvo
+            // change-password y logout, así que RequirePasswordChange superpone
+            // el modal de cambio en cuanto se entra al dashboard.
+            setMustChangePassword(!!data.mustChangePassword);
 
             Alert.close();
             navigate("/dashboard");
@@ -114,7 +118,6 @@ export default function AuthRegisterForm(){
                 error.status === 409 ? "Sesión ya iniciada" : "Error al iniciar sesión",
                 error.message,
             );
-            setErrors({ form: error.message });
         }
     };
 
@@ -143,7 +146,7 @@ export default function AuthRegisterForm(){
                         type="email"
                         value={formData.userEmail}
                         onChange={handleChange}
-                        error={errors.userEmail || errors.form}
+                        error={errors.userEmail}
                     />
 
                     <Input
@@ -153,7 +156,7 @@ export default function AuthRegisterForm(){
                         type="password"
                         value={formData.userPassword}
                         onChange={handleChange}
-                        error={errors.userPassword || errors.form}
+                        error={errors.userPassword}
                     />
                 </div>
 
@@ -165,9 +168,18 @@ export default function AuthRegisterForm(){
 
                 </div>
 
-                <Link className="font-secondary text-small underline text-blue-600" to="/auth/recover-password">
+                <Link className="font-secondary text-small underline text-button-primary hover:text-button-primary-hover" to="/auth/recover-password">
                     ¿Olvidó su contraseña?
                 </Link>
+
+                {/* Soporte en el login: es justo aquí donde está quien NO puede
+                    entrar y por tanto no puede pedir ayuda desde dentro */}
+                <div className="flex items-center gap-2">
+                    <SupportContactButton />
+                    <span className="font-secondary text-small text-text-muted">
+                        ¿Necesitas ayuda?
+                    </span>
+                </div>
                 
             </form>
         </div>

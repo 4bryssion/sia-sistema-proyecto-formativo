@@ -11,13 +11,13 @@ export const consumableMaterialController = {
   },
   async create(req, res, next) {
     try {
-      const data = await consumableMaterialService.create(req.body, req.file);
+      const data = await consumableMaterialService.create(req.body, req.files);
       res.status(201).json({ mensaje: 'Material de consumo creado.', data });
     } catch (err) { next(err); }
   },
   async update(req, res, next) {
     try {
-      const data = await consumableMaterialService.update(Number(req.params.id), req.body, req.file);
+      const data = await consumableMaterialService.update(Number(req.params.id), req.body, req.files);
       res.json({ mensaje: 'Material de consumo actualizado.', data });
     } catch (err) { next(err); }
   },

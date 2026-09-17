@@ -4,7 +4,12 @@ import { SUPERADMIN_GROUP } from '../../config/systemIdentities.js';
 export const groupRepository = {
   // json_agg replica la forma { permissions: [{ groupId, permissionId, permission:{id,permissionName} }], _count:{users,permissions} }
   // que entregaba Prisma con include. COALESCE+FILTER evita null cuando un grupo no tiene permisos.
-  async findAll() {
+  // isActiveFilter: true | false | undefined (undefined = sin filtro, todos).
+  // Igual que marcas e inventarios: el listado de grupos es la pantalla donde se
+  // administran, así que necesita ver también los inactivos para reactivarlos.
+  // El default del service sigue siendo `active`, que es lo que esperan el panel
+  // de accesos y el select de grupo de crear usuario.
+  async findAll(isActiveFilter) {
     const rows = await prisma.$queryRaw`
       SELECT
         g.id          AS "id",
@@ -30,7 +35,8 @@ export const groupRepository = {
       -- El grupo de superusuario se excluye en el origen: este listado alimenta
       -- la tabla de grupos, el panel de accesos y el select de grupo de crear
       -- usuario. Filtrarlo aquí evita repetir el filtro en cada pantalla.
-      WHERE g.is_active = TRUE
+      WHERE (${isActiveFilter ?? null}::boolean IS NULL
+             OR g.is_active = ${isActiveFilter ?? null}::boolean)
         AND g.group_name <> ${SUPERADMIN_GROUP}
       GROUP BY g.id, g.group_name, g.is_active, g.created_at, g.updated_at
       ORDER BY g.group_name;`;

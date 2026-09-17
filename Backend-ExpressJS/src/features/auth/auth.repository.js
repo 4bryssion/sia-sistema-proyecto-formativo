@@ -12,6 +12,13 @@ export const authRepository = {
         // Sesión única (p45): se leen aquí para decidir si ya hay una sesión viva
         activeSessionJti:       true,
         activeSessionExpiresAt: true,
+        // (p48) Vigencia del vínculo: el login la comprueba después de las
+        // credenciales. Una cuenta puede existir y ser correcta pero todavía no
+        // estar habilitada, o haberlo dejado de estar.
+        userStartDate:      true,
+        userEndDate:        true,
+        // (p48) Primer inicio de sesión: obliga a cambiar la contraseña temporal
+        mustChangePassword: true,
       },
     });
   },
@@ -36,7 +43,15 @@ export const authRepository = {
   async findSessionState(userId) {
     return prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, isActive: true, activeSessionJti: true, activeSessionExpiresAt: true },
+      select: {
+        id: true,
+        isActive: true,
+        activeSessionJti: true,
+        activeSessionExpiresAt: true,
+        // (p48) Lo necesita authenticateToken para cerrar el paso al resto del
+        // sistema mientras la contraseña temporal siga sin cambiarse
+        mustChangePassword: true,
+      },
     });
   },
 
@@ -74,6 +89,40 @@ export const authRepository = {
     return prisma.passwordResetCode.update({ where: { id: codeId }, data: { attempts } });
   },
 
+  // (p48) Contraseña actual + hash, para el cambio desde "Mi perfil". Se lee
+  // aparte de findByEmail porque ahí se busca por correo y aquí por id de sesión.
+  async findCredentialsById(id) {
+    return prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true, userEmail: true, userPassword: true,
+        userFirstName: true, userLastName: true, isActive: true,
+      },
+    });
+  },
+
+  // (p48) Cambio de contraseña desde "Mi perfil" o desde el primer inicio forzado.
+  // NO toca la sesión activa: el usuario acaba de demostrar que conoce su
+  // contraseña actual, así que echarlo sería una molestia sin ganancia de
+  // seguridad. La recuperación por correo sí la cierra, porque quien la usa no
+  // probó conocer la contraseña anterior.
+  async changePassword(id, hashedPassword) {
+    return prisma.user.update({
+      where: { id },
+      data: { userPassword: hashedPassword, mustChangePassword: false },
+      select: { id: true },
+    });
+  },
+
+  // (p48) Red de seguridad del login: si el vínculo venció y la tarea programada
+  // no alcanzó a correr, se desactiva en el momento del intento de acceso.
+  async deactivateExpiredUser(id) {
+    return prisma.user.update({
+      where: { id },
+      data: { isActive: false, activeSessionJti: null, activeSessionExpiresAt: null },
+    });
+  },
+
   async resetPasswordTransaction(userId, hashedPassword, codeId) {
     return prisma.$transaction([
       prisma.user.update({
@@ -81,7 +130,15 @@ export const authRepository = {
         // Cambiar la contraseña cierra la sesión activa (p45): es lo esperable por
         // seguridad y además es la vía de escape si alguien quedó bloqueado por el
         // "ya tienes una sesión iniciada" sin poder cerrarla.
-        data: { userPassword: hashedPassword, activeSessionJti: null, activeSessionExpiresAt: null },
+        // (p48) mustChangePassword se limpia también aquí: si alguien nunca entró
+        // y recuperó su contraseña por correo, ya eligió una propia y volver a
+        // exigirle un cambio no protegería de nada.
+        data: {
+          userPassword: hashedPassword,
+          mustChangePassword: false,
+          activeSessionJti: null,
+          activeSessionExpiresAt: null,
+        },
       }),
       prisma.passwordResetCode.update({ where: { id: codeId }, data: { used: true } }),
     ]);

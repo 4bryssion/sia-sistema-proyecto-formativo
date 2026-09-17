@@ -41,7 +41,7 @@ export default function CreateUserPage(){
 
                 <h1 
                     className="
-                        text-xl font-semibold text-h3 sm:text-h2
+                        font-main font-semibold text-h3 sm:text-h2
                     "
                 >
                     Crear Usuario

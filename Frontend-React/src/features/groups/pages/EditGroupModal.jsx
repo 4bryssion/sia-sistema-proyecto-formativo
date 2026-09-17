@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button, Input, Alert } from "@/shared";
-import { groupSchema } from "../schemas/groupSchema.js";
-import groupService from "../services/groupService.js";
+import { groupSchema } from "@/shared/schemas/groupSchema";
+import groupService from "@/shared/services/groupService";
 
 export default function EditGroupModal({ group, isOpen, onClose, onSave }) {
 
@@ -49,10 +49,10 @@ export default function EditGroupModal({ group, isOpen, onClose, onSave }) {
         className="w-full max-w-md rounded-xl bg-white p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-6 text-xl font-semibold">Editar Grupo</h2>
+        <h2 className="font-main mb-6 text-h3 font-semibold">Editar Grupo</h2>
 
         <div className="mb-4">
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block text-medium font-medium text-gray-700">
             Nombre del grupo
           </label>
           <Input
