@@ -18,6 +18,24 @@ export const authController = {
     } catch (err) { next(err); }
   },
 
+  // (p49) Latido de sesión. Responde 204 porque no tiene nada que devolver y se
+  // llama cada pocos segundos: cuanto menos viaje, mejor.
+  async heartbeat(req, res, next) {
+    try {
+      await authService.heartbeat(req.user.id);
+      res.status(204).end();
+    } catch (err) { next(err); }
+  },
+
+  // (p49) Aviso de que la pestaña se cierra. Lo manda `fetch(..., keepalive)`
+  // desde `pagehide`, que el navegador despacha aunque la página ya se esté yendo.
+  async sessionEnding(req, res, next) {
+    try {
+      await authService.sessionEnding(req.user.id);
+      res.status(204).end();
+    } catch (err) { next(err); }
+  },
+
   // (p48) Sirve a los dos casos: "Mi perfil → Cambiar contraseña" y el cambio
   // obligatorio del primer inicio de sesión.
   async changePassword(req, res, next) {

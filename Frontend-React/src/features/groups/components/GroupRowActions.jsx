@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pencil, Users } from "lucide-react";
-import { Switch, Alert, usePermissions } from "@/shared";
+import { Switch, Alert, usePermissions, IconButton } from "@/shared";
 import groupService from "@/shared/services/groupService";
 import EditGroupModal from "../pages/EditGroupModal.jsx";
 import GroupUsersModal from "../pages/GroupUsersModal.jsx";
@@ -46,22 +46,21 @@ export default function GroupRowActions({ group, onChanged }) {
       )}
 
       {can("edit_group") && (
-      <button
-        onClick={() => setIsEditOpen(true)}
-        className="p-1 rounded hover:bg-gray-900"
-      >
+      <IconButton ariaLabel="Editar grupo" hitSize={36} iconSize={16} onClick={() => setIsEditOpen(true)}>
         <Pencil size={16} />
-      </button>
+      </IconButton>
       )}
 
       {/* Ver usuarios del grupo: mismo permiso que listar grupos */}
-      <button
-        onClick={() => setIsUsersOpen(true)}
-        className="p-1 rounded hover:bg-gray-900"
+      <IconButton
+        ariaLabel="Ver usuarios del grupo"
         title="Ver usuarios del grupo"
+        hitSize={36}
+        iconSize={16}
+        onClick={() => setIsUsersOpen(true)}
       >
         <Users size={16} />
-      </button>
+      </IconButton>
 
       <GroupUsersModal
         group={group}

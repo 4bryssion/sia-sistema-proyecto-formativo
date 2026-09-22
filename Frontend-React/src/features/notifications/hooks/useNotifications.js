@@ -1,7 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
-import notificationService from "../services/notificationService";
+import notificationService from "@/shared/services/notificationService";
 
-// Mismo patrón que useUsers/useTasks: carga, error y refetch
+// Mismo patrón que useUsers/useTasks: carga, error y refetch.
+//
+// (p50) Qué devuelve depende de quién pregunta, y eso lo decide el backend: un
+// administrador recibe los últimos préstamos y devoluciones del sistema, y
+// cualquier otra persona las tareas que le asignaron. Aquí no hay ninguna rama
+// por rol a propósito: si la hubiera, bastaría llamar a la API a mano para ver
+// lo que no toca.
 export function useNotifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);

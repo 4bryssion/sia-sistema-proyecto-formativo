@@ -3,8 +3,6 @@ import path from 'path';
 import fs from 'fs';
 import { userRepository } from './user.repository.js';
 import { sendUserCredentials, sendUserReactivated, classifyMailError } from '../../config/mailer.js';
-import { notify } from '../notifications/notification.service.js';
-
 const SALT_ROUNDS = 10;
 
 // Fecha de calendario de HOY como 'YYYY-MM-DD'. Se compara como texto contra las
@@ -109,14 +107,6 @@ export const userService = {
       console.error('Error enviando credenciales:', err.message);
     }
 
-    // (P43) Log del sistema: creación de usuario (+ resultado del correo de credenciales)
-    notify({
-      title: 'Usuario creado',
-      description: `Se creó el usuario ${user.userFirstName} ${user.userLastName} (${user.userEmail}). Correo de credenciales: ${emailSent ? 'enviado' : `falló (${emailError})`}.`,
-      severity: emailSent ? 'Informativa' : 'Advertencia',
-      module: 'users',
-    });
-
     return { user, emailSent, emailError };
   },
 
@@ -158,11 +148,6 @@ export const userService = {
     try {
       const resultado = await userRepository.update(id, data);
       if (file && currentUser.userPhoto) deleteFile(currentUser.userPhoto);
-      notify({
-        title: 'Usuario modificado',
-        description: `Se actualizaron los datos del usuario ${resultado.userFirstName} ${resultado.userLastName}.`,
-        module: 'users',
-      });
       return resultado;
     } catch (err) {
       if (file) deleteFile(data.userPhoto);
@@ -219,18 +204,6 @@ export const userService = {
       }).catch((err) => console.error('Error enviando correo de reactivación:', err.message));
     }
 
-    notify({
-      title: updated.isActive ? 'Usuario activado' : 'Usuario desactivado',
-      description:
-        `${updated.userFirstName} ${updated.userLastName} quedó ${updated.isActive ? 'activo' : 'inactivo'}` +
-        (activando
-          ? ` con vigencia del ${aISO(updated.userStartDate)} al ${aISO(updated.userEndDate)}.`
-          : cambios.userEndDate
-            ? '. Su fecha de finalización se adelantó a hoy.'
-            : '.'),
-      severity: updated.isActive ? 'Informativa' : 'Advertencia',
-      module: 'users',
-    });
     return updated;
   },
 
@@ -242,16 +215,8 @@ export const userService = {
 
     await userRepository.deactivateMany(vencidos.map((u) => u.id));
 
-    // Un aviso por usuario y no uno agregado: el listado de notificaciones se
-    // consulta por persona, y "se desactivaron 4 usuarios" no dice cuáles.
-    for (const u of vencidos) {
-      notify({
-        title: 'Usuario desactivado automáticamente',
-        description: `${u.userFirstName} ${u.userLastName} quedó inactivo: su vínculo finalizó el ${aISO(u.userEndDate)}.`,
-        severity: 'Advertencia',
-        module: 'users',
-      });
-    }
+    // (p50) Ya no genera avisos. Cada desactivación queda en `audit_log` con el
+    // antes y el después del usuario, que es más de lo que la notificación daba.
     return { total: vencidos.length, usuarios: vencidos };
   },
 };

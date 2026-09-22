@@ -117,13 +117,21 @@ export const devolutionService = {
     const detalle = created.items
       .map((i) => `${i.consumableMaterial.materialName} x${i.returnedQuantity}`)
       .join(', ');
+    // (p50) Único aviso de este módulo, y es el de la SOLICITUD, no el de la
+    // autorización: la autorización la ejecuta el propio administrador, así que
+    // avisarle de su propia acción no le dice nada. Lo que necesita saber es que
+    // hay una devolución esperándolo.
+    //
+    // Sin destinatario: va al tablero de los administradores. `severity` es
+    // Advertencia porque, a diferencia de un préstamo, esto pide que alguien
+    // actúe.
     notify({
-      title: `Devolución ${type.toLowerCase()} registrada`,
+      title: `Devolución ${type.toLowerCase()} solicitada`,
       description: recorta(
         `Préstamo #${loanId}. Entrega: ${nombreDe(created.requestedBy)}. Materiales: ${detalle}. Pendiente de autorizar.`,
       ),
-      module: 'loan-returns',
-      userId: actorId,
+      severity: 'Advertencia',
+      module: 'devolutions',
     });
 
     return created;
@@ -179,28 +187,11 @@ export const devolutionService = {
     const detalle = autorizada.items
       .map((i) => `${i.consumableMaterial.materialName} x${i.returnedQuantity} (${i.materialStatus})`)
       .join(', ');
-    notify({
-      title: `Devolución ${autorizada.type.toLowerCase()} autorizada`,
-      description: recorta(
-        `Préstamo #${autorizada.loanId}. Autoriza: ${nombreDe(autorizada.authorizedBy)}. `
-        + `Entregó: ${nombreDe(autorizada.requestedBy)}. Materiales: ${detalle}.`,
-      ),
-      module: 'loan-returns',
-      userId: actorId,
-    });
 
     // Notificación aparte por cada material que devolvió cantidad al inventario:
     // el movimiento de stock es el dato que más se audita
     for (const m of movimientos) {
       if (m.estado !== 'Disponible' || m.antes == null) continue;
-      notify({
-        title: 'Stock reintegrado al inventario',
-        description: recorta(
-          `${m.materialName}: ${m.antes} → ${m.despues} unidades por la devolución del préstamo #${autorizada.loanId}.`,
-        ),
-        module: 'loan-returns',
-        userId: actorId,
-      });
     }
 
     // Los que no vuelven al stock también se registran, con su severidad.
@@ -209,17 +200,6 @@ export const devolutionService = {
     // lote entero y marcarla ensuciaría las unidades sanas.
     for (const m of movimientos) {
       if (m.estado === 'Disponible') continue;
-      notify({
-        title: 'Material devuelto sin reintegrar al stock',
-        description: recorta(
-          m.aplicadoAlMaterial
-            ? `${m.materialName} quedó en estado ${m.estado} tras la devolución del préstamo #${autorizada.loanId}: su cantidad no vuelve al inventario.`
-            : `${m.materialName}: ${m.cantidadDevuelta} unidad(es) devueltas como ${m.estado} en el préstamo #${autorizada.loanId}. No vuelven al inventario; el estado queda en la devolución, no en el material (es un lote, no una unidad).`,
-        ),
-        severity: m.estado === 'Baja' ? 'Critica' : 'Advertencia',
-        module: 'loan-returns',
-        userId: actorId,
-      });
     }
 
     return autorizada;
@@ -233,12 +213,6 @@ export const devolutionService = {
       throw new Error('No se puede desactivar una devolución ya autorizada.');
     }
     const updated = await devolutionRepository.toggle(id, !request.isActive);
-    notify({
-      title: request.isActive ? 'Devolución descartada' : 'Devolución reactivada',
-      description: `La devolución #${id} del préstamo #${request.loanId} quedó ${request.isActive ? 'descartada' : 'de nuevo en espera'}.`,
-      severity: 'Advertencia',
-      module: 'loan-returns',
-    });
     return updated;
   },
 };

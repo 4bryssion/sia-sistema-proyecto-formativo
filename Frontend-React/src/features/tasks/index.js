@@ -1,5 +1,4 @@
-// tasks — exportar páginas aquí cuando estén creadas
+// (p50) Visualizar y editar dejaron de ser páginas: son modales que abre el
+// listado, como en los módulos principales.
 export { default as ListTaskPage } from "./pages/ListTaskPage";
-export { default as ViewTaskPage } from "./pages/ViewTaskPage";
-export { default as EditTaskPage } from "./pages/EditTaskPage";
 

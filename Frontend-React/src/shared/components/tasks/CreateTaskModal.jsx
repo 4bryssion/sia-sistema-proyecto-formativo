@@ -90,7 +90,17 @@ export default function CreateTaskModal({ isOpen, onClose, onSave, assignedUser 
     // al montarse sobre Visualizar Usuario aparecía POR DETRÁS de ese modal:
     // z-index de contextos de apilamiento distintos no compiten entre sí.
     // Ahora ambos son hijos de <body> y el último montado queda encima.
-    <Modal isOpen={isOpen} onClose={onClose} title="Crear Tarea" size="md">
+    // (p49) Es un formulario: un clic fuera no puede cerrarlo, o se pierde lo
+    // escrito. Y la X va fuera de la tarjeta, en la esquina — regla del proyecto
+    // para los modales de formulario.
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Crear Tarea"
+      size="md"
+      closeOnBackdrop={false}
+      closeButtonOutside
+    >
       <div className="text-neutral-900">
         {/* Vertical hasta md; desde md: 2 columnas × 3 filas (botón incluido) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -106,7 +116,11 @@ export default function CreateTaskModal({ isOpen, onClose, onSave, assignedUser 
           {assignedUser ? (
             <Input label="Usuario asignado" name="userId" value={assignedUser.name} disabled />
           ) : (
+            // (p50) Variante de búsqueda: la lista es TODO el personal activo,
+            // y encontrar a alguien por su nombre escribiéndolo es lo que se
+            // hace de verdad.
             <Select
+              variant="search"
               label="Usuario asignado"
               name="userId"
               required

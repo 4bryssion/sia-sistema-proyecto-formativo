@@ -15,7 +15,8 @@ import { useEffect, useState } from "react";
 import { Modal, Button, usePermissions } from "@/shared";
 import { Pencil } from "lucide-react";
 import MaterialIdentityPanel from "@/shared/components/materials/MaterialIdentityPanel";
-import MaterialField from "@/shared/components/materials/MaterialField";
+import LabelValue from "@/shared/components/LabelValue";
+import { assignedQuotations } from "@/shared/utils/quotationFiles";
 import { money } from "@/shared/utils/formatMoney";
 import returnableMaterialService from "@/shared/services/returnableMaterialService";
 import { accountableNames } from "@/shared/utils/accountables";
@@ -78,6 +79,7 @@ export default function ViewReturnableMaterialModal({ isOpen, materialId, onClos
 
           <MaterialIdentityPanel
             images={cm.images ?? []}
+            quotations={assignedQuotations(cm.quotations)}
             sheets={cm.technicalSheets ?? []}
             name={cm.materialName}
             status={cm.status}
@@ -91,21 +93,21 @@ export default function ViewReturnableMaterialModal({ isOpen, materialId, onClos
               <p className="sm:col-span-2 font-main text-body font-bold text-(--color-primary-950)">
                 Identificación
               </p>
-              <MaterialField label="Marca" value={cm.brand?.brandName} />
-              <MaterialField label="Inventario" value={cm.inventory?.inventoryName} />
-              <MaterialField label="Categoría" value={material.category?.categoryName} />
-              <MaterialField label="Modelo" value={material.model} />
-              <MaterialField label="Serial" value={material.serial} />
-              <MaterialField label="Placa SENA" value={cm.senaPlate} />
-              <MaterialField label="Ubicación" value={cm.location} />
+              <LabelValue label="Marca" value={cm.brand?.brandName} />
+              <LabelValue label="Inventario" value={cm.inventory?.inventoryName} />
+              <LabelValue label="Categoría" value={material.category?.categoryName} />
+              <LabelValue label="Modelo" value={material.model} />
+              <LabelValue label="Serial" value={material.serial} />
+              <LabelValue label="Placa SENA" value={cm.senaPlate} />
+              <LabelValue label="Ubicación" value={cm.location} />
               {/* Dimensiones solo la pide "Muebles y enseres": en el resto de
                   categorías es NULL y mostrar el par vacío solo añade ruido */}
               {material.dimensions && (
-                <MaterialField label="Dimensiones" value={material.dimensions} />
+                <LabelValue label="Dimensiones" value={material.dimensions} />
               )}
               {/* Aquí SÍ caben todos los cuentadantes: la tabla es la que tiene
                   que resumirlos en "el primero y N más" */}
-              <MaterialField
+              <LabelValue
                 className="sm:col-span-2"
                 label={(cm.accountables?.length ?? 0) > 1 ? "Cuentadantes" : "Cuentadante"}
                 value={accountableNames(cm.accountables).join(" · ")}
@@ -116,19 +118,19 @@ export default function ViewReturnableMaterialModal({ isOpen, materialId, onClos
               <p className="sm:col-span-2 font-main text-body font-bold text-(--color-primary-950)">
                 Inventario y costos
               </p>
-              <MaterialField
+              <LabelValue
                 label="Cantidad"
                 value={isSerialized ? "1 (material serializado)" : String(cm.quantity)}
               />
-              <MaterialField label="Valor unitario" value={money(cm.unitPrice)} />
-              <MaterialField label="Valor total" value={money(cm.totalPrice)} />
-              <MaterialField label="Fecha de compra" value={formatDateOnly(cm.purchaseDate)} />
+              <LabelValue label="Valor unitario" value={money(cm.unitPrice)} />
+              <LabelValue label="Valor total" value={money(cm.totalPrice)} />
+              <LabelValue label="Fecha de compra" value={formatDateOnly(cm.purchaseDate)} />
               {/* (p48) Fecha de ingreso al almacén */}
-              <MaterialField label="Fecha de ingreso" value={formatDateOnly(cm.entryDate)} />
+              <LabelValue label="Fecha de ingreso" value={formatDateOnly(cm.entryDate)} />
             </section>
 
             <section className="border-t border-border pt-4">
-              <MaterialField label="Descripción" value={cm.description} />
+              <LabelValue label="Descripción" value={cm.description} />
             </section>
           </div>
         </div>

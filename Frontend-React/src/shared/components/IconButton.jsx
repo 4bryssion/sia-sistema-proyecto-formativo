@@ -19,6 +19,12 @@ export const IconButton = React.forwardRef(function IconButton (
         // Estados
         isActive = false,
 
+        // (p50) Punto de aviso sobre el icono (la campana de notificaciones).
+        // Va aquí y no en el consumidor porque el punto tiene que posicionarse
+        // contra el botón, y el botón es quien conoce su propio tamaño.
+        badge = false,
+        badgeLabel,
+
         ...props
     },
     ref
@@ -57,6 +63,16 @@ export const IconButton = React.forwardRef(function IconButton (
             hover:bg-white/20
             focus-visible:ring-white
         `,
+
+        // Fondo oscuro a CUALQUIER ancho: las pantallas de autenticación, que
+        // van sobre la imagen de fondo. Se separa de `onColor` porque esa cambia
+        // de color según el ancho (es del navbar, que solo es oscuro a partir de
+        // cierto tamaño) y aquí el fondo es oscuro siempre.
+        onDark: `
+            text-text-inverse
+            hover:bg-white/20
+            focus-visible:ring-white
+        `,
     }
 
     return(
@@ -69,6 +85,13 @@ export const IconButton = React.forwardRef(function IconButton (
 
             className={clsx(baseStyles, variants[variant], className, {
                 "bg-neutral-300" : isActive,
+                // `relative` SOLO cuando hay punto, y nunca por defecto: es la
+                // ancla que el punto necesita. Puesto en los estilos base le
+                // ganaba al `absolute` con el que algunos consumidores colocan
+                // el botón —el ojo de ver contraseña dentro del Input— porque
+                // entre dos utilidades de posición decide el orden del CSS
+                // generado, no el del atributo class.
+                "relative": badge,
             })}
 
             style={{
@@ -87,6 +110,21 @@ export const IconButton = React.forwardRef(function IconButton (
             >
                 {children}
             </span>
+
+            {/* El punto se dibuja DENTRO del botón, anclado a su esquina, y no
+                como un hermano posicionado a ojo: así acompaña al icono sea cual
+                sea el tamaño con el que se use el botón.
+                aria-hidden + texto solo para lectores: el punto es decorativo,
+                lo que se anuncia es la frase. */}
+            {badge && (
+                <>
+                    <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute right-2.5 top-2.5 size-2.5 rounded-full bg-(--color-secondary-600) ring-2 ring-white"
+                    />
+                    <span className="sr-only">{badgeLabel ?? "Hay novedades"}</span>
+                </>
+            )}
         </button>
     )
 })

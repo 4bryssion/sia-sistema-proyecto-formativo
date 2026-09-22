@@ -1,22 +1,31 @@
-import { useState, useEffect } from "react";
-import { Button, Input, Alert } from "@/shared";
+import { useState } from "react";
+import { Button, Input, Alert, Modal } from "@/shared";
 import { groupSchema } from "@/shared/schemas/groupSchema";
 import groupService from "@/shared/services/groupService";
 
+// (p49) Antes dibujaba su propio overlay a mano: un clic fuera lo cerraba y se
+// perdía lo escrito, no atendía Escape, no entraba en la pila de modales y
+// repetía el marcado que ya resuelve `Modal`. Ahora usa el componente
+// compartido, igual que sus gemelos de inventarios.
+//
+// La etiqueta del campo pasó a la prop `label` del Input, que ya la dibuja con
+// font-secondary y el token de color; antes era un <label> a mano con
+// `text-medium font-medium text-gray-700` — sin variable de tipografía y con el
+// gris cableado.
+//
+// El cuerpo va en un componente aparte que solo se monta con el modal abierto:
+// así el campo arranca con el grupo que toca sin el useEffect que hacía setState
+// (regla react-hooks/set-state-in-effect).
 export default function EditGroupModal({ group, isOpen, onClose, onSave }) {
+  if (!isOpen || !group) return null;
 
-  const [groupName, setGroupName] = useState("");
+  return <EditGroupBody group={group} onClose={onClose} onSave={onSave} />;
+}
+
+function EditGroupBody({ group, onClose, onSave }) {
+  const [groupName, setGroupName] = useState(group.groupName ?? "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (isOpen && group) {
-      setGroupName(group.groupName ?? "");
-      setError("");
-    }
-  }, [isOpen, group]);
-
-  if (!isOpen) return null;
 
   const handleSave = async () => {
     const result = groupSchema.safeParse({ groupName });
@@ -41,39 +50,36 @@ export default function EditGroupModal({ group, isOpen, onClose, onSave }) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-md rounded-xl bg-white p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="font-main mb-6 text-h3 font-semibold">Editar Grupo</h2>
-
-        <div className="mb-4">
-          <label className="mb-1 block text-medium font-medium text-gray-700">
-            Nombre del grupo
-          </label>
-          <Input
-            type="text"
-            name="groupName"
-            placeholder="Ingrese el nombre del grupo"
-            value={groupName}
-            onChange={(e) => setGroupName(e.target.value)}
-            error={error}
-          />
-        </div>
-
-        <div className="flex justify-end gap-2 mt-6">
+    <Modal
+      isOpen
+      onClose={onClose}
+      title="Editar Grupo"
+      size="sm"
+      closeOnBackdrop={false}
+      showCloseButton={false}
+      footer={
+        <>
           <Button variant="secondary" size="sm" onClick={onClose} disabled={saving}>
             Cancelar
           </Button>
           <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
-            Guardar
+            {saving ? "Guardando..." : "Guardar"}
           </Button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <Input
+        type="text"
+        label="Nombre del grupo"
+        name="groupName"
+        placeholder="Ingrese el nombre del grupo"
+        value={groupName}
+        onChange={(e) => {
+          setGroupName(e.target.value);
+          setError("");
+        }}
+        error={error}
+      />
+    </Modal>
   );
 }

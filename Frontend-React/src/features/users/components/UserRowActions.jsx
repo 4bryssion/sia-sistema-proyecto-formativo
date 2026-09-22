@@ -1,6 +1,6 @@
 import { Pencil, EllipsisVertical } from "lucide-react";
 
-import { Dropdown, DropdownTrigger, DropdownItem, DropdownContent, usePermissions } from "@/shared";
+import { Dropdown, DropdownTrigger, DropdownItem, DropdownContent, usePermissions, IconButton } from "@/shared";
 
 // Acciones de cada fila de usuarios.
 //
@@ -16,22 +16,21 @@ export default function UserRowActions({ users, onView, onEdit }) {
 
             {/* Botón editar */}
             {can("edit_user") && (
-            <button
+            <IconButton
                 onClick={() => onEdit?.(users.id)}
-                aria-label="Editar usuario"
-                className="p-1 rounded hover:bg-gray-900 cursor-pointer"
+                ariaLabel="Editar usuario"
+                hitSize={36}
+                iconSize={16}
             >
                 <Pencil size={16} /> {/* Icono de editar */}
-            </button>
+            </IconButton>
             )}
 
             {/* Botón option */}
             <Dropdown>
 
             <DropdownTrigger>
-                <button className="p-1 rounded hover:bg-gray-900 cursor-pointer" aria-label="Más opciones">
-                    <EllipsisVertical size={16} /> {/* Icono de opciones */}
-                </button>
+                <IconButton ariaLabel="Más opciones" hitSize={36} iconSize={16}><EllipsisVertical size={16} /></IconButton>
             </DropdownTrigger>
 
             <DropdownContent className="right-0">

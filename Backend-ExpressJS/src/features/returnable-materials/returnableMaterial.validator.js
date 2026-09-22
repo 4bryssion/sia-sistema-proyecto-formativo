@@ -31,6 +31,11 @@ const validateQuantityVsPlate = (value, helpers) => {
 export const createReturnableMaterialSchema = Joi.object({
   // (p48) Cuentadantes: uno o varios, ya no un userId suelto
   accountableIds: jsonList.required(),
+  // (p50) Cotizaciones que respaldan el precio: entre 1 y 3. Aquí solo se
+  // comprueba que el campo llegue y tenga forma de lista; cuántas son, si
+  // existen y si están habilitadas lo decide quotationService, que es quien
+  // puede consultarlo en la base de datos.
+  quotationIds: jsonList.required(),
   // (p48) La marca dejó de ser obligatoria
   brandId:      Joi.number().integer().positive().optional().allow('', null),
   // (p48) El inventario SÍ es obligatorio
@@ -57,6 +62,8 @@ export const createReturnableMaterialSchema = Joi.object({
 
 export const updateReturnableMaterialSchema = Joi.object({
   accountableIds: jsonList,
+  // (p50) Si no llega, la edición no tocó las cotizaciones
+  quotationIds: jsonList,
   brandId:        Joi.number().integer().positive().allow('', null),
   inventoryId:    Joi.number().integer().positive(),
   senaPlate:      Joi.string().max(20).allow('', null),

@@ -118,8 +118,33 @@
     .swal-btn-cancel:hover {
         background: var(--semantic-button-secundary-hover) !important;
     }
+    /* (p50) Tercer botón (Alert.elegir). Es el REFLEJO en CSS de la variante
+       `outline` del componente Button: SweetAlert dibuja sus propios <button> y
+       no admite un componente de React dentro, así que el aspecto se replica.
+       Si se cambia una, hay que cambiar la otra — hay una prueba que lo vigila. */
+    .swal-btn-deny {
+        background: transparent !important;
+        color: var(--semantic-text-primary) !important;
+        border-radius: 2rem !important;
+        padding: 0.5rem 2rem !important;
+        font-size: var(--semantic-font-size-body) !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+        border: 2px solid var(--semantic-button-secundary) !important;
+    }
+    .swal-btn-deny:hover {
+        background: var(--semantic-button-secundary) !important;
+        color: var(--semantic-text-inverse) !important;
+    }
     .swal-actions {
         gap: 2rem !important;
+    }
+    /* Solo la alerta de tres salidas: con 2rem entre tres botones no caben en
+       una pantalla estrecha. Se acota a su propia clase para no cambiar el resto
+       de las alertas del sistema, que siguen teniendo dos. */
+    .swal-popup-tres .swal-actions {
+        gap: 1rem !important;
+        flex-wrap: wrap !important;
     }
     /* Icono custom (triángulo de warning): sin borde circular default de swal */
     .swal-icon-plain {

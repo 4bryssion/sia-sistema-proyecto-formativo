@@ -41,6 +41,12 @@ import devolutionRoutes from './features/devolutions/devolution.routes.js';
 import taskRoutes from './features/tasks/task.routes.js';
 // (P43) Notificaciones / logs del sistema
 import notificationRoutes from './features/notifications/notification.routes.js';
+
+// (p50) Cotizaciones: PDF que respaldan el precio de los materiales.
+import quotationRoutes from './features/quotations/quotation.routes.js';
+
+// (p50) Auditoría: solo lectura y solo para el SADMIN.
+import auditRoutes from './features/audit/audit.routes.js';
 // (P43) Contexto de petición: expone el id del usuario autor para las notificaciones
 import { requestContextMiddleware } from './middleware/requestContext.js';
 
@@ -82,6 +88,8 @@ app.use('/api/permissions',          permissionRoutes);
 
 app.use('/api/groups', groupRoutes);
 
+app.use('/api/quotations',           quotationRoutes);
+app.use('/api/audit',                auditRoutes);
 app.use('/api/consumable-materials', consumableMaterialRoutes);
 
 app.use('/api/returnable-materials', returnableMaterialRoutes);

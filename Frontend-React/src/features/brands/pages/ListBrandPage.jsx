@@ -1,47 +1,66 @@
 import { useState } from "react";
-import { DataTable, IconButton, StatusFilterSelect } from "@/shared";
+import { DataTable, Button, IconButton, StatusFilterSelect } from "@/shared";
 import { brandColumns } from "../table/BrandsColumns";
 import { useBrands } from "../hooks/useBrands";
-import BrandRegisterForm from "../components/BrandRegisterForm";
-import { Undo2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Undo2 } from "lucide-react";
+import CreateBrandModal from "@/shared/components/brands/CreateBrandModal";
 
+// (p50) Estandarizado contra el listado de grupos.
+//
+// Antes esta pantalla era un panel partido: una columna negra de 380px con el
+// formulario de crear incrustado y la tabla al lado. Eso traía tres problemas:
+//
+//  - Ningún otro módulo del sistema se ve así, de modo que crear aquí no se
+//    parecía a crear en ninguna otra parte.
+//  - El formulario ocupaba espacio permanente para algo que se usa de vez en
+//    cuando, y a cambio le quitaba ancho a la tabla, que es lo que sí se mira.
+//  - La franja negra existía solo para que el formulario se distinguiera del
+//    fondo; con el formulario en un modal, deja de haber nada que distinguir.
+//
+// El modal de crear ya existía en shared —lo abre el formulario de materiales
+// con "Crear y asignar nueva marca"—, así que aquí no se construye nada nuevo:
+// se reutiliza el mismo, que además garantiza que crear desde el listado y
+// crear desde un material se comporten igual.
 export default function ListBrandPage() {
-    const navigate = useNavigate();
-    const [status, setStatus] = useState("active");
-    const { brands, loading, error, refetch } = useBrands(status);
+  const navigate = useNavigate();
+  const [status, setStatus] = useState("active");
+  const { brands, loading, error, refetch } = useBrands(status);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-    return (
-        <div className="p-6">
+  return (
+    <div className="p-6">
 
-            <div className="mb-6">
-                <IconButton ariaLabel="Devolverse" onClick={() => navigate(-1)}>
-                    <Undo2 strokeWidth={2.8} />
-                </IconButton>
-            </div>
-
-            <div className="grid grid-cols-1 1400:grid-cols-[380px_1fr]">
-
-                <div className="bg-black p-16 1400:h-full flex items-center justify-center">
-                    <BrandRegisterForm onSuccess={refetch} />
-                </div>
-
-                <div className="bg-white p-6">
-                    <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-                        <h1 className="font-main text-h2 font-bold">Marcas</h1>
-                        <StatusFilterSelect value={status} onChange={setStatus} />
-                    </div>
-
-                    {loading ? (
-                        <p className="text-gray-600">Cargando marcas...</p>
-                    ) : error ? (
-                        <p className="text-error">{error}</p>
-                    ) : (
-                        <DataTable data={brands} columns={brandColumns(refetch)} />
-                    )}
-                </div>
-
-            </div>
+      <div className="flex justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <IconButton ariaLabel="Devolverse" onClick={() => navigate(-1)}>
+            <Undo2 strokeWidth={2.8} />
+          </IconButton>
+          <h1 className="font-main font-semibold mb-0 text-h3 sm:text-h2">Marcas</h1>
         </div>
-    );
+
+        <div className="grid sm:flex gap-6 items-center">
+          <StatusFilterSelect value={status} onChange={setStatus} />
+
+          <Button variant="primary" onClick={() => setIsCreateOpen(true)}>
+            Crear Marca
+          </Button>
+        </div>
+      </div>
+
+      {loading ? (
+        <p className="font-secondary text-body text-text-muted">Cargando marcas...</p>
+      ) : error ? (
+        <p className="font-secondary text-body text-error">{error}</p>
+      ) : (
+        <DataTable data={brands} columns={brandColumns(refetch)} />
+      )}
+
+      <CreateBrandModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSave={refetch}
+      />
+    </div>
+  );
 }

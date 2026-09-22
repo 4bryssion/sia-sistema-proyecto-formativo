@@ -26,6 +26,18 @@ export const MIN_TECHNICAL_SHEETS = 1;
 // reservado para que la caja no cambie de tamaño al ir agregando archivos.
 export const FILE_SLOTS = 3;
 
+// (p49) Huecos reservados en los FORMULARIOS (crear y editar material).
+//
+// Uno, no tres: en un paso de modal, reservar el hueco de tres
+// previsualizaciones deja un vacío enorme mientras solo hay un archivo. Con uno
+// reservado la caja ya no salta de tamaño al cargar el primero —que es el
+// problema que `slots` resuelve— y los demás archivos se recorren con las
+// flechas del propio FileInput.
+//
+// FILE_SLOTS sigue en 3 porque lo usa el panel de VISUALIZAR, donde las tres
+// miniaturas se ven a la vez y no hay nada que reservar: ya están todas.
+export const FORM_PREVIEW_SLOTS = 1;
+
 // La ficha técnica es documentación, no fotografía: no acepta imágenes.
 // Debe coincidir con ALLOWED_BY_FIELD.technical_sheet del backend
 // (middleware/multerConfig.js), que es quien realmente rechaza el archivo.

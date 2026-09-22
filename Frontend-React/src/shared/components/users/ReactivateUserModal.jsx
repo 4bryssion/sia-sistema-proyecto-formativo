@@ -89,6 +89,9 @@ function ReactivateBody({ user, onClose, onReactivated }) {
       title="Reactivar usuario"
       size="sm"
       closeOnBackdrop={false}
+      // La X va fuera de la tarjeta, en la esquina: es la regla del proyecto
+      // para los modales de formulario (dentro le restaba espacio al contenido).
+      closeButtonOutside
       showCloseButton={false}
       footer={
         <>

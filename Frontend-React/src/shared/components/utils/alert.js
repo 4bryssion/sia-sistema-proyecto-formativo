@@ -17,6 +17,8 @@ const baseConfig = {
     title: "swal-title",
     htmlContainer: "swal-content",
     confirmButton: "swal-btn-confirm",
+    // (p50) Tercer botón, solo lo usa Alert.elegir
+    denyButton: "swal-btn-deny",
     cancelButton: "swal-btn-cancel",
     actions: "swal-actions",
   },
@@ -78,8 +80,13 @@ export const Alert = {
     return result;
   },
 
-  // Confirmación neutra (ej. cerrar sesión, enviar datos): el usuario decide
-  confirm: async (title, text = "") => {
+  // Confirmación neutra (ej. cerrar sesión, enviar datos): el usuario decide.
+  //
+  // (p49) Los textos de los botones son configurables porque hay confirmaciones
+  // donde "Confirmar/Cancelar" no dice nada: en el aviso de inactividad las
+  // opciones reales son "Sigo aquí" y "Cerrar sesión", y con los textos genéricos
+  // el usuario no sabe cuál de los dos lo deja dentro.
+  confirm: async (title, text = "", { confirmText = "Confirmar", cancelText = "Cancelar" } = {}) => {
     const result = await Swal.fire({
       ...baseConfig,
       icon: "question",
@@ -87,8 +94,36 @@ export const Alert = {
       title,
       text,
       showCancelButton: true,
-      confirmButtonText: "Confirmar",
-      cancelButtonText: "Cancelar",
+      confirmButtonText: confirmText,
+      cancelButtonText: cancelText,
+      reverseButtons: true,
+      allowOutsideClick: false,
+    });
+    return result;
+  },
+
+  // (p50) Decisión de TRES salidas. Nació para los archivos repetidos, donde las
+  // opciones reales son tres y ninguna es "cancelar" disfrazada: usar la que ya
+  // existe, cargar una copia aparte, o no hacer nada.
+  //
+  // Devuelve el resultado de SweetAlert tal cual: isConfirmed / isDenied /
+  // isDismissed. Se deja así, y no se traduce a un string, para que sea el mismo
+  // objeto que devuelven `confirm` y `warning`.
+  elegir: async (title, text = "", { confirmText, denyText, cancelText = "Cancelar" } = {}) => {
+    const result = await Swal.fire({
+      ...baseConfig,
+      // Clase propia para separar menos los botones: tres con la separación
+      // normal no caben en una pantalla estrecha.
+      customClass: { ...baseConfig.customClass, popup: "swal-popup swal-popup-tres" },
+      icon: "question",
+      iconColor: "var(--color-secondary-950)",
+      title,
+      text,
+      showDenyButton: true,
+      showCancelButton: true,
+      confirmButtonText: confirmText,
+      denyButtonText: denyText,
+      cancelButtonText: cancelText,
       reverseButtons: true,
       allowOutsideClick: false,
     });

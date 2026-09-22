@@ -7,8 +7,8 @@ import { Search, ChevronDown, Check } from "lucide-react";
  * Primarias (prop `variant`):
  * - "basic" (por defecto): el <select> nativo de siempre.
  * - "search": listado propio cuya PRIMERA fila es un buscador (icono de lupa +
- *   campo "Escribe aquí para buscar"). Filtra las opciones y muestra un máximo
- *   de `maxMatches` coincidencias dentro de las mismas filas del select.
+ *   campo "Escribe aquí para buscar"). Filtra las opciones y las muestra dentro
+ *   de las mismas filas del select.
  *
  * Secundaria (prop `multiple`): selección de VARIAS opciones con casillas.
  * Se combina con cualquiera de las dos primarias:
@@ -18,16 +18,46 @@ import { Search, ChevronDown, Check } from "lucide-react";
  * "basic": un <select multiple> del navegador no dibuja casillas y se maneja con
  * Ctrl+clic, que es justo lo que se quiere evitar.
  *
+ * (p50) Dos capacidades más, ambas opcionales y pensadas para el select de
+ * cotizaciones, pero escritas en general porque no tienen nada de específico:
+ *
+ * - `maxSelected`: tope de opciones marcables. Al llegar al tope, las que NO
+ *   estén marcadas se deshabilitan en vez de desaparecer — quitarlas de la lista
+ *   haría creer que ya no existen, y lo que pasa es que hay que soltar una para
+ *   poder tomar otra. Las marcadas siguen pulsables para poder desmarcarlas.
+ *
+ * - `onPreview`: si se pasa, cada fila lleva un botón propio a la derecha (un
+ *   ojo, por ejemplo) que llama a `onPreview(opcion)` SIN tocar la selección.
+ *   Sirve para mirar el documento antes de decidir si asignarlo.
+ *   Va como hermano del botón de la fila y no dentro: un <button> dentro de otro
+ *   es HTML inválido y el navegador lo reordena por su cuenta.
+ *
  * La API es la misma en todos los casos (name/value/onChange/options/error), así
  * que cambiar de variante es agregar una prop: no hay que tocar el formulario.
  * En `multiple`, `value` es un ARRAY y el onChange emite un array.
  * `required` pinta el asterisco de campo obligatorio junto al label.
  */
 
-// Tope de coincidencias por defecto. Es una prop y no una constante fija porque
-// el alto disponible cambia según dónde esté el select: en el panel de accesos
-// solo caben 4 filas sin que el desplegable tape el contenido de abajo.
-const MAX_MATCHES_POR_DEFECTO = 5;
+// (p50) Cuántas filas se VEN antes de tener que desplazarse.
+//
+// Antes esta prop recortaba la lista: con 13 cotizaciones y un tope de 5, las
+// otras 8 sencillamente no existían para quien no supiera su nombre — y si una
+// de ellas ya estaba asignada, no había forma de verla ni de quitarla.
+//
+// Ahora el tope es de ALTURA, no de datos: se dibujan todas y la caja mide lo
+// que midan `filasVisibles` filas. Quien sabe el nombre lo escribe; quien no,
+// baja con la rueda.
+//
+// Sigue siendo una prop porque el alto disponible cambia según dónde esté el
+// select: en el panel de accesos solo caben 4 filas sin que el desplegable tape
+// el contenido de abajo.
+const FILAS_VISIBLES_POR_DEFECTO = 5;
+
+// Alto aproximado de una fila (py-2 + una línea de texto), en rem para que siga
+// al tamaño de fuente en vez de a un número de píxeles. Si una etiqueta larga
+// parte en dos líneas, la última fila asoma a medias — y eso es justo la señal
+// de que hay más abajo.
+const ALTO_FILA_REM = 2.5;
 
 export default function Select({
     label,
@@ -43,7 +73,15 @@ export default function Select({
     required = false,
     disabled = false,
     placeholder = "Seleccione una opción",
-    maxMatches = MAX_MATCHES_POR_DEFECTO,
+    filasVisibles = FILAS_VISIBLES_POR_DEFECTO,
+    // (p50) Tope de opciones marcables (solo con `multiple`)
+    maxSelected,
+    // (p50) Acción por fila que NO cambia la selección: recibe la opción
+    onPreview,
+    // Qué icono dibuja ese botón. Se pasa como nodo para que el consumidor elija
+    // el suyo sin que este componente tenga que conocerlos todos.
+    previewIcon,
+    previewLabel = "Ver",
     // Qué decir cuando hay varios elegidos y no caben todos en el disparador
     resumenSeleccion,
     // Mismo criterio que en Input: el ancho es una prop, no algo a sobrescribir
@@ -96,16 +134,29 @@ export default function Select({
         return `${etiqueta(seleccionados[0])} y ${seleccionados.length - 1} más`;
     }, [multiple, seleccionados, options, resumenSeleccion]);
 
-    // Coincidencias del buscador. Sin buscador (multiple + basic) se muestran
-    // todas y el desplegable se recorre con la barra de desplazamiento.
+    // Coincidencias del buscador. Ya NO se recortan: la caja limita el alto y el
+    // resto se alcanza desplazándose.
+    //
+    // (p50) En selección múltiple lo ya elegido va PRIMERO. Sin esto, con una
+    // lista larga, lo que tienes asignado podía quedar tan abajo que ni sabías
+    // que estaba marcado ni podías desmarcarlo. Que se reordene al marcar es
+    // deliberado: deja siempre a la vista lo que llevas elegido, que es lo que
+    // hay que revisar antes de guardar.
     const matches = useMemo(() => {
-        if (!isSearch) return options;
-        const q = query.trim().toLowerCase();
-        const list = q
+        const q = isSearch ? query.trim().toLowerCase() : "";
+        const lista = q
             ? options.filter((o) => String(o.label).toLowerCase().includes(q))
             : options;
-        return list.slice(0, maxMatches);
-    }, [options, query, isSearch, maxMatches]);
+
+        if (!multiple || seleccionados.length === 0) return lista;
+
+        const elegidas = [];
+        const resto = [];
+        for (const o of lista) {
+            (seleccionados.includes(String(o.value ?? o.id)) ? elegidas : resto).push(o);
+        }
+        return [...elegidas, ...resto];
+    }, [options, query, isSearch, multiple, seleccionados]);
 
     // Emite un evento con la misma forma que el <select> nativo, para que los
     // handleChange existentes (e.target.name / e.target.value) sigan funcionando
@@ -115,11 +166,19 @@ export default function Select({
         setQuery("");
     };
 
+    // (p50) ¿Se llegó al tope? Con el tope alcanzado solo se puede desmarcar.
+    const topeAlcanzado = multiple && maxSelected != null && seleccionados.length >= maxSelected;
+
     // En múltiple el desplegable NO se cierra al elegir: lo normal es marcar
     // varios seguidos, y cerrarlo obligaría a reabrirlo en cada uno.
     const toggleSeleccion = (val) => {
         const v = String(val);
-        const siguiente = seleccionados.includes(v)
+        const yaEstaba = seleccionados.includes(v);
+        // Se comprueba también aquí y no solo deshabilitando el botón: el tope es
+        // una regla de datos, y dejarla únicamente en el atributo `disabled` la
+        // volvería decorativa ante cualquier otra vía de entrada.
+        if (!yaEstaba && topeAlcanzado) return;
+        const siguiente = yaEstaba
             ? seleccionados.filter((x) => x !== v)
             : [...seleccionados, v];
         onChange?.({ target: { name, value: siguiente } });
@@ -278,9 +337,15 @@ export default function Select({
                             </div>
                         )}
 
-                        {/* Filas del propio select. Con búsqueda, como máximo
-                            `maxMatches` coincidencias. */}
-                        <ul className="max-h-60 overflow-y-auto" role="listbox" aria-multiselectable={multiple}>
+                        {/* Filas del propio select. Se dibujan TODAS; lo que
+                            limita `filasVisibles` es cuántas se ven antes de
+                            tener que desplazarse. */}
+                        <ul
+                            className="overflow-y-auto"
+                            style={{ maxHeight: `${filasVisibles * ALTO_FILA_REM}rem` }}
+                            role="listbox"
+                            aria-multiselectable={multiple}
+                        >
                             {matches.length === 0 && (
                                 <li className="px-3 py-2 font-secondary text-text-muted">
                                     {isSearch ? "Sin coincidencias" : "Sin opciones"}
@@ -292,17 +357,25 @@ export default function Select({
                                 const marcado = multiple
                                     ? seleccionados.includes(v)
                                     : String(opt.value) === String(value);
+                                // (p50) Con el tope alcanzado, lo no marcado se
+                                // deshabilita: sigue a la vista —para que se
+                                // entienda que existe— pero no se puede tomar sin
+                                // soltar otra antes.
+                                const bloqueada = topeAlcanzado && !marcado;
                                 return (
-                                    <li key={opt.value ?? opt.id}>
+                                    <li key={opt.value ?? opt.id} className="flex items-stretch">
                                         <button
                                             type="button"
                                             role="option"
                                             aria-selected={marcado}
+                                            disabled={bloqueada}
+                                            title={bloqueada ? `Ya tienes ${maxSelected} seleccionadas. Quita una para elegir otra.` : undefined}
                                             onClick={() => (multiple ? toggleSeleccion(opt.value) : emit(opt.value))}
                                             className={`
-                                                w-full px-3 py-2 text-left font-secondary cursor-pointer
+                                                flex-1 min-w-0 px-3 py-2 text-left font-secondary
                                                 flex items-center gap-2
-                                                hover:bg-neutral-100
+                                                enabled:cursor-pointer enabled:hover:bg-neutral-100
+                                                disabled:cursor-not-allowed disabled:opacity-50
                                                 ${marcado && !multiple ? "font-semibold" : ""}
                                             `}
                                         >
@@ -325,6 +398,21 @@ export default function Select({
                                             )}
                                             <span className="truncate">{opt.label}</span>
                                         </button>
+
+                                        {/* Acción de fila, hermana del botón de
+                                            selección: mirar no es elegir, y
+                                            anidar botones es HTML inválido. */}
+                                        {onPreview && (
+                                            <button
+                                                type="button"
+                                                onClick={() => onPreview(opt)}
+                                                aria-label={`${previewLabel}: ${opt.label}`}
+                                                title={previewLabel}
+                                                className="shrink-0 px-3 cursor-pointer text-text-muted hover:bg-neutral-100 hover:text-text-primary"
+                                            >
+                                                {previewIcon}
+                                            </button>
+                                        )}
                                     </li>
                                 );
                             })}
@@ -336,7 +424,11 @@ export default function Select({
                         {multiple && (
                             <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2">
                                 <span className="font-secondary text-caption text-text-muted">
-                                    {seleccionados.length} seleccionado{seleccionados.length === 1 ? "" : "s"}
+                                    {/* Con tope se muestra "2 de 3": saber cuántas
+                                        caben todavía evita el intento fallido. */}
+                                    {maxSelected != null
+                                        ? `${seleccionados.length} de ${maxSelected} seleccionada${maxSelected === 1 ? "" : "s"}`
+                                        : `${seleccionados.length} seleccionado${seleccionados.length === 1 ? "" : "s"}`}
                                 </span>
                                 <button
                                     type="button"

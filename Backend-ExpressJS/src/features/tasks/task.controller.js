@@ -2,7 +2,7 @@ import { taskService } from './task.service.js';
 
 export const taskController = {
   async getAll(req, res, next) {
-    try { res.json(await taskService.getAll()); }
+    try { res.json(await taskService.getAll(req.query.status)); }
     catch (err) { next(err); }
   },
 
@@ -27,6 +27,19 @@ export const taskController = {
     try {
       const data = await taskService.update(Number(req.params.id), req.body);
       res.json({ mensaje: 'Tarea actualizada.', data });
+    } catch (err) { next(err); }
+  },
+
+  // (p50) Cambiar SOLO el estado. `puedeEditarTodas` lo resuelve la ruta.
+  async setStatus(req, res, next) {
+    try {
+      const data = await taskService.setStatus(
+        Number(req.params.id),
+        Number(req.user.id),
+        req.body?.status,
+        req.puedeEditarTareas === true,
+      );
+      res.json({ mensaje: 'Estado de la tarea actualizado.', data });
     } catch (err) { next(err); }
   },
 

@@ -1,6 +1,8 @@
-import { notify } from '../notifications/notification.service.js';
 import { returnableMaterialRepository } from './returnableMaterial.repository.js';
 import { deleteFiles, parseOrden, resolverOrden } from '../../shared/orderedFiles.js';
+// (p50) Cotizaciones: la regla y el parseo viven en su propio módulo; aquí solo
+// se consumen. Un material necesita entre 1 y 3 para poder guardarse.
+import { quotationService, parseQuotationIds } from '../quotations/quotation.service.js';
 
 // Topes por material. Multer ya corta al subir, pero la edición puede combinar
 // archivos conservados + nuevos y ahí no interviene multer.
@@ -128,7 +130,10 @@ export const returnableMaterialService = {
 
     const data = parseCampos(bodyData);
     const accountableIds = parseAccountables(data.accountableIds);
+    // (p50) Cotizaciones que respaldan el precio: obligatorias al crear
+    const quotationIds = parseQuotationIds(data.quotationIds);
     delete data.accountableIds;
+    delete data.quotationIds;
     // En create el orden es el de subida: si llegaran, se descartan
     delete data.imageOrder;
     delete data.sheetOrder;
@@ -136,6 +141,13 @@ export const returnableMaterialService = {
     if (accountableIds === undefined) abortar('Debe asignar al menos un cuentadante.');
     try {
       await validarCuentadantes(accountableIds);
+    } catch (err) {
+      abortar(err.message);
+    }
+
+    let cotizaciones;
+    try {
+      cotizaciones = await quotationService.validarAsignacion(quotationIds ?? []);
     } catch (err) {
       abortar(err.message);
     }
@@ -149,17 +161,8 @@ export const returnableMaterialService = {
         accountableIds,
         imagenes.map((f, i) => aImagen(f, i)),
         fichas.map((f, i) => aFicha(f, i)),
+        cotizaciones,
       );
-      // El repositorio crea desde la tabla PADRE: lo que vuelve ya es el
-      // material de consumo (con `returnable` dentro), no un envoltorio.
-      // Leerlo como `created.consumableMaterial` dejaba la notificación con el
-      // nombre vacío y la cantidad en 1.
-      const cm = created ?? {};
-      notify({
-        title: 'Material devolutivo creado',
-        description: `Se creó "${cm.materialName ?? ''}" con cantidad ${cm.quantity ?? 1}${cm.senaPlate ? ` (placa ${cm.senaPlate})` : ''}.`,
-        module: 'returnable-materials',
-      });
       return created;
     } catch (err) {
       deleteFiles(subidos);
@@ -183,14 +186,23 @@ export const returnableMaterialService = {
     const ordenImagenes  = parseOrden(data.imageOrder, 'las imágenes');
     const ordenFichas    = parseOrden(data.sheetOrder, 'las fichas técnicas');
     const accountableIds = parseAccountables(data.accountableIds);
+    const quotationIds   = parseQuotationIds(data.quotationIds);
     delete data.imageOrder;
     delete data.sheetOrder;
     delete data.accountableIds;
+    delete data.quotationIds;
 
     const { consumo, devolutivo } = separar(data);
 
     try {
       if (accountableIds !== undefined) await validarCuentadantes(accountableIds);
+
+      // (p50) undefined = la edición no tocó las cotizaciones. Si llegan, valen
+      // las mismas reglas que al crear: entre 1 y 3, existentes y habilitadas.
+      const cotizaciones =
+        quotationIds === undefined
+          ? undefined
+          : await quotationService.validarAsignacion(quotationIds);
 
       // Un material sin placa necesita cantidad, y al revés. Joi lo comprueba al
       // CREAR, pero al editar solo ve los campos que llegan: aquí se compara el
@@ -229,7 +241,7 @@ export const returnableMaterialService = {
       if (huerfanos.length) deleteFiles(huerfanos);
 
       const resultado = await returnableMaterialRepository.update(
-        id, consumo, devolutivo, accountableIds, imagenes.ops, fichas.ops,
+        id, consumo, devolutivo, accountableIds, imagenes.ops, fichas.ops, cotizaciones,
       );
 
       // Los archivos del disco se borran DESPUÉS de que la transacción confirmó:
@@ -237,17 +249,6 @@ export const returnableMaterialService = {
       const eliminados = [...imagenes.rutasEliminadas, ...fichas.rutasEliminadas];
       if (eliminados.length) deleteFiles(eliminados);
 
-      // Igual que en create: el repositorio devuelve el material de consumo
-      const cmNew = resultado ?? {};
-      const cambioCantidad =
-        consumo.quantity !== undefined && Number(consumo.quantity) !== Number(padre.quantity)
-          ? ` Cantidad: ${padre.quantity ?? 1} → ${cmNew.quantity ?? 1}.`
-          : '';
-      notify({
-        title: cambioCantidad ? 'Cantidad de material modificada' : 'Material devolutivo modificado',
-        description: `Se actualizó "${cmNew.materialName ?? ''}".${cambioCantidad}`,
-        module: 'returnable-materials',
-      });
       return resultado;
     } catch (err) {
       // Solo se limpian los archivos RECIÉN subidos: los que ya estaban en BD
@@ -261,12 +262,6 @@ export const returnableMaterialService = {
     const record = await returnableMaterialService.getById(id);
     const currentIsActive = record.consumableMaterial.isActive;
     const updated = await returnableMaterialRepository.toggle(id, !currentIsActive);
-    notify({
-      title: !currentIsActive ? 'Material devolutivo activado' : 'Material devolutivo desactivado',
-      description: `El material devolutivo #${id} quedó ${!currentIsActive ? 'activo' : 'inactivo'}.`,
-      severity: !currentIsActive ? 'Informativa' : 'Advertencia',
-      module: 'returnable-materials',
-    });
     return updated;
   },
 };

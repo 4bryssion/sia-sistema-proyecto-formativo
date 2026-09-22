@@ -1,6 +1,6 @@
-import { notify } from '../notifications/notification.service.js';
 import { consumableMaterialRepository } from './consumableMaterial.repository.js';
 import { deleteFiles, parseOrden, resolverOrden } from '../../shared/orderedFiles.js';
+import { quotationService, parseQuotationIds } from '../quotations/quotation.service.js';
 
 // Topes por material. Multer ya corta al subir, pero la edición puede combinar
 // archivos conservados + nuevos y ahí no interviene multer.
@@ -34,6 +34,10 @@ const aFicha = (file, sortOrder) => ({
 
 // Los cuentadantes viajan como JSON dentro del multipart, igual que imageOrder y
 // sheetOrder: un FormData no puede llevar un array sin serializarlo.
+// (p50) Cotizaciones: la regla y el parseo viven en su propio módulo; aquí solo
+// se consumen. Un material necesita entre 1 y 3 para poder guardarse.
+const parseCotizaciones = parseQuotationIds;
+
 const parseAccountables = (raw) => {
   if (raw === undefined || raw === '') return undefined; // la edición no los tocó
   let lista;
@@ -119,9 +123,20 @@ export const consumableMaterialService = {
     delete data.imageOrder;
     delete data.sheetOrder;
 
+    // (p50) Cotizaciones que respaldan el precio: obligatorias al crear.
+    const quotationIds = parseCotizaciones(data.quotationIds);
+    delete data.quotationIds;
+
     if (accountableIds === undefined) abortar('Debe asignar al menos un cuentadante.');
     try {
       await validarCuentadantes(accountableIds);
+    } catch (err) {
+      abortar(err.message);
+    }
+
+    let cotizaciones;
+    try {
+      cotizaciones = await quotationService.validarAsignacion(quotationIds ?? []);
     } catch (err) {
       abortar(err.message);
     }
@@ -132,12 +147,8 @@ export const consumableMaterialService = {
         accountableIds,
         imagenes.map((f, i) => aImagen(f, i)),
         fichas.map((f, i) => aFicha(f, i)),
+        cotizaciones,
       );
-      notify({
-        title: 'Material de consumo creado',
-        description: `Se creó "${created.materialName}" con cantidad ${created.quantity ?? 1}${created.senaPlate ? ` (placa ${created.senaPlate})` : ''}.`,
-        module: 'consumable-materials',
-      });
       return created;
     } catch (err) {
       deleteFiles(subidos);
@@ -158,12 +169,25 @@ export const consumableMaterialService = {
     const ordenImagenes = parseOrden(data.imageOrder, 'las imágenes');
     const ordenFichas   = parseOrden(data.sheetOrder, 'las fichas técnicas');
     const accountableIds = parseAccountables(data.accountableIds);
+    const quotationIds   = parseCotizaciones(data.quotationIds);
     delete data.imageOrder;
     delete data.sheetOrder;
     delete data.accountableIds;
+    delete data.quotationIds;
 
     try {
       if (accountableIds !== undefined) await validarCuentadantes(accountableIds);
+
+      // (p50) Cotizaciones. undefined = la edición no las tocó y se dejan como
+      // están; si llegan, valen las mismas reglas que al crear (entre 1 y 3,
+      // existentes y habilitadas). El formulario siempre las manda, así que un
+      // material antiguo sin ninguna no se podrá guardar hasta asignarle una —
+      // es el comportamiento acordado para que ningún material quede sin
+      // respaldo de precio.
+      const cotizaciones =
+        quotationIds === undefined
+          ? undefined
+          : await quotationService.validarAsignacion(quotationIds);
 
       // Un material sin placa necesita cantidad, y al revés. Joi lo comprueba al
       // CREAR, pero al editar solo ve los campos que llegan: aquí se compara el
@@ -202,7 +226,7 @@ export const consumableMaterialService = {
       if (huerfanos.length) deleteFiles(huerfanos);
 
       const resultado = await consumableMaterialRepository.update(
-        id, data, accountableIds, imagenes.ops, fichas.ops,
+        id, data, accountableIds, imagenes.ops, fichas.ops, cotizaciones,
       );
 
       // Los archivos del disco se borran DESPUÉS de que la transacción confirmó:
@@ -210,15 +234,6 @@ export const consumableMaterialService = {
       const eliminados = [...imagenes.rutasEliminadas, ...fichas.rutasEliminadas];
       if (eliminados.length) deleteFiles(eliminados);
 
-      const cambioCantidad =
-        data.quantity !== undefined && Number(data.quantity) !== Number(actual.quantity)
-          ? ` Cantidad: ${actual.quantity ?? 1} → ${resultado.quantity ?? 1}.`
-          : '';
-      notify({
-        title: cambioCantidad ? 'Cantidad de material modificada' : 'Material de consumo modificado',
-        description: `Se actualizó "${resultado.materialName}".${cambioCantidad}`,
-        module: 'consumable-materials',
-      });
       return resultado;
     } catch (err) {
       // Solo se limpian los archivos RECIÉN subidos: los que ya estaban en BD
@@ -231,12 +246,6 @@ export const consumableMaterialService = {
   async toggle(id) {
     const record = await consumableMaterialService.getById(id);
     const updated = await consumableMaterialRepository.toggle(id, !record.isActive);
-    notify({
-      title: updated.isActive ? 'Material de consumo activado' : 'Material de consumo desactivado',
-      description: `"${updated.materialName}" quedó ${updated.isActive ? 'activo' : 'inactivo'}.`,
-      severity: updated.isActive ? 'Informativa' : 'Advertencia',
-      module: 'consumable-materials',
-    });
     return updated;
   },
 };

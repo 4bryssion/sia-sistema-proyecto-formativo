@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { X, FileText } from "lucide-react";
+import { FileText, Coins } from "lucide-react";
 import { IconButton } from "../IconButton";
+import ImageZoom from "../ImageZoom";
 import { Dropdown, DropdownTrigger, DropdownContent, DropdownItem } from "../DropdownContext";
 import { getStatusLabel } from "@/shared/utils/materialStatusLabel";
 import { API_FILES, FILE_SLOTS } from "@/shared/utils/materialFiles";
@@ -22,6 +22,12 @@ import { API_FILES, FILE_SLOTS } from "@/shared/utils/materialFiles";
 export default function MaterialIdentityPanel({
     images = [],
     sheets = [],
+    // (p50) Cotizaciones que respaldan el precio. Se muestran igual que la ficha
+    // técnica —mismo botón, misma lista desplegable cuando hay varias— porque son
+    // lo mismo desde el punto de vista de quien consulta: documentos del material
+    // que se abren para leerlos. Lo único que cambia es el icono, para poder
+    // distinguirlas de un vistazo.
+    quotations = [],
     name,
     status,
     isActive,
@@ -49,6 +55,7 @@ export default function MaterialIdentityPanel({
     const actual = images[indice];
 
     const openSheet = (sheet) => window.open(`${API_FILES}${sheet.fileUrl}`, "_blank");
+    const openQuotation = (q) => window.open(`${API_FILES}${q.fileUrl}`, "_blank");
 
     return (
         <>
@@ -163,38 +170,65 @@ export default function MaterialIdentityPanel({
                                 : "Sin ficha técnica"}
                     </span>
                 </div>
+
+                {/* (p50) Cotizaciones: idéntico a la ficha técnica en estructura
+                    y comportamiento. El icono de monedas apiladas es lo único que
+                    las distingue — con el mismo icono de documento no se sabría
+                    cuál de los dos botones abre qué. */}
+                <div className="flex items-center gap-2">
+                    {quotations.length > 1 ? (
+                        <Dropdown>
+                            <DropdownTrigger>
+                                <IconButton ariaLabel="Ver cotizaciones" hitSize={40} iconSize={20}>
+                                    <Coins />
+                                </IconButton>
+                            </DropdownTrigger>
+                            <DropdownContent className="w-64">
+                                {quotations.map((q) => (
+                                    <DropdownItem key={q.id} onClick={() => openQuotation(q)}>
+                                        <span className="font-secondary text-small wrap-break-word">
+                                            {q.fileName}
+                                        </span>
+                                    </DropdownItem>
+                                ))}
+                            </DropdownContent>
+                        </Dropdown>
+                    ) : (
+                        <IconButton
+                            ariaLabel="Ver cotización"
+                            hitSize={40}
+                            iconSize={20}
+                            disabled={!quotations.length}
+                            onClick={() => quotations[0] && openQuotation(quotations[0])}
+                            className="disabled:opacity-40"
+                        >
+                            <Coins />
+                        </IconButton>
+                    )}
+                    <span className="font-secondary text-small text-text-muted">
+                        {quotations.length > 1
+                            ? `Cotizaciones (${quotations.length})`
+                            : quotations.length === 1
+                                ? "Cotización"
+                                : "Sin cotización"}
+                    </span>
+                </div>
             </div>
 
-            {zoom && actual && createPortal(
-                <div
-                    className="fixed inset-0 z-110 flex items-center justify-center bg-black/80 p-6 cursor-zoom-out"
-                    onClick={() => setZoom(false)}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label={`Imagen de ${name}`}
-                >
-                    <div className="absolute top-4 right-4">
-                        <IconButton ariaLabel="Cerrar imagen" variant="onColor" onClick={() => setZoom(false)}>
-                            <X strokeWidth={2.5} />
-                        </IconButton>
-                    </div>
-                    {/* Caja de tamaño definido y la imagen al 100% dentro: con solo
-                        `max-h/max-w` una imagen pequeña se quedaba en su tamaño
-                        original y la "ampliación" no ampliaba nada.
-                        Medidas al 70% de las iniciales (900px/85vh): a tamaño
-                        completo la imagen ocupaba casi toda la pantalla. */}
-                    <div
-                        className="w-[min(63vw,630px)] h-[60vh] grid place-items-center"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <img
-                            src={`${API_FILES}${actual.imageUrl}`}
-                            alt={name}
-                            className="w-full h-full object-contain rounded-xl cursor-default"
-                        />
-                    </div>
-                </div>,
-                document.body,
+            {/* (p50) Visor compartido: ver ImageZoom. Estaba escrito igual aquí,
+                en ver usuario y en ver préstamo. */}
+            {actual && (
+            <ImageZoom
+                isOpen={zoom}
+                onClose={() => setZoom(false)}
+                label={`Imagen de ${name}`}
+            >
+                <img
+                    src={`${API_FILES}${actual?.imageUrl}`}
+                    alt={name}
+                    className="w-full h-full object-contain rounded-xl cursor-default"
+                />
+            </ImageZoom>
             )}
         </>
     );

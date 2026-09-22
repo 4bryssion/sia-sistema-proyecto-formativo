@@ -1,6 +1,6 @@
 import { Pencil, EllipsisVertical, ArrowLeftRight } from "lucide-react";
 
-import { Dropdown, DropdownTrigger, DropdownItem, DropdownContent, Alert, usePermissions } from "@/shared";
+import { Dropdown, DropdownTrigger, DropdownItem, DropdownContent, Alert, usePermissions, IconButton} from "@/shared";
 import { getLoanStatusLabel } from "../utils/loanStatusLabel";
 import { getAuthorizeActionLabel } from "@/shared/utils/devolutionLabels";
 
@@ -16,16 +16,14 @@ export default function LoanRowActions({ loan, devolution, onView, onEdit, onRet
             <div className="flex gap-2 justify-end">
                 <Dropdown>
                     <DropdownTrigger>
-                        <button className="p-1 rounded hover:bg-gray-900 cursor-pointer" aria-label="Más opciones">
-                            <EllipsisVertical size={16} />
-                        </button>
+                        <IconButton ariaLabel="Más opciones" hitSize={36} iconSize={16}><EllipsisVertical size={16} /></IconButton>
                     </DropdownTrigger>
 
                     <DropdownContent className="right-0 w-64">
                         {devolution.status === "Autorizada" ? (
                             // Ya autorizada: la fila es histórico, no queda nada
                             // por hacer con ella
-                            <DropdownItem className="opacity-60">
+                            <DropdownItem disabled className="opacity-60">
                                 Devolución ya autorizada
                             </DropdownItem>
                         ) : can("authorize_devolution") ? (
@@ -33,7 +31,7 @@ export default function LoanRowActions({ loan, devolution, onView, onEdit, onRet
                                 {getAuthorizeActionLabel(devolution)}
                             </DropdownItem>
                         ) : (
-                            <DropdownItem className="opacity-60">
+                            <DropdownItem disabled className="opacity-60">
                                 Sin permiso para autorizar
                             </DropdownItem>
                         )}
@@ -75,30 +73,16 @@ export default function LoanRowActions({ loan, devolution, onView, onEdit, onRet
             {/* Editar/retornar: ocultos para roles de solo lectura (INV y nuevos) */}
             {(can("update_loan") || can("create_loan_return")) && (
             <>
-            <button
-                onClick={handleEdit}
-                aria-label="Editar préstamo"
-                className="p-1 rounded hover:bg-gray-900 cursor-pointer"
-            >
-                <Pencil size={16} />
-            </button>
+            <IconButton onClick={handleEdit} ariaLabel="Editar préstamo" hitSize={36} iconSize={16}><Pencil size={16} /></IconButton>
 
-            <button
-                onClick={handleReturn}
-                aria-label="Retornar préstamo"
-                className="p-1 rounded hover:bg-gray-900 cursor-pointer"
-            >
-                < ArrowLeftRight  size={16} />
-            </button>
+            <IconButton onClick={handleReturn} ariaLabel="Retornar préstamo" hitSize={36} iconSize={16}><ArrowLeftRight size={16} /></IconButton>
             </>
             )}
 
             {/* Botón opciones */}
             <Dropdown>
                 <DropdownTrigger>
-                    <button className="p-1 rounded hover:bg-gray-900 cursor-pointer" aria-label="Más opciones">
-                        <EllipsisVertical size={16} />
-                    </button>
+                    <IconButton ariaLabel="Más opciones" hitSize={36} iconSize={16}><EllipsisVertical size={16} /></IconButton>
                 </DropdownTrigger>
 
                 <DropdownContent className="right-0">

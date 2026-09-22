@@ -2,7 +2,7 @@ import { categoryService } from './category.service.js';
 
 export const categoryController = {
   async getAll(req, res, next) {
-    try { res.json(await categoryService.getAll()); }
+    try { res.json(await categoryService.getAll(req.query.status)); }
     catch (err) { next(err); }
   },
 

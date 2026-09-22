@@ -1,23 +1,24 @@
-import { useState, useEffect } from "react";
-import { Button, Input, Alert } from "@/shared";
+import { useState } from "react";
+import { Button, Input, Alert, Modal } from "@/shared";
 import { brandSchema } from "@/shared/schemas/brandSchema";
 import brandService from "@/shared/services/brandService";
 
-// Modal de crear marca (mismo patrón que CreateGroupModal de groups).
+// Modal de crear marca (mismo patrón que CreateInventoryModal).
 // onSave recibe la marca creada para que el consumidor pueda autoseleccionarla.
+//
+// El cuerpo va en un componente aparte que solo se monta con isOpen en true: así
+// cada apertura arranca con el campo vacío sin el useEffect que hacía setState
+// (regla react-hooks/set-state-in-effect).
 export default function CreateBrandModal({ isOpen, onClose, onSave }) {
+  if (!isOpen) return null;
+
+  return <CreateBrandBody onClose={onClose} onSave={onSave} />;
+}
+
+function CreateBrandBody({ onClose, onSave }) {
   const [brandName, setBrandName] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      setBrandName("");
-      setError("");
-    }
-  }, [isOpen]);
-
-  if (!isOpen) return null;
 
   const handleSave = async () => {
     const result = brandSchema.safeParse({ brandName });
@@ -42,44 +43,43 @@ export default function CreateBrandModal({ isOpen, onClose, onSave }) {
     }
   };
 
+  // (p49) Antes dibujaba su propio overlay a mano: se cerraba con un clic fuera
+  // —perdiendo lo escrito—, no atendía Escape ni entraba en la pila de modales, y
+  // repetía el marcado que ya resuelve `Modal`. Ahora usa el componente
+  // compartido, igual que su gemelo de inventarios. La etiqueta del campo pasó a
+  // la prop `label` del Input, que ya la dibuja con font-secondary y el token de
+  // color (antes era un <label> a mano con text-gray-700 cableado).
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={onClose}
-    >
-      {/* text-neutral-900 explícito para no heredar colores claros del contexto */}
-      <div
-        className="w-full max-w-md rounded-xl bg-white p-6 text-neutral-900"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="font-main mb-6 text-h3 font-semibold">Crear Marca</h2>
-
-        <div className="mb-4">
-          <label className="mb-1 block text-medium font-medium text-gray-700">
-            Nombre de la marca
-          </label>
-          <Input
-            type="text"
-            name="brandName"
-            placeholder="Ej: Bosch"
-            value={brandName}
-            onChange={(e) => {
-              setBrandName(e.target.value);
-              setError("");
-            }}
-            error={error}
-          />
-        </div>
-
-        <div className="flex justify-end gap-2 mt-6">
+    <Modal
+      isOpen
+      onClose={onClose}
+      title="Crear Marca"
+      size="sm"
+      closeOnBackdrop={false}
+      showCloseButton={false}
+      footer={
+        <>
           <Button variant="secondary" size="sm" onClick={onClose} disabled={saving}>
             Cancelar
           </Button>
           <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
             {saving ? "Guardando..." : "Crear"}
           </Button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <Input
+        type="text"
+        label="Nombre de la marca"
+        name="brandName"
+        placeholder="Ej: Bosch"
+        value={brandName}
+        onChange={(e) => {
+          setBrandName(e.target.value);
+          setError("");
+        }}
+        error={error}
+      />
+    </Modal>
   );
 }

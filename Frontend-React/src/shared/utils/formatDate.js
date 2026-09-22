@@ -23,5 +23,27 @@ export const formatDate = (d) => (d ? new Date(d).toLocaleDateString("es-CO") : 
 export const formatDateOnly = (d) =>
   d ? new Date(d).toLocaleDateString("es-CO", { timeZone: "UTC" }) : "—";
 
+/**
+ * (p50) Una fecha cualquiera en AAAA-MM-DD, en hora LOCAL.
+ *
+ * Es el formato que entiende un <input type="date"> y el que sirve para comparar
+ * fechas de calendario sin que la zona horaria reste un día. "en-CA" no es un
+ * capricho: es el locale cuyo formato corto ya es ISO.
+ *
+ * Sin argumento devuelve hoy.
+ */
+export const isoLocal = (d = new Date()) => new Date(d).toLocaleDateString("en-CA");
+
+/**
+ * (p50) Fecha de calendario de un DATE de la BD, en AAAA-MM-DD.
+ *
+ * Es la hermana en UTC de `isoLocal`, y las dos hacen falta a la vez: una fecha
+ * guardada como DATE es medianoche UTC, así que su día real solo se lee en UTC;
+ * pero "hoy" es el día de quien mira, que es local. Compararlas es comparar la
+ * fecha del dato con la fecha de la persona, y cada una se lee en su huso.
+ */
+export const isoUtc = (d) =>
+  d ? new Date(d).toLocaleDateString("en-CA", { timeZone: "UTC" }) : "";
+
 /** Sufijo para nombres de archivo: AAAA-MM-DD */
-export const fileStamp = () => new Date().toLocaleDateString("en-CA");
+export const fileStamp = () => isoLocal();

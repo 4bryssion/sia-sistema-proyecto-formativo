@@ -18,6 +18,12 @@ export const updateTaskSchema = Joi.object({
   status: Joi.string().valid(...TASK_STATUSES),
 }).min(1);
 
+// (p50) Cambio de estado a secas. `no_completada` NO se acepta: lo pone el
+// vencimiento automático, no una persona.
+export const statusTaskSchema = Joi.object({
+  status: Joi.string().valid('en_progreso', 'completada').required(),
+});
+
 export const validate = (schema) => (req, res, next) => {
   const { error } = schema.validate(req.body, { abortEarly: false });
   if (error) {

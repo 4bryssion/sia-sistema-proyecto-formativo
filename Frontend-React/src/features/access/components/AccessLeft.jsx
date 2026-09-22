@@ -60,11 +60,18 @@ export default function AccessLeft({
           Grupos usuarios
         </h3>
 
+        {/* (p50) Variante de búsqueda, como el de usuario que va justo debajo:
+            con un grupo por cada rol del sistema, la lista nativa obligaba a
+            recorrerla entera. 4 filas a la vista por el mismo motivo que allí:
+            con 5 el desplegable tapa lo que viene abajo. Las demás siguen ahí,
+            desplazándose. */}
         <Select
+          variant="search"
           name="groupId"
           value={selectedGroupId ? String(selectedGroupId) : ""}
           onChange={(e) => onGroupChange(e.target.value)}
           options={groupOptions}
+          filasVisibles={4}
           className="w-full min-w-0"
         />
 
@@ -77,15 +84,15 @@ export default function AccessLeft({
           Usuario individual
         </h3>
 
-        {/* maxMatches 4 y no las 5 por defecto: justo debajo va la lista de
-            grupos del usuario, y con 5 filas el desplegable la tapaba entera */}
+        {/* 4 filas a la vista y no las 5 por defecto: justo debajo va la lista
+            de grupos del usuario, y con 5 el desplegable la tapaba entera */}
         <Select
           variant="search"
           name="userId"
           value={selectedUserId ? String(selectedUserId) : ""}
           onChange={(e) => onUserChange(e.target.value)}
           options={userOptions}
-          maxMatches={4}
+          filasVisibles={4}
           className="w-full min-w-0 justify-self-center"
         />
 

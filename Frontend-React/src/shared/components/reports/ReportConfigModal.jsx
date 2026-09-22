@@ -17,8 +17,15 @@ import { Modal, Button, Input, Select, Checkbox } from "@/shared";
  *
  * Props:
  * - `fields`: [{ key, label, default }] — los campos disponibles del reporte.
- * - `scopeOptions`: [{ value, label, input?: { label, placeholder } }]. La opción
- *   con `input` despliega un campo de texto cuyo valor viaja como `scopeValue`.
+ * - `scopeOptions`: [{ value, label, input?, search? }]. La opción elegida puede
+ *   pedir un dato extra, que viaja como `scopeValue`, de dos formas:
+ *     - `input: { label, placeholder }` → campo de texto libre.
+ *     - `search: { label, placeholder, options, vacio }` → (p50) select con
+ *       buscador sobre valores que EXISTEN en el listado.
+ *   La segunda es la buena cuando el dato es un identificador de un registro ya
+ *   cargado —un número de documento, una placa SENA, el receptor de un préstamo—:
+ *   escrito a mano, una tilde o un dígito de más devuelven un reporte vacío sin
+ *   decir por qué, y quien lo pide casi nunca se sabe el número de memoria.
  * - `inventoryOptions`: si se pasa, se dibuja el filtro por inventarios
  *   (selección múltiple) y los ids elegidos viajan como `inventoryIds`.
  * - `onGenerate({ format, selectedFields, scope, scopeValue, inventoryIds })`.
@@ -95,6 +102,9 @@ function ReportConfigBody({ onClose, title, fields, scopeOptions, inventoryOptio
             size="md"
             // Formulario: un clic fuera no puede descartar lo elegido
             closeOnBackdrop={false}
+            // La X va fuera de la tarjeta, en la esquina: regla del proyecto
+            // para los modales de formulario.
+            closeButtonOutside
             showCloseButton={false}
             footer={
                 <>
@@ -148,12 +158,10 @@ function ReportConfigBody({ onClose, title, fields, scopeOptions, inventoryOptio
                         multiple
                         name="inventoryIds"
                         options={inventoryOptions}
-                        // El tope por defecto del Select son 5 coincidencias, y
-                        // aquí eso haría creer que el sistema solo tiene cinco
-                        // inventarios. La lista ya se desplaza (max-h-60), así
-                        // que se sube el tope y el buscador sigue estando para
-                        // listas largas.
-                        maxMatches={50}
+                        // (p50) Ya no hace falta subir ningún tope: el Select
+                        // dibuja todas las opciones y solo limita cuántas se ven
+                        // a la vez. Antes había que pedirle 50 para que no
+                        // pareciera que el sistema tenía cinco inventarios.
                         value={inventoryIds}
                         onChange={(e) => setInventoryIds(e.target.value)}
                     />
@@ -177,6 +185,33 @@ function ReportConfigBody({ onClose, title, fields, scopeOptions, inventoryOptio
                         value={scopeValue}
                         onChange={(e) => setScopeValue(e.target.value)}
                     />
+                )}
+
+                {/* (p50) Alcance elegido de una lista en vez de escrito. Las
+                    opciones salen del listado que ya tiene el módulo: no hay
+                    petición extra, y lo que se ofrece es exactamente lo que el
+                    reporte puede encontrar. */}
+                {opcionAlcance?.search && (
+                    opcionAlcance.search.options?.length ? (
+                        <Select
+                            variant="search"
+                            label={opcionAlcance.search.label}
+                            name="scopeValue"
+                            placeholder={opcionAlcance.search.placeholder ?? "Seleccione una opción"}
+                            options={opcionAlcance.search.options}
+                            // (p50) Sin tope de datos: se dibujan todas y la
+                            // caja limita el alto. Antes había que pedir 50 para
+                            // que no pareciera que solo existían cinco registros.
+                            value={scopeValue}
+                            onChange={(e) => setScopeValue(e.target.value)}
+                        />
+                    ) : (
+                        // Sin nada que elegir se dice por qué, en vez de dejar un
+                        // select vacío que parece roto.
+                        <p className="font-secondary text-medium text-text-muted">
+                            {opcionAlcance.search.vacio ?? "No hay valores disponibles para este filtro."}
+                        </p>
+                    )
                 )}
             </div>
         </Modal>

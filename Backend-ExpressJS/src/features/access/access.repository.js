@@ -15,14 +15,20 @@ export const accessRepository = {
       WHERE ug.user_id = ${userId};`;
   },
 
+  // (p50) Estas cuatro pasaron de `$executeRaw` a llamadas de modelo de Prisma.
+  // No es estilo: la auditoría automática es una extensión de Prisma y NO VE el
+  // SQL crudo. Asignar y quitar grupos y permisos a una persona es de lo más
+  // sensible que hace el sistema, y mientras fuera SQL crudo no dejaba huella.
+  //
+  // Las LECTURAS de este archivo se quedan en SQL crudo: no hay nada que
+  // auditar en ellas y sus `json_build_object` arman la forma exacta que espera
+  // el frontend, que con `include` de Prisma habría que rehacer.
   async assignGroup(userId, groupId) {
-    await prisma.$executeRaw`
-      INSERT INTO user_groups (user_id, group_id) VALUES (${userId}, ${groupId});`;
+    await prisma.userGroup.create({ data: { userId, groupId } });
   },
 
   async removeGroup(userId, groupId) {
-    await prisma.$executeRaw`
-      DELETE FROM user_groups WHERE user_id = ${userId} AND group_id = ${groupId};`;
+    await prisma.userGroup.delete({ where: { userId_groupId: { userId, groupId } } });
   },
 
   async hasGroup(userId, groupId) {
@@ -47,13 +53,13 @@ export const accessRepository = {
   },
 
   async assignPermission(userId, permissionId) {
-    await prisma.$executeRaw`
-      INSERT INTO user_permissions (user_id, permission_id) VALUES (${userId}, ${permissionId});`;
+    await prisma.userPermission.create({ data: { userId, permissionId } });
   },
 
   async removePermission(userId, permissionId) {
-    await prisma.$executeRaw`
-      DELETE FROM user_permissions WHERE user_id = ${userId} AND permission_id = ${permissionId};`;
+    await prisma.userPermission.delete({
+      where: { userId_permissionId: { userId, permissionId } },
+    });
   },
 
   async hasPermission(userId, permissionId) {

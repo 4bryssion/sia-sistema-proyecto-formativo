@@ -1,11 +1,11 @@
 import { getStatusFilterLabel } from "@/shared/reports/statusLabel";
-import { Button, Checkbox, DataTable, FilterMenu, usePermissions, ListPageHeader, StatusFilterSelect } from "@/shared";
-import { Link } from "react-router-dom";
+import { Button, Checkbox, DataTable, FilterMenu, usePermissions, ListPageHeader, StatusFilterSelect, getCurrentUser } from "@/shared";
 import { useMemo, useState } from "react";
 import { useLoans } from "../hooks/useLoans";
 import { loanColumns } from "../table/loanColumns";
 import ViewLoanModal from "../components/ViewLoanModal";
 import EditLoanModal from "../components/EditLoanModal";
+import CreateLoanModal from "../components/CreateLoanModal";
 import ReportConfigModal from "../reports/components/ReportConfigModal.jsx";
 import { LOAN_STATUS_FILTER_OPTIONS } from "../utils/loanStatusLabel";
 import ReturnLoanModal from "@/shared/components/devolutions/ReturnLoanModal";
@@ -16,6 +16,7 @@ export default function ListLoanPage() {
   const { can } = usePermissions();
   const [status, setStatus] = useState("active");
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   // Filtro por estado del préstamo. Igual que en usuarios y materiales, recorta
   // los datos ANTES de entregarlos a la tabla: así el buscador, la paginación,
   // el contador y el reporte trabajan sobre el conjunto ya filtrado.
@@ -40,7 +41,7 @@ export default function ListLoanPage() {
   const refrescarTodo = () => { refetch(); refetchDevolutions(); };
 
   // Sin permiso para listar todos los préstamos, solo se ven aquellos donde participa
-  const ownId = JSON.parse(sessionStorage.getItem("user") ?? "null")?.id ?? null;
+  const ownId = getCurrentUser()?.id ?? null;
   const ownLoans = can("list_loans")
     ? loans
     : loans.filter((l) => l.signatures?.some((sig) => Number(sig.userId ?? sig.user?.id) === Number(ownId)));
@@ -83,10 +84,12 @@ export default function ListLoanPage() {
           Generar Reporte
         </Button>
 
+        {/* (p49) Crear préstamo dejó de ser una página: es un modal por pasos.
+            Al guardar refresca el listado sin navegar a ninguna parte. */}
         {can("create_loan") && (
-          <Link to="/dashboard/loans/create">
-            <Button variant="primary">Crear Préstamo</Button>
-          </Link>
+          <Button variant="primary" onClick={() => setIsCreateOpen(true)}>
+            Crear Préstamo
+          </Button>
         )}
       </ListPageHeader>
 
@@ -140,6 +143,12 @@ export default function ListLoanPage() {
         loanId={viewLoanId}
         onClose={() => setViewLoanId(null)}
         onEdit={(id) => { setViewLoanId(null); setEditLoanId(id); }}
+      />
+
+      <CreateLoanModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSaved={refrescarTodo}
       />
 
       <EditLoanModal

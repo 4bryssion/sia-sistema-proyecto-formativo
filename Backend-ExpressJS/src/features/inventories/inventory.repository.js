@@ -16,6 +16,12 @@ export const inventoryRepository = {
     return prisma.inventory.findUnique({ where: { id } });
   },
 
+  // (p50) Busca por el nombre normalizado: es como se detecta que «Gucci» y
+  // «Gúcci» son la misma cosa antes de intentar guardarlas.
+  async findByNormalized(normalizado) {
+    return prisma.inventory.findUnique({ where: { inventoryNameNormalized: normalizado } });
+  },
+
   async create(data) {
     return prisma.inventory.create({ data });
   },

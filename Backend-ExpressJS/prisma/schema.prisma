@@ -20,6 +20,11 @@ model DocumentType {
 model Group {
   id          Int               @id(map: "groups_pkey") @default(autoincrement())
   groupName   String            @unique @map("group_name") @db.VarChar(100)
+  // (p50) El mismo nombre sin espacios sobrantes, en minúsculas y sin tildes.
+  // Es lo que hace que «Gucci», «GuccI» y «Gúcci» choquen entre sí; el de arriba
+  // se guarda tal como lo escribió la persona. Lo calcula el backend
+  // (src/shared/normalizeName.js): nunca llega desde el formulario.
+  groupNameNormalized String @unique @map("group_name_normalized") @db.VarChar(100)
   isActive    Boolean           @default(true) @map("is_active")
   created_at  DateTime          @default(now())
   updated_at  DateTime          @updatedAt
@@ -100,6 +105,12 @@ model User {
   // detecta al iniciar sesión y una sesión reemplazada muere al instante.
   // `activeSessionExpiresAt` evita el bloqueo permanente si el usuario cierra el
   // navegador sin hacer logout: pasada esa fecha la sesión se considera libre.
+  // (p50) Cotizaciones que esta persona cargó. Prisma exige declarar los dos
+  // lados de la relación aunque solo se consulte desde Quotation.
+  quotations             Quotation[]
+  // (p50) Lo que esta persona hizo en el sistema. Prisma exige declarar los dos
+  // lados aunque solo se consulte desde AuditLog.
+  auditEntries           AuditLog[]
   activeSessionJti       String?             @map("active_session_jti") @db.VarChar(64)
   activeSessionExpiresAt DateTime?           @map("active_session_expires_at")
   // (p48) Ley 1581 de 2012 — Protección de Datos Personales. Se guarda CUÁNDO se
@@ -123,6 +134,12 @@ model User {
   directPermissions   UserPermission[]
   passwordResetCodes  PasswordResetCode[]
   notifications       Notification[]
+  // (p50) Avisos dirigidos a esta persona (tareas asignadas). Relación distinta
+  // de `notifications`, que son los avisos que ESTA persona provocó.
+  notificationsReceived Notification[]     @relation("NotificationRecipient")
+  // (p50) Última vez que abrió sus notificaciones. Enciende o apaga el punto
+  // verde de la campana. NULL = nunca las ha abierto.
+  notificationsSeenAt   DateTime?          @map("notifications_seen_at")
   documentType        DocumentType           @relation(fields: [documentTypeId], references: [id], map: "users_document_type_id_fkey")
 
   @@map("users")
@@ -153,6 +170,11 @@ model UserPermission {
 model Brand {
   id                  Int                  @id(map: "brands_pkey") @default(autoincrement())
   brandName           String               @unique @map("brand_name") @db.VarChar(100)
+  // (p50) El mismo nombre sin espacios sobrantes, en minúsculas y sin tildes.
+  // Es lo que hace que «Gucci», «GuccI» y «Gúcci» choquen entre sí; el de arriba
+  // se guarda tal como lo escribió la persona. Lo calcula el backend
+  // (src/shared/normalizeName.js): nunca llega desde el formulario.
+  brandNameNormalized String @unique @map("brand_name_normalized") @db.VarChar(100)
   isActive            Boolean              @default(true) @map("is_active")
   consumableMaterials ConsumableMaterial[]
 
@@ -166,6 +188,11 @@ model Brand {
 model Inventory {
   id                  Int                  @id @default(autoincrement())
   inventoryName       String               @unique @map("inventory_name") @db.VarChar(100)
+  // (p50) El mismo nombre sin espacios sobrantes, en minúsculas y sin tildes.
+  // Es lo que hace que «Gucci», «GuccI» y «Gúcci» choquen entre sí; el de arriba
+  // se guarda tal como lo escribió la persona. Lo calcula el backend
+  // (src/shared/normalizeName.js): nunca llega desde el formulario.
+  inventoryNameNormalized String @unique @map("inventory_name_normalized") @db.VarChar(100)
   isActive            Boolean              @default(true) @map("is_active")
   consumableMaterials ConsumableMaterial[]
 
@@ -175,7 +202,17 @@ model Inventory {
 model Category {
   id                  Int                  @id(map: "categories_pkey") @default(autoincrement())
   categoryName        String               @unique @map("category_name") @db.VarChar(100)
+  // (p50) El mismo nombre sin espacios sobrantes, en minúsculas y sin tildes.
+  // Es lo que hace que «Gucci», «GuccI» y «Gúcci» choquen entre sí; el de arriba
+  // se guarda tal como lo escribió la persona. Lo calcula el backend
+  // (src/shared/normalizeName.js): nunca llega desde el formulario.
+  categoryNameNormalized String @unique @map("category_name_normalized") @db.VarChar(100)
   isActive            Boolean              @default(true) @map("is_active")
+  // (p50) La regla "esta categoría pide dimensiones" vive en la FILA, no en su
+  // nombre. Antes se decidía comparando el nombre contra "muebles y enseres";
+  // desde que las categorías se pueden renombrar y desactivar, eso apagaría la
+  // regla en silencio.
+  requiresDimensions  Boolean              @default(false) @map("requires_dimensions")
   returnableMaterials ReturnableMaterial[]
 
   @@map("categories")
@@ -208,6 +245,9 @@ model ConsumableMaterial {
   // (p48) El cuentadante dejó de ser la columna user_id: un material puede tener
   // varios, así que la relación pasa por una tabla intermedia.
   accountables  MaterialAccountable[]
+  // (p50) Cotizaciones que respaldan el precio. Cuelgan de la tabla PADRE, como
+  // cuentadantes, imágenes y fichas: así sirven a los dos tipos de material.
+  quotations    MaterialQuotation[]
   // (p48) La imagen dejó de ser la columna `image`: hasta 3, con el mismo
   // contrato que las fichas técnicas.
   images        ConsumableMaterialImage[]
@@ -278,6 +318,58 @@ model ReturnableMaterial {
 // repuntó a la tabla PADRE: la ficha técnica ya no es exclusiva del devolutivo.
 // La migración conserva las filas existentes — los ids son los mismos porque
 // returnable_materials comparte PK con consumable_materials.
+// (p50) Cotización: un PDF que respalda el precio de uno o varios materiales.
+//
+// La relación con el material es de MUCHOS A MUCHOS y asimétrica en sus topes:
+// un material admite entre 1 y 3 cotizaciones, y una cotización puede respaldar
+// cuantos materiales haga falta. Por eso hay tabla intermedia y no una columna.
+//
+// No lleva nombre propio: el nombre de una cotización ES el de su archivo, que
+// es lo que la persona reconoce.
+model Quotation {
+  id         Int                 @id @default(autoincrement())
+  fileName   String              @map("file_name") @db.VarChar(255)
+  fileUrl    String              @map("file_url") @db.VarChar(255)
+  mimeType   String              @map("mime_type") @db.VarChar(100)
+  // (p50) Huella SHA-256 del CONTENIDO. Es lo que permite avisar de que este
+  // mismo PDF ya está cargado aunque venga con otro nombre.
+  //
+  // No es @unique a propósito: cargar una copia a sabiendas tiene que seguir
+  // siendo posible. El sistema avisa y ofrece usar la que ya existe.
+  //
+  // Opcional porque las cargadas antes de existir esta columna no la tienen
+  // hasta que se ejecute `npm run hashear-cotizaciones`.
+  fileHash   String?             @map("file_hash") @db.Char(64)
+  // Quién la cargó. Opcional y con SetNull: desactivar o borrar a una persona no
+  // puede arrastrarse una cotización que respalda precios.
+  uploadedBy Int?                @map("uploaded_by")
+  uploader   User?               @relation(fields: [uploadedBy], references: [id], onDelete: SetNull)
+  isActive   Boolean             @default(true) @map("is_active")
+  created_at DateTime            @default(now())
+  materials  MaterialQuotation[]
+
+  @@index([isActive])
+  @@index([fileHash], map: "quotations_file_hash_idx")
+  @@map("quotations")
+}
+
+// Asignación material ↔ cotización.
+//
+// El material referenciado es SIEMPRE ConsumableMaterial: es la tabla padre, y
+// ReturnableMaterial comparte su clave primaria con ella. Así una sola tabla
+// sirve para los dos tipos, igual que con cuentadantes, imágenes y fichas.
+model MaterialQuotation {
+  materialId  Int                @map("material_id")
+  quotationId Int                @map("quotation_id")
+  created_at  DateTime           @default(now())
+  material    ConsumableMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  quotation   Quotation          @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@id([materialId, quotationId])
+  @@index([quotationId])
+  @@map("material_quotations")
+}
+
 model MaterialFile {
   id         Int                @id @default(autoincrement())
   materialId Int                @map("material_id")
@@ -492,16 +584,48 @@ enum NotificationSeverity {
   Informativa
 }
 
+// (p50) Registro de auditoría. Lo escribe la extensión de src/config/audit.js,
+// no los services: auditar a mano dejó cuatro huecos, el peor de ellos los
+// cambios de permisos de un grupo.
+//
+// No confundir con Notification: una notificación es un texto para leer en
+// pantalla; esto guarda sobre qué registro se actuó y qué valor cambió.
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  actorId   Int?     @map("actor_id")
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String   @db.VarChar(20)
+  model     String   @db.VarChar(60)
+  // Texto y no entero: hay claves compuestas que no caben en un entero.
+  recordId  String?  @map("record_id") @db.VarChar(120)
+  before    Json?
+  after     Json?
+  created_at DateTime @default(now())
+
+  @@index([created_at(sort: Desc)], map: "audit_log_created_at_idx")
+  @@index([model, recordId], map: "audit_log_model_record_idx")
+  @@map("audit_log")
+}
+
+// (p50) Aviso dirigido a una persona. NO es el registro del sistema: eso es
+// AuditLog. Aquí solo caben tres eventos —préstamo realizado, devolución
+// solicitada y tarea asignada— y cada uno existe para que alguien lo vea.
 model Notification {
   id          Int                  @id @default(autoincrement())
   title       String               @db.VarChar(100)
   description String               @db.VarChar(255)
   severity    NotificationSeverity
+  // Solo toma tres valores: 'loans', 'devolutions', 'tasks'.
   module      String               @db.VarChar(50)
+  // Quién ejecutó la acción. Es lo que muestra la columna "Responsable".
   userId      Int?                 @map("user_id")
   user        User?                @relation(fields: [userId], references: [id])
-  isActive    Boolean              @default(true) @map("is_active")
+  // A quién va dirigido. NULL = a los administradores, que es el caso de los
+  // préstamos y las devoluciones: no son de nadie en concreto.
+  recipientId Int?                 @map("recipient_id")
+  recipient   User?                @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   created_at  DateTime             @default(now())
 
+  @@index([recipientId, created_at(sort: Desc)], map: "notifications_recipient_created_idx")
   @@map("notifications")
 }

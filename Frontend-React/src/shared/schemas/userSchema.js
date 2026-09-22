@@ -1,8 +1,12 @@
 import { z } from "zod";
+import { isoLocal } from "@/shared/utils/formatDate";
 
 // Fecha de hoy LOCAL en YYYY-MM-DD; se compara como string contra el input type="date"
 // (evita el bug de zona horaria de new Date("YYYY-MM-DD"), que parsea en UTC)
-export const todayLocalISO = () => new Date().toLocaleDateString("en-CA");
+// (p50) Una sola implementación, en shared/utils/formatDate.js. Estaba
+// escrita igual en este archivo, en taskSchema y en userSchema. Se conserva
+// el nombre para no tocar los ocho sitios que ya la importan de aquí.
+export const todayLocalISO = isoLocal;
 
 const FORMATO_FECHA = /^\d{4}-\d{2}-\d{2}$/;
 

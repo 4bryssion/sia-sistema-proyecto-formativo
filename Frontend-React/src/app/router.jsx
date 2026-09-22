@@ -33,25 +33,19 @@ import {
 
 
 // Módulo users:
-// Visualizar y editar usuario ya no tienen ruta: son modales (jul-2026)
-import {
-    ListUserPage,
-    CreateUserPage
-
-} from "@/features/users";
+// Visualizar, editar y CREAR usuario ya no tienen ruta: son modales
+// (visualizar/editar jul-2026; crear, p49)
+import { ListUserPage } from "@/features/users";
 
 // Módulo tasks:
-import {
-    ListTaskPage,
-    ViewTaskPage,
-    EditTaskPage
-} from "@/features/tasks";
+// Visualizar y editar tarea ya no tienen ruta: son modales (p50)
+import { ListTaskPage } from "@/features/tasks";
 
 
 // Módulo consumable-materials:
 // Visualizar y editar material de consumo ya no tienen ruta: son modales (jul-2026)
 import {
-    ListConsumableMaterialPage, CreateConsumablesMaterialPage
+    ListConsumableMaterialPage
 
 } from "@/features/consumable-material";
 
@@ -60,14 +54,12 @@ import {
 // Visualizar y editar ya no tienen ruta: son modales que abre el listado
 import {
     ListReturnableMaterialPage,
-    CreateReturnableMaterialPage,
 
 } from "@/features/returnable-material";
 
 // Módulo loans:
 import {
     ListLoanPage,
-    CreateLoanPage,
     SignLoanPage,
 
 } from "@/features/loans";
@@ -75,7 +67,6 @@ import {
 
 // Módulo brands:
 import {
-    CreateBrandPage,
     ListBrandPage
 } from "@/features/brands";
 
@@ -83,9 +74,16 @@ import {
 // Módulo inventories (p48): gemelo de brands. Se llega desde el dropdown de
 // Configuración del navbar, debajo de Marcas.
 import {
-    CreateInventoryPage,
     ListInventoryPage
 } from "@/features/inventories";
+
+// Módulo categories (p50): mismo patrón que marcas e inventarios. Se llega desde
+// el dropdown de Configuración de la navbar, entre Marcas e Inventarios.
+import { ListCategoryPage } from "@/features/categories";
+
+// Módulo quotations (p50): PDF que respaldan el precio de los materiales.
+// Se llega desde el menú de la navbar, encima de Tareas.
+import { ListQuotationPage } from "@/features/quotations";
 
 
 // Módulo groups:
@@ -160,7 +158,7 @@ const router = createBrowserRouter([
         children: [
             // Notificaciones / logs del sistema (P43)
             {
-                path: "alert-history",
+                path: "notifications",
                 element: <RequirePermission codename="list_notifications"><ListNotificationPage /></RequirePermission>,
             },
 
@@ -175,14 +173,14 @@ const router = createBrowserRouter([
                 path: "users",
                 element: <RequirePermission codename={["create_user", "edit_user"]}><ListUserPage /></RequirePermission>
             },
-            {
-                path: "users/create",
-                element: <RequirePermission codename="create_user"><CreateUserPage /></RequirePermission>,
-            },
             // Módulo tasks:
+            // (p50) Dos permisos entran: `list_tasks` ve las de todo el mundo y
+            // `manage_own_tasks` solo las propias. Quien solo tiene el segundo
+            // entra a ver su tarea y marcarla como completada; el backend
+            // vuelve a decidir qué le entrega.
             {
                 path: "tasks",
-                element: <RequirePermission codename="list_tasks"><ListTaskPage /></RequirePermission>,
+                element: <RequirePermission codename={["list_tasks", "manage_own_tasks"]}><ListTaskPage /></RequirePermission>,
             },
             // crear tarea ahora es un modal (CreateTaskModal) abierto desde ListTaskPage
 
@@ -191,18 +189,10 @@ const router = createBrowserRouter([
                 path: "consumable-materials",
                 element: <RequirePermission codename="list_consumable_materials"><ListConsumableMaterialPage /></RequirePermission>,
             },
-            {
-                path: "consumable-materials/create",
-                element: <RequirePermission codename="create_consumable_material"><CreateConsumablesMaterialPage /></RequirePermission>,
-            },
             // Módulo returnable-materials:
             {
                 path: "returnable-materials",
                 element: <RequirePermission codename="list_returnable_materials"><ListReturnableMaterialPage /></RequirePermission>
-            },
-            {
-                path: "returnable-materials/create",
-                element: <RequirePermission codename="create_returnable_material"><CreateReturnableMaterialPage /></RequirePermission>,
             },
             
 
@@ -211,29 +201,29 @@ const router = createBrowserRouter([
                 path: "loans",
                 element: <RequirePermission codename="list_loans"><ListLoanPage /></RequirePermission>,
             },
-            {
-                path: "loans/create",
-                element: <RequirePermission codename="create_loan"><CreateLoanPage /></RequirePermission>,
-            },
 
             // Módulo brands:
             {
                 path: "brands",
                 element: <RequirePermission codename="list_brands"><ListBrandPage /></RequirePermission>,
             },
+
+            // Módulo quotations:
             {
-                path: "brands/create",
-                element: <RequirePermission codename="create_brand"><CreateBrandPage /></RequirePermission>,
+                path: "quotations",
+                element: <RequirePermission codename="list_quotations"><ListQuotationPage /></RequirePermission>,
+            },
+
+            // Módulo categories:
+            {
+                path: "categories",
+                element: <RequirePermission codename="list_categories"><ListCategoryPage /></RequirePermission>,
             },
 
             // Módulo inventories:
             {
                 path: "inventories",
                 element: <RequirePermission codename="list_inventories"><ListInventoryPage /></RequirePermission>,
-            },
-            {
-                path: "inventories/create",
-                element: <RequirePermission codename="create_inventory"><CreateInventoryPage /></RequirePermission>,
             },
 
             // Módulo groups:
@@ -266,15 +256,8 @@ const router = createBrowserRouter([
             // (ViewUserModal / EditUserModal), abiertos desde la tabla y, en el
             // caso de "Mi perfil", desde el propio Navbar.
 
-            // Módulo tasks:
-            {
-                path: "tasks/:id",
-                element: <RequirePermission codename="list_tasks"><ViewTaskPage /></RequirePermission>,
-            },
-            {
-                path: "tasks/:id/edit",
-                element: <RequirePermission codename="edit_task"><EditTaskPage /></RequirePermission>,
-            },
+            // Módulo tasks: sin rutas de ver ni editar — son modales abiertos
+            // desde la tabla de listar (p50)
 
             // Módulo consumable-materials:
             // Módulo consumable-materials: sin rutas de ver ni editar — son
