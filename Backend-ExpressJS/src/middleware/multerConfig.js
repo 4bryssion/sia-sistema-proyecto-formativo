@@ -1,9 +1,20 @@
 import multer from 'multer';
 import path from 'path';
+import { mkdirSync } from 'node:fs';
+
+// (p50) La carpeta se crea si no existe.
+//
+// `uploads/` está en .gitignore —los archivos subidos son datos, no código— así
+// que quien clona el repositorio no la tiene. Multer NO crea el destino: se
+// limita a escribir en él, y la primera carga fallaba con ENOENT en un proyecto
+// recién clonado. Una línea aquí ahorra un paso de instalación que nadie
+// adivina por el mensaje de error.
+const DESTINO = path.resolve('uploads');
+mkdirSync(DESTINO, { recursive: true });
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.resolve('uploads'));
+    cb(null, DESTINO);
   },
   filename: (req, file, cb) => {
     const unique = Date.now() + '_' + Math.round(Math.random() * 1e9);
