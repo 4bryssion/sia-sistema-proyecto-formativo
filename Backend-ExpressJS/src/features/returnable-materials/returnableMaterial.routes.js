@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { returnableMaterialController } from './returnableMaterial.controller.js';
 import { validate, createReturnableMaterialSchema, updateReturnableMaterialSchema } from './returnableMaterial.validator.js';
-import { uploadFiles } from '../../middleware/multerConfig.js';
+import { uploadFiles, limitarTamanoTotal } from '../../middleware/multerConfig.js';
 import { authenticateToken } from '../../middleware/auth.middleware.js';
 import { requirePermission } from '../../middleware/permission.middleware.js';
 
@@ -17,8 +17,10 @@ const uploadFields = uploadFiles.fields([
 
 router.get('/', authenticateToken, requirePermission('list_returnable_materials'),       returnableMaterialController.getAll);
 router.get('/:id', authenticateToken, requirePermission('list_returnable_materials'),    returnableMaterialController.getById);
-router.post('/', authenticateToken, requirePermission('create_returnable_material'),      uploadFields, validate(createReturnableMaterialSchema), returnableMaterialController.create);
-router.put('/:id', authenticateToken, requirePermission('edit_returnable_material'),          uploadFields, validate(updateReturnableMaterialSchema),  returnableMaterialController.update);
+// (p50) limitarTamanoTotal va ANTES de multer: cortar aquí evita escribir en
+// disco una carga que se va a rechazar de todos modos.
+router.post('/', authenticateToken, requirePermission('create_returnable_material'),      limitarTamanoTotal, uploadFields, validate(createReturnableMaterialSchema), returnableMaterialController.create);
+router.put('/:id', authenticateToken, requirePermission('edit_returnable_material'),          limitarTamanoTotal, uploadFields, validate(updateReturnableMaterialSchema),  returnableMaterialController.update);
 router.patch('/:id/toggle', authenticateToken, requirePermission('toggle_returnable_material'), returnableMaterialController.toggle);
 
 router.use((err, req, res, next) => {

@@ -31,6 +31,15 @@ export const authRepository = {
     });
   },
 
+  // (p49) Renueva solo el vencimiento de la sesión, sin tocar el jti. Lo usan el
+  // latido y la renovación automática de authenticateToken.
+  async touchActiveSession(userId, expiresAt) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { activeSessionExpiresAt: expiresAt },
+    });
+  },
+
   async clearActiveSession(userId) {
     return prisma.user.update({
       where: { id: userId },

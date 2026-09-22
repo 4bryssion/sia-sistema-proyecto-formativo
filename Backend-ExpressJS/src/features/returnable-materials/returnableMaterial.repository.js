@@ -16,6 +16,12 @@ const relacionesDelPadre = {
   // el usuario dejó al arrastrar las previsualizaciones
   images: { orderBy: { sortOrder: 'asc' } },
   technicalSheets: { orderBy: { sortOrder: 'asc' } },
+  // (p50) Cotizaciones: también cuelgan del PADRE, como cuentadantes, imágenes
+  // y fichas. Una sola tabla intermedia sirve a los dos tipos de material.
+  quotations: {
+    orderBy: { created_at: 'asc' },
+    include: { quotation: true },
+  },
 };
 
 const includeComplete = {
@@ -49,13 +55,14 @@ export const returnableMaterialRepository = {
     });
   },
 
-  async create(consumableData, returnableData, accountableIds, images, sheets) {
+  async create(consumableData, returnableData, accountableIds, images, sheets, quotationIds = []) {
     return prisma.consumableMaterial.create({
       data: {
         ...consumableData,
         accountables: { create: accountableIds.map((userId) => ({ userId })) },
         images: { create: images },
         technicalSheets: { create: sheets },
+        quotations: { create: quotationIds.map((quotationId) => ({ quotationId })) },
         returnable: { create: returnableData },
       },
       include: includeDesdePadre,
@@ -65,7 +72,7 @@ export const returnableMaterialRepository = {
   // Las operaciones sobre imágenes y fichas llegan ya resueltas por el service.
   // Todo va en una transacción: un fallo a medias dejaría el material con
   // archivos borrados y los nuevos sin insertar.
-  async update(id, consumableData, returnableData, accountableIds, imageOps = {}, sheetOps = {}) {
+  async update(id, consumableData, returnableData, accountableIds, imageOps = {}, sheetOps = {}, quotationIds) {
     const operaciones = [
       prisma.consumableMaterial.update({
         where: { id },
@@ -88,6 +95,18 @@ export const returnableMaterialRepository = {
           data: accountableIds.map((userId) => ({ materialId: id, userId })),
         }),
       );
+    }
+
+    // (p50) quotationIds undefined = la edición no tocó las cotizaciones.
+    if (quotationIds !== undefined) {
+      operaciones.push(prisma.materialQuotation.deleteMany({ where: { materialId: id } }));
+      if (quotationIds.length) {
+        operaciones.push(
+          prisma.materialQuotation.createMany({
+            data: quotationIds.map((quotationId) => ({ materialId: id, quotationId })),
+          }),
+        );
+      }
     }
 
     const aplicar = (ops, delegate) => {

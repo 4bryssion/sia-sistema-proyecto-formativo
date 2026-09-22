@@ -4,10 +4,14 @@ import {
   MAX_TECHNICAL_SHEETS,
   IMAGE_ACCEPT,
   TECHNICAL_SHEET_ACCEPT,
-  FILE_SLOTS,
+  FORM_PREVIEW_SLOTS,
 } from "@/shared/utils/materialFiles";
 
-// Banda superior de archivos de los modales de EDITAR material (los dos tipos).
+// Banda de archivos de los modales de material (los dos tipos), tanto al CREAR
+// como al EDITAR. (p49) Antes solo la usaba editar: crear dibujaba su propia
+// columna de dos FileInput con otras medidas y otros textos, así que los dos
+// formularios del mismo material no se parecían. Ahora es la misma banda, y es
+// el paso de archivos del modal por pasos.
 //
 // Va arriba y a todo el ancho, no en una columna lateral como en editar usuario:
 // aquí hay DOS file inputs y cada uno enseña hasta tres previsualizaciones, así
@@ -20,8 +24,8 @@ import {
 // Una sola previsualización visible y flechas para recorrer el resto. Antes
 // dependía de un useMediaQuery que medía el ancho para mostrar una o las tres;
 // se eliminó (sesión 4) porque decidir cuánto se renderiza midiendo el ancho en
-// JS es hardcodear la responsividad. Con `slots` el hueco de las tres sigue
-// reservado, así que la caja no cambia de tamaño al agregar archivos.
+// JS es hardcodear la responsividad. Con `slots` el hueco queda reservado desde
+// el principio, así que la caja no cambia de tamaño al agregar el primer archivo.
 const PREVIEW_COUNT = 1;
 
 export default function MaterialFilesBand({
@@ -33,12 +37,12 @@ export default function MaterialFilesBand({
     sheetError,
 }) {
     return (
-        // Una sola columna hasta lg: cada file input con sus tres huecos mide
-        // ~408px (caja + 3 previsualizaciones + gaps) y no encoge, así que a
-        // 768px dos columnas se pisaban. Recién a partir de lg hay ancho para
-        // las dos. Debajo de sm ni siquiera cabe uno: ahí la tira baja a una
-        // previsualización con flechas y se coloca bajo la caja.
-        <div className="grid gap-6 lg:grid-cols-2 lg:gap-8 border-b border-border pb-6">
+        // (p49) Dos columnas ya desde sm: con un solo hueco reservado cada file
+        // input mide la caja más una previsualización (~216px), no los ~408px de
+        // antes, así que las dos caben mucho antes. El borde inferior se quita:
+        // en el modal por pasos la banda ES el paso, no una banda sobre unos
+        // campos de los que haya que separarla.
+        <div className="grid gap-6 sm:grid-cols-2 sm:gap-8">
             <div className="flex flex-col gap-2">
                 <FileInput
                     accept={IMAGE_ACCEPT}
@@ -47,7 +51,7 @@ export default function MaterialFilesBand({
                     label="Imágenes del material"
                     replaceLabel="Reemplazar imagen"
                     required
-                    slots={FILE_SLOTS}
+                    slots={FORM_PREVIEW_SLOTS}
                     directionClassName="flex-col-reverse sm:flex-row-reverse"
                     visibleCount={PREVIEW_COUNT}
                     value={images}
@@ -67,7 +71,7 @@ export default function MaterialFilesBand({
                     label="Fichas técnicas"
                     replaceLabel="Reemplazar ficha"
                     required
-                    slots={FILE_SLOTS}
+                    slots={FORM_PREVIEW_SLOTS}
                     directionClassName="flex-col-reverse sm:flex-row-reverse"
                     visibleCount={PREVIEW_COUNT}
                     value={sheets}

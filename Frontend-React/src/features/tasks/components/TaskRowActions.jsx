@@ -1,22 +1,23 @@
 import { useState } from "react";
 import { Pencil, EllipsisVertical } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { Dropdown, DropdownTrigger, DropdownItem, DropdownContent, Checkbox, Switch, Alert, usePermissions } from "@/shared";
+import { Dropdown, DropdownTrigger, DropdownItem, DropdownContent, Switch, Alert, usePermissions, IconButton } from "@/shared";
 import taskService from "@/shared/services/taskService";
 
-export default function TaskRowActions({ tasks, onChanged }) {
+// (p50) Ya no navega: visualizar y editar son modales abiertos por el listado,
+// igual que en los módulos principales. Por eso recibe `onView` y `onEdit` en
+// vez de usar el router.
+export default function TaskRowActions({ tasks, onChanged, onView, onEdit }) {
   const { can } = usePermissions();
-  const navigate = useNavigate();
-  const [busy, setBusy] = useState(false);
+  const [ocupado, setOcupado] = useState(false);
 
   const handleToggle = async () => {
     // Confirmación obligatoria antes de activar/desactivar (soft-delete)
     const result = await Alert.warning(
       `¿${tasks.isActive ? "Desactivar" : "Activar"} tarea?`,
-      `"${tasks.taskName}" quedará ${tasks.isActive ? "inactiva" : "activa nuevamente"}.`
+      `"${tasks.taskName}" quedará ${tasks.isActive ? "inactiva" : "activa nuevamente"}.`,
     );
     if (!result.isConfirmed) return;
-    setBusy(true);
+    setOcupado(true);
     try {
       await taskService.toggle(tasks.id);
       Alert.success(`Tarea ${tasks.isActive ? "desactivada" : "activada"}`);
@@ -25,38 +26,45 @@ export default function TaskRowActions({ tasks, onChanged }) {
       Alert.error("Error al cambiar estado", err.response?.data?.error ?? "");
       onChanged?.();
     } finally {
-      setBusy(false);
+      setOcupado(false);
     }
   };
 
   return (
     <div className="flex items-center gap-3">
 
-      {/* Toggle y editar: solo gestión (ADMIN/SADMIN); INST/INV ven sus tareas */}
-      {can("edit_task") && (
-      <>
-      <Switch checked={tasks.isActive} onChange={handleToggle} disabled={busy} size="sm" className="inline-flex"/>
+      {/* Activar/desactivar y editar: solo gestión. Quien solo tiene la tarea
+          asignada la abre y la marca como completada, nada más. */}
+      {can("toggle_task") && (
+        <Switch
+          checked={tasks.isActive}
+          onChange={handleToggle}
+          disabled={ocupado}
+          size="sm"
+          className="inline-flex"
+        />
+      )}
 
-      <button
-        onClick={() => navigate(`/view/tasks/${tasks.id}/edit`)}
-        className="p-1 rounded hover:bg-gray-900"
-      >
-        <Pencil size={16} />
-      </button>
-      </>
+      {can("edit_task") && (
+        <IconButton
+          ariaLabel="Editar tarea"
+          hitSize={36}
+          iconSize={16}
+          onClick={() => onEdit?.(tasks.id)}
+        >
+          <Pencil size={16} />
+        </IconButton>
       )}
 
       <Dropdown>
         <DropdownTrigger>
-          <button className="p-1 rounded hover:bg-gray-900">
+          <IconButton ariaLabel="Más acciones" hitSize={36} iconSize={16}>
             <EllipsisVertical size={16} />
-          </button>
+          </IconButton>
         </DropdownTrigger>
         <DropdownContent className="right-0">
-          <DropdownItem>
-            <button onClick={() => navigate(`/view/tasks/${tasks.id}`)}>
-              Visualizar Tarea
-            </button>
+          <DropdownItem onClick={() => onView?.(tasks.id)}>
+            Visualizar tarea
           </DropdownItem>
         </DropdownContent>
       </Dropdown>

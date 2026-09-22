@@ -73,6 +73,12 @@ export const groupRepository = {
     return rows[0] ?? null;
   },
 
+  // (p50) Busca por el nombre normalizado: es como se detecta que «Gucci» y
+  // «Gúcci» son la misma cosa antes de intentar guardarlas.
+  async findByNormalized(normalizado) {
+    return prisma.group.findUnique({ where: { groupNameNormalized: normalizado } });
+  },
+
   async create(data) {
     const rows = await prisma.$queryRaw`
       INSERT INTO groups (group_name, is_active, created_at, updated_at)
@@ -116,16 +122,16 @@ export const groupRepository = {
     return rows[0] ?? null;
   },
 
+  // (p50) De SQL crudo a llamadas de modelo, por el mismo motivo que
+  // updatePermissions: la extensión de auditoría no ve `$executeRaw`.
   async assignPermission(groupId, permissionId) {
-    await prisma.$executeRaw`
-      INSERT INTO group_permissions (group_id, permission_id)
-      VALUES (${groupId}, ${permissionId});`;
+    await prisma.groupPermission.create({ data: { groupId, permissionId } });
   },
 
   async removePermission(groupId, permissionId) {
-    await prisma.$executeRaw`
-      DELETE FROM group_permissions
-      WHERE group_id = ${groupId} AND permission_id = ${permissionId};`;
+    await prisma.groupPermission.delete({
+      where: { groupId_permissionId: { groupId, permissionId } },
+    });
   },
 
   async hasPermission(groupId, permissionId) {
@@ -148,12 +154,22 @@ export const groupRepository = {
       WHERE gp.group_id = ${groupId};`;
   },
 
-  // Reemplazo atómico del set de permisos: DELETE + INSERTs en una sola transacción
+  // Reemplazo atómico del set de permisos: borrar + insertar en una transacción.
+  //
+  // (p50) Pasó de `$executeRaw` a llamadas de modelo de Prisma. El motivo no es
+  // estilo: la auditoría automática es una extensión de Prisma, y una extensión
+  // NO VE el SQL crudo. Mientras esto fuera `$executeRaw`, cambiar qué puede
+  // hacer cada grupo —la operación más sensible del sistema— seguiría sin dejar
+  // ninguna huella, que es precisamente el hueco que la auditoría venía a cerrar.
+  //
+  // El comportamiento es idéntico: mismo borrado total y mismas inserciones,
+  // dentro de la misma transacción.
   async updatePermissions(groupId, permissionIds) {
     await prisma.$transaction([
-      prisma.$executeRaw`DELETE FROM group_permissions WHERE group_id = ${groupId}`,
-      ...permissionIds.map((pid) =>
-        prisma.$executeRaw`INSERT INTO group_permissions (group_id, permission_id) VALUES (${groupId}, ${pid})`),
+      prisma.groupPermission.deleteMany({ where: { groupId } }),
+      prisma.groupPermission.createMany({
+        data: permissionIds.map((permissionId) => ({ groupId, permissionId })),
+      }),
     ]);
   },
 };

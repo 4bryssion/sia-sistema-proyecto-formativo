@@ -6,7 +6,7 @@ import ReportConfigModal from "../reports/components/ReportConfigModal";
 import ViewUserModal from "@/shared/components/users/ViewUserModal";
 import EditUserModal from "@/shared/components/users/EditUserModal";
 import ReactivateUserModal from "@/shared/components/users/ReactivateUserModal";
-import { Link } from "react-router-dom";
+import CreateUserModal from "../components/CreateUserModal";
 import { useState } from "react";
 
 // Tipo de usuario = userAccountType del modelo (enum AccountType del backend)
@@ -23,6 +23,7 @@ export default function ListUserPage() {
   // Una sola instancia de cada modal para toda la tabla: las filas solo dicen
   // qué id abrir. Montar un modal por fila multiplicaría los componentes y las
   // peticiones sin ninguna ganancia.
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [viewUserId, setViewUserId] = useState(null);
   const [editUserId, setEditUserId] = useState(null);
   // (p48) Reactivar exige fechas nuevas: se guarda el usuario entero, no el id,
@@ -46,10 +47,13 @@ export default function ListUserPage() {
           Generar Reporte
         </Button>
 
+        {/* (p49) Crear usuario dejó de ser una página: es un modal por pasos,
+            igual que crear tarea. Se abre desde aquí y al guardar refresca el
+            listado, sin navegar a ninguna parte. */}
         {can("create_user") && (
-          <Link to="/dashboard/users/create">
-            <Button variant="primary">Crear Usuario</Button>
-          </Link>
+          <Button variant="primary" onClick={() => setIsCreateOpen(true)}>
+            Crear Usuario
+          </Button>
         )}
       </ListPageHeader>
 
@@ -71,6 +75,12 @@ export default function ListUserPage() {
           }
         />
       )}
+
+      <CreateUserModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSaved={refetch}
+      />
 
       <ReportConfigModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} users={visibleUsers} statusLabel={getStatusFilterLabel(status)} />
 

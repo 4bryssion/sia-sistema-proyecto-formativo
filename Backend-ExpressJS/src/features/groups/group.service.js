@@ -1,4 +1,5 @@
 import { groupRepository } from './group.repository.js';
+import { prepararNombre } from '../../shared/catalogName.js';
 import { permissionRepository } from '../permissions/permission.repository.js';
 
 export const groupService = {
@@ -19,12 +20,29 @@ export const groupService = {
   },
 
   async create(data) {
-    return groupRepository.create(data);
+    const { limpio, normalizado } = await prepararNombre({
+      valor: data.groupName,
+      buscar: groupRepository.findByNormalized,
+      mensajeVacio: () => 'El nombre del grupo no puede quedar vacío.',
+      mensajeChoque: (x) => `Ya existe un grupo registrado como «${x.groupName}». Usa ese o escribe un nombre distinto.`,
+    });
+    return groupRepository.create({ ...data, groupName: limpio, groupNameNormalized: normalizado });
   },
 
   async update(id, data) {
     await groupService.getById(id);
-    return groupRepository.update(id, data);
+    // El nombre no es obligatorio en el PUT: si no viene, no se toca ni se
+    // recalcula su forma normalizada.
+    if (data.groupName === undefined) return groupRepository.update(id, data);
+
+    const { limpio, normalizado } = await prepararNombre({
+      valor: data.groupName,
+      buscar: groupRepository.findByNormalized,
+      idActual: id,
+      mensajeVacio: () => 'El nombre del grupo no puede quedar vacío.',
+      mensajeChoque: (x) => `Ya existe un grupo registrado como «${x.groupName}». Usa ese o escribe un nombre distinto.`,
+    });
+    return groupRepository.update(id, { ...data, groupName: limpio, groupNameNormalized: normalizado });
   },
 
   async toggle(id) {

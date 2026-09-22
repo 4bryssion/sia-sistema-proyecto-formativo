@@ -1,6 +1,5 @@
 import { getStatusFilterLabel } from "@/shared/reports/statusLabel";
 import { DataTable, Button, FilterMenu, usePermissions, ListPageHeader, StatusFilterSelect } from "@/shared";
-import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useReturnableMaterials } from "../hooks/useReturnableMaterials";
 import { returnableMaterialColumns } from "../table/returnableMaterialColumns";
@@ -8,11 +7,13 @@ import { STATUS_FILTER_OPTIONS } from "@/shared/utils/materialStatusLabel";
 import ReportConfigModal from "../reports/components/ReportConfigModal";
 import ViewReturnableMaterialModal from "../components/ViewReturnableMaterialModal";
 import EditReturnableMaterialModal from "../components/EditReturnableMaterialModal";
+import CreateReturnableMaterialModal from "../components/CreateReturnableMaterialModal";
 
 export default function ListReturnableMaterialPage() {
   const { can } = usePermissions();
   const [status, setStatus]                       = useState("active");
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen]           = useState(false);
   // Filtro por estado del material. Igual que en usuarios y consumibles, se
   // aplica sobre los datos ANTES de entregarlos a la tabla: así el buscador, la
   // paginación, el contador y el reporte trabajan sobre el conjunto ya filtrado.
@@ -37,10 +38,12 @@ export default function ListReturnableMaterialPage() {
         <Button variant="secondary" onClick={() => setIsReportModalOpen(true)}>
           Generar Reporte
         </Button>
+        {/* (p49) Crear material dejó de ser una página: es un modal de 6 pasos.
+            Al guardar refresca el listado sin navegar a ninguna parte. */}
         {can("create_returnable_material") && (
-        <Link to="/dashboard/returnable-materials/create">
-          <Button variant="primary">Crear Material</Button>
-        </Link>
+          <Button variant="primary" onClick={() => setIsCreateOpen(true)}>
+            Crear Material
+          </Button>
         )}
       </ListPageHeader>
 
@@ -75,6 +78,12 @@ export default function ListReturnableMaterialPage() {
         materialId={viewMaterialId}
         onClose={() => setViewMaterialId(null)}
         onEdit={(id) => { setViewMaterialId(null); setEditMaterialId(id); }}
+      />
+
+      <CreateReturnableMaterialModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSaved={refetch}
       />
 
       <EditReturnableMaterialModal

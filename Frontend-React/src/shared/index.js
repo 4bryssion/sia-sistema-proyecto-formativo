@@ -1,7 +1,6 @@
 // Shared - Components
 
 export { default as Button } from "./components/Button";
-export { default as CancelButton } from "./components/CancelButton";
 export { Alert } from "./components/utils/alert.js";
 export { PermissionsProvider, usePermissions } from "./context/PermissionsContext.jsx";
 export { default as RequirePermission } from "./components/auth/RequirePermission.jsx";
@@ -25,6 +24,7 @@ export {
 export { default as FileInput } from "./components/FileInput";
 export { default as FilterMenu } from "./components/FilterMenu";
 export { IconButton } from "./components/IconButton";
+export { default as ImageZoom } from "./components/ImageZoom";
 export { default as Input } from "./components/Input";
 export { default as ListPageHeader } from "./components/ListPageHeader";
 export { default as Modal } from "./components/Modal";

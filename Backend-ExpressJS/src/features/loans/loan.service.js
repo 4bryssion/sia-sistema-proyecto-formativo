@@ -148,8 +148,11 @@ export const loanService = {
     });
     sendSignatureEmails(loan); // fire-and-forget: no bloquea la respuesta de creación
     // (P43) Log del sistema
+    // (p50) Único aviso que genera este módulo. Sin destinatario: va al tablero
+    // de los administradores. Los cambios posteriores del préstamo (edición,
+    // activación, firmas) ya no avisan: quedan en `audit_log`.
     notify({
-      title: 'Préstamo creado',
+      title: 'Préstamo realizado',
       description:
         `Préstamo #${loan.id} (${loan.loanType.toLowerCase()}) creado` +
         `${loan.apprenticeGroup ? ` para el grupo ${loan.apprenticeGroup}` : ''} (pendiente de firmas).`,
@@ -177,12 +180,6 @@ export const loanService = {
       }
     }
     const toggled= await loanRepository.toggle(id, !loan.isActive, lines);
-    notify({
-      title: toggled.isActive ? 'Préstamo reactivado' : 'Préstamo desactivado',
-      description: `Préstamo #${id} ${toggled.isActive ? 'reactivado (stock descontado nuevamente)' : 'desactivado (stock restaurado)'}.`,
-      severity: toggled.isActive ? 'Informativa' : 'Advertencia',
-      module: 'loans',
-    });
     return toggled;
   },
 
@@ -247,15 +244,6 @@ export const loanService = {
     const detalle = data.materials
       .map((m) => `material #${m.materialId} x${m.borrowedQuantity}`)
       .join(', ');
-    notify({
-      title: 'Préstamo modificado',
-      description:
-        `Préstamo #${id} actualizado. Materiales: ${detalle}.` +
-        (partesReiniciadas.length
-          ? ` Cambió ${partesReiniciadas.join(' y ').toLowerCase()}: el préstamo vuelve a pendiente de confirmación y se reenvió el enlace de firma.`
-          : ''),
-      module: 'loans',
-    });
     return updated;
   },
 

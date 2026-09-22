@@ -1,6 +1,5 @@
 import { inventoryRepository } from './inventory.repository.js';
-import { notify } from '../notifications/notification.service.js';
-
+import { prepararNombre } from '../../shared/catalogName.js';
 export const inventoryService = {
   // Mismo contrato de `status` que materiales: active (por defecto) | inactive | all
   async getAll(status) {
@@ -18,24 +17,29 @@ export const inventoryService = {
   },
 
   async create(data) {
-    const created = await inventoryRepository.create(data);
-    notify({
-      title: 'Inventario creado',
-      description: `Se creó el inventario "${created.inventoryName}".`,
-      module: 'inventories',
+    const { limpio, normalizado } = await prepararNombre({
+      valor: data.inventoryName,
+      buscar: inventoryRepository.findByNormalized,
+      mensajeVacio: () => 'El nombre del inventario no puede quedar vacío.',
+      mensajeChoque: (x) => `Ya existe un inventario registrado como «${x.inventoryName}». Usa ese o escribe un nombre distinto.`,
     });
-    return created;
+    return inventoryRepository.create({ ...data, inventoryName: limpio, inventoryNameNormalized: normalizado });
   },
 
   async update(id, data) {
     await inventoryService.getById(id);
-    const updated = await inventoryRepository.update(id, data);
-    notify({
-      title: 'Inventario modificado',
-      description: `Se actualizó el inventario "${updated.inventoryName}".`,
-      module: 'inventories',
+    // El nombre no es obligatorio en el PUT: si no viene, no se toca ni se
+    // recalcula su forma normalizada.
+    if (data.inventoryName === undefined) return inventoryRepository.update(id, data);
+
+    const { limpio, normalizado } = await prepararNombre({
+      valor: data.inventoryName,
+      buscar: inventoryRepository.findByNormalized,
+      idActual: id,
+      mensajeVacio: () => 'El nombre del inventario no puede quedar vacío.',
+      mensajeChoque: (x) => `Ya existe un inventario registrado como «${x.inventoryName}». Usa ese o escribe un nombre distinto.`,
     });
-    return updated;
+    return inventoryRepository.update(id, { ...data, inventoryName: limpio, inventoryNameNormalized: normalizado });
   },
 
   async toggle(id) {
@@ -45,16 +49,6 @@ export const inventoryService = {
     // de ofrecerse al crear o editar un material.
     const materiales = await inventoryRepository.countMaterials(id);
     const updated = await inventoryRepository.toggle(id, !record.isActive);
-    notify({
-      title: updated.isActive ? 'Inventario activado' : 'Inventario desactivado',
-      description:
-        `"${updated.inventoryName}" quedó ${updated.isActive ? 'activo' : 'inactivo'}` +
-        (!updated.isActive && materiales > 0
-          ? `. Conserva ${materiales} material(es) asignado(s).`
-          : '.'),
-      severity: updated.isActive ? 'Informativa' : 'Advertencia',
-      module: 'inventories',
-    });
     return updated;
   },
 };

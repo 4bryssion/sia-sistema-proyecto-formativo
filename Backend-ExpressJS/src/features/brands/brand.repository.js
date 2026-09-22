@@ -17,6 +17,12 @@ export const brandRepository = {
     return prisma.brand.findUnique({ where: { id } });
   },
 
+  // (p50) Busca por el nombre normalizado: es como se detecta que «Gucci» y
+  // «Gúcci» son la misma cosa antes de intentar guardarlas.
+  async findByNormalized(normalizado) {
+    return prisma.brand.findUnique({ where: { brandNameNormalized: normalizado } });
+  },
+
   async create(data) {
     return prisma.brand.create({ data });
   },

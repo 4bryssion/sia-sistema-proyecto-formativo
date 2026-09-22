@@ -6,9 +6,8 @@
 // inputs deshabilitados. Sin logo del SENA.
 
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
-import { Modal, Button, IconButton, usePermissions } from "@/shared";
-import { Pencil, X } from "lucide-react";
+import { Modal, Button, ImageZoom, usePermissions } from "@/shared";
+import { Pencil } from "lucide-react";
 import loanService from "@/shared/services/loanService";
 import { getLoanStatusLabel, getLoanTypeLabel } from "../utils/loanStatusLabel";
 import { partyLabel, documentoDe, firmaDe, nombreDe } from "@/shared/utils/loanParties";
@@ -227,31 +226,19 @@ export default function ViewLoanModal({ isOpen, loanId, onClose, onEdit }) {
 
       {/* Visor de la foto ampliada, en su PROPIO portal: en el árbol de la página
           quedaría en otro contexto de apilamiento y el z-index no lo subiría */}
-      {zoom && loaded && receptor?.userPhoto && createPortal(
-        <div
-          className="fixed inset-0 z-110 flex items-center justify-center bg-black/80 p-6 cursor-zoom-out"
-          onClick={() => setZoom(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Foto de ${receptorLabel}`}
-        >
-          <div className="absolute top-4 right-4">
-            <IconButton ariaLabel="Cerrar imagen" variant="onColor" onClick={() => setZoom(false)}>
-              <X strokeWidth={2.5} />
-            </IconButton>
-          </div>
-          <div
-            className="w-[min(63vw,630px)] h-[60vh] grid place-items-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <UserPhoto
-              photo={receptor.userPhoto}
-              alt={receptorLabel}
-              className="w-full h-full"
-            />
-          </div>
-        </div>,
-        document.body,
+      {/* (p50) Visor compartido: ver ImageZoom. */}
+      {loaded && receptor?.userPhoto && (
+      <ImageZoom
+        isOpen={zoom}
+        onClose={() => setZoom(false)}
+        label={`Foto de ${receptorLabel}`}
+      >
+        <UserPhoto
+          photo={receptor?.userPhoto}
+          alt={receptorLabel}
+          className="w-full h-full"
+        />
+      </ImageZoom>
       )}
     </>
   );

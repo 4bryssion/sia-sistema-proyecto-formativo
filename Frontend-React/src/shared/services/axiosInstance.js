@@ -5,7 +5,7 @@
 import axios from "axios";
 import { Alert } from "../components/utils/alert.js";
 import { clearSession } from "@/shared/services/logoutService";
-import { setMustChangePassword } from "@/shared/services/authStorage";
+import { setMustChangePassword, getToken } from "@/shared/services/authStorage";
 
 const api = axios.create({
   baseURL: "http://localhost:5000/api",
@@ -14,7 +14,7 @@ const api = axios.create({
 
 // Interceptor de request: adjuntar token JWT automáticamente
 api.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem("token");
+  const token = getToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });

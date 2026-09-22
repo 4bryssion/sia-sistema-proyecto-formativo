@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { IconButton, Dropdown, DropdownTrigger, DropdownItem, DropdownContent, getCurrentUser, Alert, usePermissions } from "@/shared";
+import { useUnreadNotifications } from "@/shared/hooks/useUnreadNotifications";
 
 // Import directo (no vía @/features/users) para no arrastrar el índice completo
 // del módulo de usuarios dentro del layout
@@ -23,6 +24,11 @@ import logo from "@/assets/logos/logo-sena-negro.png";
 
 export default function Navbar(){
     const { can } = usePermissions();
+
+    // (p50) Punto verde de la campana. Solo se consulta si la persona puede ver
+    // notificaciones: sin permiso el icono ni siquiera se dibuja, así que pedir
+    // el estado sería una petición garantizada a devolver 403.
+    const { hayNuevas } = useUnreadNotifications(can("list_notifications"));
 
     const [view, setView] = useState("main");
     // Id del usuario cuyo perfil se está viendo en el modal (null = cerrado)
@@ -99,12 +105,17 @@ export default function Navbar(){
                             flex items-center gap-4    
                         `}
                     >
-                        {/* Icono de notificaciones de historial general */}
+                        {/* (p50) Notificaciones. El punto verde avisa de una tarea
+                            recién asignada o de un préstamo o devolución nuevos,
+                            según a quién le corresponda ver cada cosa. Se apaga
+                            al abrir la pantalla. */}
                         {can("list_notifications") && (
-                        <Link to="/dashboard/alert-history">
+                        <Link to="/dashboard/notifications">
                             <IconButton
-                                ariaLabel = "Notificaciones de historial general"
+                                ariaLabel = "Notificaciones"
                                 variant="onColor"
+                                badge={hayNuevas}
+                                badgeLabel="Tienes notificaciones sin ver"
                             >
                                 <Bell strokeWidth={2.8} />
                             </IconButton>
@@ -189,6 +200,15 @@ export default function Navbar(){
                                             </DropdownItem>
                                             )}
 
+                                            {/* (p50) Cotizaciones va encima de Tareas */}
+                                            {can("list_quotations") && (
+                                            <DropdownItem>
+                                                <Link to="/dashboard/quotations" className="block w-full">
+                                                    Cotizaciones
+                                                </Link>
+                                            </DropdownItem>
+                                            )}
+
                                             {can("list_tasks") && (
                                             <DropdownItem>
                                                 <Link to="/dashboard/tasks" className="block w-full">
@@ -235,7 +255,16 @@ export default function Navbar(){
                                             </DropdownItem>
                                             )}
 
-                                            {/* Inventarios va inmediatamente debajo de Marcas (p48) */}
+                                            {/* (p50) Categorías va entre Marcas e Inventarios */}
+                                            {can("list_categories") && (
+                                            <DropdownItem>
+                                                <Link to="/dashboard/categories" className="block w-full">
+                                                    Categorías
+                                                </Link>
+                                            </DropdownItem>
+                                            )}
+
+                                            {/* Inventarios va inmediatamente debajo (p48) */}
                                             {can("list_inventories") && (
                                             <DropdownItem>
                                                 <Link to="/dashboard/inventories" className="block w-full">

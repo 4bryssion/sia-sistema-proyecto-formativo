@@ -60,6 +60,9 @@ function InventoryEditBody({ inventory, onClose, onSave }) {
       title="Editar inventario"
       size="sm"
       closeOnBackdrop={false}
+      // La X va fuera de la tarjeta, en la esquina: es la regla del proyecto
+      // para los modales de formulario (dentro le restaba espacio al contenido).
+      closeButtonOutside
       showCloseButton={false}
       footer={
         <>

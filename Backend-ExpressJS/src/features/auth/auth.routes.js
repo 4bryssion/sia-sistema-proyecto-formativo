@@ -46,6 +46,15 @@ const changePasswordLimiter = rateLimit({
   message: { error: 'Demasiados intentos. Intenta de nuevo en unos minutos.' },
 });
 
+// (p49) POST /api/auth/heartbeat — el navegador avisa de que sigue abierto.
+// POST /api/auth/session-ending — el navegador avisa de que se está cerrando.
+// Las dos pasan por authenticateToken (que ya comprueba el jti) y NO llevan
+// limitador: el latido es periódico por diseño y un limitador por IP echaría a
+// varios usuarios detrás de la misma salida a internet, que es el caso normal en
+// el centro de formación.
+router.post('/heartbeat', authenticateToken, authController.heartbeat);
+router.post('/session-ending', authenticateToken, authController.sessionEnding);
+
 // POST /api/auth/change-password — contraseña actual + nueva, con sesión iniciada.
 // Es una de las DOS rutas que authenticateToken deja pasar cuando el usuario
 // todavía tiene la contraseña temporal (la otra es logout): si las bloqueara,

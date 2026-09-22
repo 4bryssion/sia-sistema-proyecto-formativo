@@ -9,13 +9,15 @@
 // - Sin logo del SENA: los modales del proyecto no lo llevan.
 
 import { useEffect, useState, useMemo } from "react";
-import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
-  Modal, Button, IconButton, usePermissions, getCurrentUser,
+  Modal, Button, ImageZoom, usePermissions, getCurrentUser,
   SupportContactButton, DataPolicyCheckbox,
 } from "@/shared";
-import { Pencil, X, KeyRound } from "lucide-react";
+import { Pencil, KeyRound } from "lucide-react";
+// Las fechas de vigencia son DATE: se formatean en UTC o la zona horaria local
+// les restaría un día.
+import { formatDateOnly } from "@/shared/utils/formatDate";
 import userService from "@/shared/services/userService";
 import { getTopGroupName } from "@/shared/utils/topGroup";
 import CreateTaskModal from "@/shared/components/tasks/CreateTaskModal";
@@ -24,7 +26,6 @@ import UserPhoto from "./UserPhoto";
 import { API_FILES } from "@/shared/utils/materialFiles";
 
 // timeZone UTC: la columna es DATE, sin hora; sin esto restaría un día en UTC-5
-const fmtDateOnly = (d) => (d ? new Date(d).toLocaleDateString("es-CO", { timeZone: "UTC" }) : "—");
 
 // Par etiqueta/valor: la unidad de lectura de todo el modal
 function Field({ label, value }) {
@@ -112,6 +113,20 @@ export default function ViewUserModal({ isOpen, userId, onClose, onEdit }) {
         size="lg"
         footer={
           <>
+            {/* Extremo izquierdo del pie, frente a Cerrar/Editar. Los dos
+                accesos son de CONSULTA, no acciones sobre el usuario, y por eso
+                se separan de los botones de la derecha en vez de mezclarse con
+                los datos.
+                `mr-auto` es lo que los empuja al otro extremo: el pie del Modal
+                es `justify-end` y se respeta tal cual, sin tocar el componente
+                compartido. Cada uno lleva su icono a la IZQUIERDA. */}
+            <div className="mr-auto flex flex-wrap items-center gap-2">
+              {/* Soporte solo en el perfil propio: ofrecerle a un administrador
+                  ayuda "sobre la cuenta de otra persona" no tiene sentido */}
+              {isOwnProfile && <SupportContactButton />}
+              <DataPolicyCheckbox mode="link" />
+            </div>
+
             <Button variant="secondary" size="sm" onClick={onClose}>
               Cerrar
             </Button>
@@ -150,22 +165,18 @@ export default function ViewUserModal({ isOpen, userId, onClose, onEdit }) {
                 @{getTopGroupName(user)} - {fullName}
               </h3>
 
-              {/* El botón de soporte va junto a la insignia y SOLO en el perfil
-                  propio: ofrecerle soporte a un administrador "sobre la cuenta de
-                  otra persona" no tiene sentido */}
-              <div className="flex items-center gap-2">
-                <span
-                  className={`font-secondary text-small px-3 py-1 rounded-full ${
-                    user.isActive
-                      ? "bg-(--color-primary-100) text-(--color-primary-950)"
-                      : "bg-gray-800 text-text-primary"
-                  }`}
-                >
-                  {user.isActive ? "Activo" : "Inactivo"}
-                </span>
-
-                {isOwnProfile && <SupportContactButton />}
-              </div>
+              {/* Insignia de estado. El soporte y el tratamiento de datos
+                  estaban aquí y en la columna de datos; ahora viven los dos en
+                  el pie, junto a Cerrar y Editar. */}
+              <span
+                className={`font-secondary text-small px-3 py-1 rounded-full ${
+                  user.isActive
+                    ? "bg-(--color-primary-100) text-(--color-primary-950)"
+                    : "bg-gray-800 text-text-primary"
+                }`}
+              >
+                {user.isActive ? "Activo" : "Inactivo"}
+              </span>
 
               {/* Cambiar contraseña: solo el propio dueño de la cuenta. Un
                   administrador NO puede cambiarle la contraseña a otro — el
@@ -182,11 +193,15 @@ export default function ViewUserModal({ isOpen, userId, onClose, onEdit }) {
                 </Button>
               )}
 
+              {/* (p50) "Ver mis tareas" sigue existiendo, pero ahora lleva a
+                  notificaciones. Antes llevaba al módulo de tareas con
+                  ?userId=, lo que obligaba al listado a filtrarse por "mis
+                  tareas" y a mantener dos modos en la misma tabla. */}
               {isOwnProfile ? (
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => { onClose?.(); navigate(`/dashboard/tasks?userId=${user.id}`); }}
+                  onClick={() => { onClose?.(); navigate("/dashboard/notifications"); }}
                 >
                   Ver mis tareas
                 </Button>
@@ -214,15 +229,8 @@ export default function ViewUserModal({ isOpen, userId, onClose, onEdit }) {
                   de creación del registro: puede ser anterior (alguien que ya
                   venía vinculado). Y la de finalización ya no admite el caso
                   "sin fecha": desapareció con la excepción de instructor de planta. */}
-              <Field label="Fecha de inicio" value={fmtDateOnly(user.userStartDate)} />
-              <Field label="Fecha de finalización" value={fmtDateOnly(user.userEndDate)} />
-
-              {/* Consulta del tratamiento de datos que se aceptó al crear la
-                  cuenta. Aquí no hay nada que aceptar, solo leer: por eso
-                  mode="link" y no la casilla */}
-              <div className="sm:col-span-2">
-                <DataPolicyCheckbox mode="link" />
-              </div>
+              <Field label="Fecha de inicio" value={formatDateOnly(user.userStartDate)} />
+              <Field label="Fecha de finalización" value={formatDateOnly(user.userEndDate)} />
 
               {/* Un usuario puede pertenecer a varios grupos: se listan todos */}
               <div className="sm:col-span-2">
@@ -254,27 +262,21 @@ export default function ViewUserModal({ isOpen, userId, onClose, onEdit }) {
           Con ambos como hijos directos de body, el z mayor sí manda. */}
       {/* `loaded` y no `user`: mientras llega el usuario pedido sigue en memoria
           el anterior, y el visor mostraría la foto de otra persona */}
-      {zoom && loaded && user.userPhoto && createPortal(
-        <div
-          className="fixed inset-0 z-110 flex items-center justify-center bg-black/80 p-6 cursor-zoom-out"
-          onClick={() => setZoom(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Foto de ${fullName}`}
-        >
-          <div className="absolute top-4 right-4">
-            <IconButton ariaLabel="Cerrar foto" variant="onColor" onClick={() => setZoom(false)}>
-              <X strokeWidth={2.5} />
-            </IconButton>
-          </div>
-          <img
-            src={`${API_FILES}${user.userPhoto}`}
-            alt={fullName}
-            className="max-h-[85vh] max-w-full object-contain rounded-xl"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>,
-        document.body,
+      {/* (p50) El visor pasó a ser el componente compartido: estaba escrito
+          igual aquí, en ver préstamo y en el panel de un material. */}
+      {loaded && user?.userPhoto && (
+      <ImageZoom
+        isOpen={zoom}
+        onClose={() => setZoom(false)}
+        label={`Foto de ${fullName}`}
+        closeLabel="Cerrar foto"
+      >
+        <img
+          src={`${API_FILES}${user.userPhoto}`}
+          alt={fullName}
+          className="w-full h-full object-contain rounded-xl cursor-default"
+        />
+      </ImageZoom>
       )}
 
       {/* Cambiar la propia contraseña (voluntario). El obligatorio del primer

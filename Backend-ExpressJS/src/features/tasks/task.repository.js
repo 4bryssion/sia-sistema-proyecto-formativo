@@ -1,9 +1,13 @@
 import prisma from '../../config/prisma.js';
 
 export const taskRepository = {
-  async findAll() {
+  // (p50) `isActiveFilter` undefined = sin filtrar (Todos). Mismo contrato que
+  // el resto de los listados del sistema: el service lo traduce desde `status`.
+  async findAll(isActiveFilter) {
+    const where = {};
+    if (isActiveFilter !== undefined) where.isActive = isActiveFilter;
     return prisma.task.findMany({
-      where: { isActive: true },
+      where,
       include: {
         user: { select: { id: true, userFirstName: true, userLastName: true } },
       },

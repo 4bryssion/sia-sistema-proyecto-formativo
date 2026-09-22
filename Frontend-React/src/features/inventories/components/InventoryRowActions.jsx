@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pencil } from "lucide-react";
-import { Switch, Alert, usePermissions } from "@/shared";
+import { Switch, Alert, usePermissions, IconButton } from "@/shared";
 import inventoryService from "@/shared/services/inventoryService";
 import EditInventoryPage from "../pages/EditInventoryPage.jsx";
 
@@ -48,12 +48,9 @@ export default function InventoryRowActions({ inventory, onChanged }) {
             )}
 
             {can("edit_inventory") && (
-            <button
-                onClick={() => setIsEditOpen(true)}
-                className="p-1 rounded hover:bg-gray-900"
-            >
+            <IconButton ariaLabel="Editar inventario" hitSize={36} iconSize={16} onClick={() => setIsEditOpen(true)}>
                 <Pencil size={16} />
-            </button>
+            </IconButton>
             )}
 
             <EditInventoryPage

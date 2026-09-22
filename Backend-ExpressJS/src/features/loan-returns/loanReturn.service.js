@@ -1,5 +1,4 @@
 import { loanReturnRepository } from './loanReturn.repository.js';
-import { notify } from '../notifications/notification.service.js';
 import prisma from '../../config/prisma.js';
 
 export const loanReturnService = {
@@ -74,28 +73,12 @@ export const loanReturnService = {
     };
 
     const created = await loanReturnRepository.createWithRestore(data, restore);
-    // (P43) Log del sistema
-    notify({
-      title: 'Retorno de préstamo registrado',
-      description: `Préstamo #${data.loanId}: material #${data.materialId} retornado`
-        + (data.remainingQuantity !== undefined && data.remainingQuantity !== null
-            ? ` (cantidad devuelta: ${data.remainingQuantity}).`
-            : (bodyData.materialStatus ? ` (estado del material: ${bodyData.materialStatus}).` : '.')),
-      severity: 'Informativa',
-      module: 'loan-returns',
-    });
     return created;
   },
 
   async toggle(id) {
     const record = await loanReturnService.getById(id);
     const updated = await loanReturnRepository.toggle(id, !record.isActive);
-    notify({
-      title: updated.isActive ? 'Retorno reactivado' : 'Retorno anulado',
-      description: `El retorno #${id} quedó ${updated.isActive ? 'activo' : 'anulado'}.`,
-      severity: updated.isActive ? 'Informativa' : 'Advertencia',
-      module: 'loan-returns',
-    });
     return updated;
   },
 };

@@ -150,11 +150,16 @@ export function DropdownItem({
     children,
     onClick,
     keepOpen,
+    // (p50) Un item que solo informa ("Devolución ya autorizada", "Sin permiso
+    // para autorizar") no es pulsable: se marca así para que no se comporte ni
+    // se vea como si lo fuera.
+    disabled = false,
     className = ""
 }) {
     const { setOpen } = useContext(DropdownContext)
 
     const handleClick = (e) => {
+        if (disabled) return
         onClick?.(e)
         if(keepOpen) return
         setOpen(false)
@@ -164,7 +169,14 @@ export function DropdownItem({
         <button
             role="menuitem"
             onClick={handleClick}
-            className={`w-full text-left px-3 py-2 rounded-lg hover:bg-gray-500 focus:bg-gray-100 transition-colors ${className}`}
+            disabled={disabled}
+            // (p50) El cursor de mano se decide AQUÍ y no en cada consumidor: un
+            // item de menú es pulsable, y repartir esa clase por los sitios que
+            // usan el dropdown garantizaba que alguno se quedara sin ella — que
+            // es justo lo que pasaba en la navbar.
+            className={`w-full text-left px-3 py-2 rounded-lg transition-colors
+                cursor-pointer hover:bg-gray-500 focus:bg-gray-100
+                disabled:cursor-default disabled:hover:bg-transparent ${className}`}
         >
             {children}
         </button>

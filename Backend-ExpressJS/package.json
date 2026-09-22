@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "revisar-duplicados": "node prisma/revisar-duplicados.js",
+    "hashear-cotizaciones": "node prisma/hashear-cotizaciones.js"
   },
   "keywords": [
     "MVC",

@@ -2,6 +2,9 @@ import { Switch, Alert } from "@/shared";
 import UserRowActions from "../components/UserRowActions";
 import { getTopGroupName } from "@/shared/utils/topGroup";
 import userService from "@/shared/services/userService";
+// Las fechas de vigencia son DATE: `formatDateOnly` y `isoUtc` las leen en UTC,
+// o la zona horaria local les restaría un día. `isoLocal` es "hoy", que sí es local.
+import { formatDateOnly, isoLocal, isoUtc } from "@/shared/utils/formatDate";
 
 // onView / onEdit: abren los modales de ListUserPage. Antes estas acciones
 // navegaban a /view/users/:id, rutas que ya no existen.
@@ -52,13 +55,13 @@ export const UserColumns = (onChanged, can = () => true, onView, onEdit, onReact
     // (p48) Campo propio del usuario, no la fecha de creación del registro:
     // antes de ella el login rechaza aunque las credenciales sean correctas
     accessorFn: (row) =>
-      row.userStartDate ? new Date(row.userStartDate).toLocaleDateString("es-CO", { timeZone: "UTC" }) : "—",
+      formatDateOnly(row.userStartDate),
   },
   {
     id: "fechaFin",
     header: "Fecha de finalización",
     accessorFn: (row) =>
-      row.userEndDate ? new Date(row.userEndDate).toLocaleDateString("es-CO", { timeZone: "UTC" }) : "—",
+      formatDateOnly(row.userEndDate),
   },
   {
     id: "estado",
@@ -79,10 +82,10 @@ export const UserColumns = (onChanged, can = () => true, onView, onEdit, onReact
           return;
         }
 
-        const hoy = new Date().toLocaleDateString("en-CA");
+        const hoy = isoLocal();
         const finFuturo =
           u.userEndDate &&
-          new Date(u.userEndDate).toLocaleDateString("en-CA", { timeZone: "UTC" }) > hoy;
+          isoUtc(u.userEndDate) > hoy;
 
         const result = await Alert.warning(
           "¿Desactivar usuario?",

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pencil } from "lucide-react";
-import { Switch, Alert, usePermissions } from "@/shared";
+import { Switch, Alert, usePermissions, IconButton } from "@/shared";
 import brandService from "@/shared/services/brandService";
 import EditBrandPage from "../pages/EditBrandPage.jsx";
 
@@ -44,12 +44,9 @@ export default function BrandRowActions({ brand, onChanged }) {
             )}
 
             {can("edit_brand") && (
-            <button
-                onClick={() => setIsEditOpen(true)}
-                className="p-1 rounded hover:bg-gray-900"
-            >
+            <IconButton ariaLabel="Editar marca" hitSize={36} iconSize={16} onClick={() => setIsEditOpen(true)}>
                 <Pencil size={16} />
-            </button>
+            </IconButton>
             )}
 
             <EditBrandPage

@@ -1,6 +1,5 @@
 import { getStatusFilterLabel } from "@/shared/reports/statusLabel";
 import { Button, DataTable, FilterMenu, usePermissions , ListPageHeader, StatusFilterSelect } from "@/shared";
-import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useConsumableMaterials } from "../hooks/useConsumableMaterials";
 import { consumableMaterialColumns } from "../table/consumableMaterialColumns";
@@ -8,11 +7,13 @@ import { STATUS_FILTER_OPTIONS } from "@/shared/utils/materialStatusLabel";
 import ReportConfigModal from "../reports/components/ReportConfigModal";
 import ViewConsumableMaterialModal from "../components/ViewConsumableMaterialModal";
 import EditConsumableMaterialModal from "../components/EditConsumableMaterialModal";
+import CreateConsumableMaterialModal from "../components/CreateConsumableMaterialModal";
 
 export default function ListConsumableMaterialPage() {
   const { can } = usePermissions();
   const [status, setStatus]                       = useState("active");
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen]           = useState(false);
   // Filtro por estado del material. Igual que en usuarios, se aplica sobre los
   // datos ANTES de entregarlos a la tabla: así el buscador, la paginación y el
   // contador de registros trabajan sobre el conjunto ya filtrado.
@@ -35,10 +36,12 @@ export default function ListConsumableMaterialPage() {
         <Button variant="secondary" onClick={() => setIsReportModalOpen(true)}>
           Generar Reporte
         </Button>
+        {/* (p49) Crear material dejó de ser una página: es un modal de 5 pasos.
+            Al guardar refresca el listado sin navegar a ninguna parte. */}
         {can("create_consumable_material") && (
-        <Link to="/dashboard/consumable-materials/create">
-          <Button variant="primary">Crear Material</Button>
-        </Link>
+          <Button variant="primary" onClick={() => setIsCreateOpen(true)}>
+            Crear Material
+          </Button>
         )}
       </ListPageHeader>
 
@@ -73,6 +76,12 @@ export default function ListConsumableMaterialPage() {
         materialId={viewMaterialId}
         onClose={() => setViewMaterialId(null)}
         onEdit={(id) => { setViewMaterialId(null); setEditMaterialId(id); }}
+      />
+
+      <CreateConsumableMaterialModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSaved={refetch}
       />
 
       <EditConsumableMaterialModal

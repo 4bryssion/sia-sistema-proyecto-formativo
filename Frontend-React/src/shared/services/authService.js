@@ -11,6 +11,8 @@
 // contraseña actual que escribió el usuario no coincide. Con axios, equivocarse
 // al escribirla te echaría del sistema.
 
+import { getToken } from "@/shared/services/authStorage";
+
 const API_URL = "http://localhost:5000/api/auth";
 
 export async function login(userData) {
@@ -97,7 +99,7 @@ export async function resetPassword({ resetTicket, newPassword }) {
  * complejidad exigida) y del 429 del limitador.
  */
 export async function changePassword({ currentPassword, newPassword }) {
-    const token = sessionStorage.getItem("token");
+    const token = getToken();
     const response = await fetch(`${API_URL}/change-password`, {
         method: "POST",
         headers: {

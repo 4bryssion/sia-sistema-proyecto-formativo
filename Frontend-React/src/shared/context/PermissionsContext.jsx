@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import api from "../services/axiosInstance";
-import { getCurrentUser, getCurrentUserName, setCurrentUserName } from "../services/authStorage";
+import { getCurrentUser, getCurrentUserName, setCurrentUserName, getToken } from "../services/authStorage";
 
 /**
  * Permission Gate — RBAC dinámico con autorización basada en permisos.
@@ -20,7 +20,7 @@ export function PermissionsProvider({ children }) {
 
   const fetchPermissions = useCallback(async () => {
     // Sin token no hay nada que consultar (rutas públicas como la firma de préstamos)
-    if (!sessionStorage.getItem("token")) {
+    if (!getToken()) {
       setPermissions([]);
       setLoading(false);
       return;
@@ -40,7 +40,7 @@ export function PermissionsProvider({ children }) {
   useEffect(() => { fetchPermissions(); }, [fetchPermissions]);
 
   // Resuelve el nombre completo del usuario autenticado y lo cachea en
-  // sessionStorage. Se hace aquí porque este provider ya envuelve /dashboard y
+  // el almacenamiento de sesión. Se hace aquí porque este provider ya envuelve /dashboard y
   // /view y corre una sola vez por sesión; los encabezados de los reportes lo
   // leen después de forma síncrona. GET /users/:id con el propio id está
   // permitido sin list_users (excepción documentada de "Mi perfil").

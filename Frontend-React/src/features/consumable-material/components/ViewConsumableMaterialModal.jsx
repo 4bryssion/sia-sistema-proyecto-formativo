@@ -15,7 +15,8 @@ import { useEffect, useState } from "react";
 import { Modal, Button, usePermissions } from "@/shared";
 import { Pencil } from "lucide-react";
 import MaterialIdentityPanel from "@/shared/components/materials/MaterialIdentityPanel";
-import MaterialField from "@/shared/components/materials/MaterialField";
+import LabelValue from "@/shared/components/LabelValue";
+import { assignedQuotations } from "@/shared/utils/quotationFiles";
 import { money } from "@/shared/utils/formatMoney";
 import consumableMaterialService from "@/shared/services/consumableMaterialService";
 import { accountableNames } from "@/shared/utils/accountables";
@@ -75,6 +76,7 @@ export default function ViewConsumableMaterialModal({ isOpen, materialId, onClos
 
           <MaterialIdentityPanel
             images={material.images ?? []}
+            quotations={assignedQuotations(material.quotations)}
             sheets={material.technicalSheets ?? []}
             name={material.materialName}
             status={material.status}
@@ -88,13 +90,13 @@ export default function ViewConsumableMaterialModal({ isOpen, materialId, onClos
               <p className="sm:col-span-2 font-main text-body font-bold text-(--color-primary-950)">
                 Identificación
               </p>
-              <MaterialField label="Marca" value={material.brand?.brandName} />
-              <MaterialField label="Inventario" value={material.inventory?.inventoryName} />
-              <MaterialField label="Placa SENA" value={material.senaPlate} />
-              <MaterialField label="Ubicación" value={material.location} />
+              <LabelValue label="Marca" value={material.brand?.brandName} />
+              <LabelValue label="Inventario" value={material.inventory?.inventoryName} />
+              <LabelValue label="Placa SENA" value={material.senaPlate} />
+              <LabelValue label="Ubicación" value={material.location} />
               {/* Aquí SÍ caben todos los cuentadantes, uno por línea: la tabla
                   es la que tiene que resumirlos en "el primero y N más" */}
-              <MaterialField
+              <LabelValue
                 className="sm:col-span-2"
                 label={
                   (material.accountables?.length ?? 0) > 1 ? "Cuentadantes" : "Cuentadante"
@@ -107,19 +109,19 @@ export default function ViewConsumableMaterialModal({ isOpen, materialId, onClos
               <p className="sm:col-span-2 font-main text-body font-bold text-(--color-primary-950)">
                 Inventario y costos
               </p>
-              <MaterialField
+              <LabelValue
                 label="Cantidad"
                 value={isSerialized ? "1 (material serializado)" : String(material.quantity)}
               />
-              <MaterialField label="Valor unitario" value={money(material.unitPrice)} />
-              <MaterialField label="Valor total" value={money(material.totalPrice)} />
-              <MaterialField label="Fecha de compra" value={formatDateOnly(material.purchaseDate)} />
+              <LabelValue label="Valor unitario" value={money(material.unitPrice)} />
+              <LabelValue label="Valor total" value={money(material.totalPrice)} />
+              <LabelValue label="Fecha de compra" value={formatDateOnly(material.purchaseDate)} />
               {/* (p48) Fecha de ingreso al almacén */}
-              <MaterialField label="Fecha de ingreso" value={formatDateOnly(material.entryDate)} />
+              <LabelValue label="Fecha de ingreso" value={formatDateOnly(material.entryDate)} />
             </section>
 
             <section className="border-t border-border pt-4">
-              <MaterialField label="Descripción" value={material.description} />
+              <LabelValue label="Descripción" value={material.description} />
             </section>
           </div>
         </div>

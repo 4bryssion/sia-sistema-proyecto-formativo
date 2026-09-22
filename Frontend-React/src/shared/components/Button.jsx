@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 export default function Button({
-    variant = "primary", // Define el estilo visual: "primary" | "secondary" | "toggle"
+    variant = "primary", // Define el estilo visual: "primary" | "secondary" | "outline" | "toggle"
     size = "md", // Define tamaño visual
     type = "button", // Tipos de botón(buttom, submit, reset)
     children, // Contenido interno del botón(texto, icono)
@@ -20,6 +20,18 @@ export default function Button({
         primary: "bg-button-primary text-text-inverse  border border-border rounded hover:bg-button-primary-hover",
 
         secondary: "bg-button-secondary text-text-inverse border border-border hover:bg-button-secondary-hover",
+
+        // (p50) Contorno. Es la TERCERA opción de una decisión, no un cancelar:
+        // pesa menos que el primario pero sigue siendo una acción legítima, así
+        // que se distingue por el trazo y no por el color de relleno.
+        //
+        // Nació para el tercer botón de Alert.elegir ("cargar igual como
+        // copias"). SweetAlert dibuja sus propios <button> y no admite un
+        // componente de React dentro, así que la clase `.swal-btn-deny` de
+        // global.css es el REFLEJO de esta variante: si una cambia, la otra
+        // también. Vive aquí y no solo allí para que el tratamiento exista en el
+        // sistema y cualquier pantalla pueda usarlo.
+        outline: "bg-transparent text-text-primary border-2 border-button-secondary rounded hover:bg-button-secondary hover:text-text-inverse",
 
         toggle: isActive
             ? "bg-button-primary text-text-inverse border-border rounded hover:bg-button-primary-hover"

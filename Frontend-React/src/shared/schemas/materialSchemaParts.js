@@ -62,6 +62,14 @@ export const camposMaterialCrear = {
   inventoryId:    z.string().min(1, "Debe seleccionar un inventario"),
   // (p48) Uno o varios cuentadantes
   accountableIds: z.array(z.string()).min(1, "Debe seleccionar al menos un cuentadante"),
+  // (p50) Cotizaciones que respaldan el precio: entre 1 y 3, obligatorias.
+  // El tope también lo impone el Select con `maxSelected`, pero esa es una
+  // barrera de interfaz: la regla vive aquí y en el backend, que son los dos
+  // sitios donde no se puede esquivar.
+  quotationIds: z
+    .array(z.string())
+    .min(1, "Debe asignar al menos una cotización")
+    .max(3, "Un material admite máximo 3 cotizaciones"),
   senaPlate:      z.string().max(20).optional().or(z.literal("")),
   location:       z.string().min(2, "Mínimo 2 caracteres").max(100),
   quantity:       z.string().regex(/^\d+$/, "Debe ser un número entero").optional().or(z.literal("")),
@@ -79,6 +87,13 @@ export const camposMaterialEditar = {
   brandId:        z.string().optional().or(z.literal("")),
   inventoryId:    z.string().min(1, "Debe seleccionar un inventario").optional(),
   accountableIds: z.array(z.string()).min(1, "Debe seleccionar al menos un cuentadante").optional(),
+  // (p50) Al editar siguen siendo obligatorias: un material no puede quedarse
+  // sin respaldo de precio. `.optional()` solo cubre que el campo no se mande.
+  quotationIds: z
+    .array(z.string())
+    .min(1, "Debe asignar al menos una cotización")
+    .max(3, "Un material admite máximo 3 cotizaciones")
+    .optional(),
   senaPlate:      z.string().max(20).optional().or(z.literal("")),
   location:       z.string().min(2, "Mínimo 2 caracteres").max(100).optional(),
   quantity:       z.string().regex(/^\d+$/, "Debe ser un número entero").optional().or(z.literal("")),
