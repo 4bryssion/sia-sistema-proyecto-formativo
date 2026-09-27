@@ -54,6 +54,9 @@ los préstamos pendientes y los **ids** de préstamos, materiales y cotizaciones
 
 ## 3. Pruebas unitarias (Jest)
 
+Hay 21 casos unitarios de la matriz en 10 archivos (Auth, Usuarios, Materiales
+de Consumo, Préstamos, Tareas y Cotizaciones) más la prueba de humo.
+
 ```bash
 npm test                                            # todas
 npm test -- src/features/loans/loan.stock.test.js   # un archivo
@@ -68,12 +71,25 @@ ficticios y cada prueba simula (`jest.mock`) los repositories que necesite.
 1. Importa `tests/postman/SII-Pruebas.postman_collection.json` y
    `tests/postman/SII-Pruebas.postman_environment.json`.
 2. Selecciona el entorno **S.I.I - Pruebas (local)**.
+   - En **Settings → General → Working directory** elige la carpeta
+     `Backend-ExpressJS`: los casos que suben archivos los toman de
+     `tests/fixtures/` con rutas relativas.
+   - La variable `jwtSecretPruebas` debe ser igual al `JWT_SECRET` de `.env.test`
+     (por defecto `clave_ambiente_de_pruebas`): con ella se generan los enlaces
+     de firma de préstamos.
 3. Ejecuta la carpeta **00 - Sesiones**: guarda un token por rol
    (`tokenAdmin`, `tokenInstructor`, `tokenInvitado`, `tokenSinPermisos`,
    `tokenTemporal`, `tokenSuperAdmin`).
 4. Ejecuta los casos del módulo (carpetas 01 a 17). Cada módulo trae una petición
    `[BASE]` que confirma que responde.
 5. Al terminar, ejecuta **99 - Cerrar sesiones**.
+
+Cada carpeta contiene sus casos de Integración, Seguridad, Integridad de BD,
+Ciclo de Negocio y Regresión nombrados con el ID de la matriz (ej. `006-PRE`) y
+**en orden de ejecución**: algunos casos dejan el estado que necesita el siguiente
+(lo indica la descripción de cada petición y la columna Observación de la matriz).
+Para ejecutar la colección completa con el Runner, corre antes `npm run test:db:seed`:
+varios casos consumen datos sembrados (firmas, devoluciones en espera, contraseñas temporales).
 
 Si cambiaste `TEST_EMAIL_BASE` en `.env.test`, actualiza los `email*` del entorno.
 Los ids del entorno (`loanActivoId`, `materialTaladroId`…) coinciden con los que
@@ -93,6 +109,7 @@ Correo: `TEST_EMAIL_BASE` con `+alias`, ej. `pruebas.sii+admin.ui@gmail.com`.
 | `admin.api` | Administrador | activo | Postman |
 | `instructor.api` | Instructor | activo | Postman |
 | `invitado.api` | Invitado | activo | Postman |
+| `auth.api` | Invitado | activo | Postman, solo casos de Auth (login, sesión única, logout) |
 | `sinpermisos` | — | activo, sin grupo | Casos de 403 |
 | `inactivo` | Invitado | `isActive = false` | Login rechazado |
 | `vencido` | Invitado | vigencia terminada ayer | Tarea diaria de vencimiento |
@@ -147,3 +164,16 @@ que sigue "en progreso", una de otro usuario y una desactivada) y 3 notificacion
   SMTP de `.env.test`. Con Gmail, todos los `+alias` llegan al mismo buzón.
 - **Seed:** `npm run test:db:seed` solo se ejecuta contra la base de pruebas; el
   seed de desarrollo (`npx prisma db seed`) sigue requiriendo autorización.
+
+## 9. Casos que hoy detectan defectos
+
+Al preparar los scripts, estos casos quedaron fallando porque encontraron defectos
+reales del sistema. No es un problema del ambiente: registrarlos como FAILED en la
+matriz y en el Registro de Defectos.
+
+| Caso | Defecto |
+|---|---|
+| `006-ACC`, `007-ACC` | Las rutas `/api/access/:userId/groups` y `/permissions` no usan `authenticateToken` ni `requirePermission`: cualquiera, sin sesión, puede asignarse grupos y permisos. |
+| `001-GRU`, `004-GRU` | `group.repository.create` inserta sin `group_name_normalized` (NOT NULL desde p50): crear grupos responde 400. |
+| `004-MDEV` | El backend no exige `dimensions` en categorías con `requiresDimensions = true`; solo lo valida el formulario. |
+| `001-MCON`, `002-MCON` (mensaje) | Las reglas `.custom()` de los esquemas de materiales pasan su texto como `{ message }` y Joi lo ignora: el API responde `"value" failed custom validation because ` sin explicar el error. La regla sí rechaza el dato. |

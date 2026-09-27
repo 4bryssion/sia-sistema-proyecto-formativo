@@ -91,6 +91,9 @@ const USUARIOS = [
   { alias: 'admin.api',      nombre: 'Paula',     apellido: 'Herrera',   grupo: 'Administrador', cuenta: 'Cuentadante' },
   { alias: 'instructor.api', nombre: 'Jorge',     apellido: 'Ramírez',   grupo: 'Instructor',    cuenta: 'Cuentadante' },
   { alias: 'invitado.api',   nombre: 'Valentina', apellido: 'Castro',    grupo: 'Invitado',      cuenta: 'Solidario' },
+  // Exclusivo de los casos de Auth en Postman (login, sesión única, logout): así
+  // esos casos no chocan con las sesiones que abre la carpeta "00 - Sesiones".
+  { alias: 'auth.api',       nombre: 'Tomás',     apellido: 'Restrepo',  grupo: 'Invitado',      cuenta: 'Solidario' },
   // Estados especiales
   { alias: 'sinpermisos',    nombre: 'Mateo',     apellido: 'Vargas',    grupo: null,            cuenta: 'Solidario' },
   { alias: 'inactivo',       nombre: 'Camila',    apellido: 'Torres',    grupo: 'Invitado',      cuenta: 'Solidario', isActive: false },
@@ -160,7 +163,12 @@ const limpiar = async () => {
     where: { categoryName: { notIn: ['Herramienta', 'Maquinaria y equipos', 'Muebles y enseres'] } },
   });
   await prisma.documentType.deleteMany({
-    where: { documentName: { endsWith: '(pruebas)' } },
+    where: {
+      documentName: {
+        notIn: ['Cédula de Ciudadanía', 'Cédula de Extranjería', 'Tarjeta de Identidad',
+          'Permiso Especial de Permanencia', 'Permiso por Protección Temporal'],
+      },
+    },
   });
   for (const tabla of ['users', 'groups', 'categories', 'document_types']) await reajustarSecuencia(tabla);
   // Reactiva lo que una prueba anterior pudo haber desactivado
