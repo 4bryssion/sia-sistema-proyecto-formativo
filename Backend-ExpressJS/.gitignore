@@ -34,3 +34,8 @@ CLAUDE.md
 
 # Scripts temporales de desarrollo
 prisma/inject-test-user.js
+
+# Ambiente de pruebas (Matriz de Casos de Prueba v6)
+.env.test
+coverage/
+tests/fixtures/generados/

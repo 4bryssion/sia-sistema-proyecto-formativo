@@ -6,9 +6,17 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js",
-    "revisar-duplicados": "node prisma/revisar-duplicados.js",
-    "hashear-cotizaciones": "node prisma/hashear-cotizaciones.js"
+    "start": "node src/server.js",
+    "revisar-duplicados": "node prisma/revisar-duplicados.js",
+    "hashear-cotizaciones": "node prisma/hashear-cotizaciones.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:fixtures": "node tests/fixtures/generar-fixtures.js",
+    "test:db:migrate": "node scripts/test-env.js npx prisma migrate deploy",
+    "test:db:seed": "node scripts/test-env.js node prisma/seed.js && node scripts/test-env.js node prisma/seed-test.js",
+    "test:db:setup": "npm run test:db:migrate && npm run test:db:seed",
+    "test:server": "node scripts/test-env.js node src/server.js"
   },
   "keywords": [
     "MVC",
@@ -39,6 +47,10 @@
     "seed": "node prisma/seed.js"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@babel/preset-env": "^7.29.7",
+    "babel-jest": "^30.5.2",
+    "jest": "^30.5.2",
     "nodemon": "^3.1.14",
     "prisma": "^6.19.3"
   }

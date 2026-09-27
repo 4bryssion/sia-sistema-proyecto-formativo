@@ -1,0 +1,1411 @@
+{
+  "info": {
+    "_postman_id": "899ab4b4-785f-4858-b21b-1f15448111f0",
+    "name": "S.I.I - Pruebas (Matriz de Casos de Prueba v6)",
+    "description": "Colección de pruebas de Integración, Seguridad e Integridad de BD del backend S.I.I.\n\nRequisitos: base de datos de pruebas cargada (npm run test:db:setup), backend corriendo con npm run test:server y el entorno \"S.I.I - Pruebas (local)\" seleccionado. Ver Backend-ExpressJS/tests/README.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{tokenAdmin}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Regla común a TODAS las peticiones: el servidor nunca debe responder un error interno.",
+          "pm.test('Sin error interno del servidor (no 5xx)', () => pm.expect(pm.response.code).to.be.below(500));"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Sesiones",
+      "description": "Inicia sesión con cada rol y guarda su token en el entorno (tokenAdmin, tokenInstructor, ...). La sesión es ÚNICA por usuario: no inicies sesión en el navegador con los usuarios \".api\". Al terminar, ejecuta la carpeta \"99 - Cerrar sesiones\".",
+      "item": [
+        {
+          "name": "Iniciar sesión — Administrador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailAdmin}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Inicio de sesión exitoso (200)', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.environment.set('tokenAdmin', pm.response.json().token);",
+                  "} else if (pm.response.code === 409) {",
+                  "  console.warn('Ya hay una sesión abierta con este usuario. Ejecuta \"Cerrar sesión — Administrador\" o espera 5 minutos a que la sesión se libere sola.');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Iniciar sesión — Instructor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailInstructor}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Inicio de sesión exitoso (200)', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.environment.set('tokenInstructor', pm.response.json().token);",
+                  "} else if (pm.response.code === 409) {",
+                  "  console.warn('Ya hay una sesión abierta con este usuario. Ejecuta \"Cerrar sesión — Instructor\" o espera 5 minutos a que la sesión se libere sola.');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Iniciar sesión — Invitado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailInvitado}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Inicio de sesión exitoso (200)', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.environment.set('tokenInvitado', pm.response.json().token);",
+                  "} else if (pm.response.code === 409) {",
+                  "  console.warn('Ya hay una sesión abierta con este usuario. Ejecuta \"Cerrar sesión — Invitado\" o espera 5 minutos a que la sesión se libere sola.');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Iniciar sesión — Sin permisos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailSinPermisos}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Inicio de sesión exitoso (200)', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.environment.set('tokenSinPermisos', pm.response.json().token);",
+                  "} else if (pm.response.code === 409) {",
+                  "  console.warn('Ya hay una sesión abierta con este usuario. Ejecuta \"Cerrar sesión — Sin permisos\" o espera 5 minutos a que la sesión se libere sola.');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Iniciar sesión — Contraseña temporal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailTemporal}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Inicio de sesión exitoso (200)', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.environment.set('tokenTemporal', pm.response.json().token);",
+                  "} else if (pm.response.code === 409) {",
+                  "  console.warn('Ya hay una sesión abierta con este usuario. Ejecuta \"Cerrar sesión — Contraseña temporal\" o espera 5 minutos a que la sesión se libere sola.');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Iniciar sesión — SuperAdmin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailSuperAdmin}}\",\n  \"password\": \"{{passwordSuperAdmin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Inicio de sesión exitoso (200)', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.environment.set('tokenSuperAdmin', pm.response.json().token);",
+                  "} else if (pm.response.code === 409) {",
+                  "  console.warn('Ya hay una sesión abierta con este usuario. Ejecuta \"Cerrar sesión — SuperAdmin\" o espera 5 minutos a que la sesión se libere sola.');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mantener sesión viva (latido) — Administrador",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/heartbeat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "heartbeat"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "La sesión del servidor vence tras 5 minutos sin actividad (src/config/session.js). Si una prueba larga se detiene, este latido la mantiene viva."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Latido aceptado', () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 - Auth",
+      "description": "Casos AUTH. Los inicios y cierres de sesión reutilizables están en \"00 - Sesiones\".",
+      "item": []
+    },
+    {
+      "name": "02 - Usuarios",
+      "description": "Casos de prueba del módulo Usuarios (Matriz de Casos de Prueba v6). Cada petición se nombra con su ID, ej: 006-AUTH.",
+      "item": [
+        {
+          "name": "[BASE] Listar usuarios (todos los estados)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?status=all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "all"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Petición base de verificación del módulo (no es un caso de la matriz). Requiere haber iniciado sesión en \"00 - Sesiones\"."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respuesta 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve datos en JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Accesos",
+      "description": "Casos de prueba del módulo Accesos (Matriz de Casos de Prueba v6). Cada petición se nombra con su ID, ej: 006-AUTH.",
+      "item": [
+        {
+          "name": "[BASE] Mis permisos efectivos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/access/me/permissions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "access",
+                "me",
+                "permissions"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Petición base de verificación del módulo (no es un caso de la matriz). Requiere haber iniciado sesión en \"00 - Sesiones\"."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respuesta 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve datos en JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Tipo de documento",
+      "description": "Casos de prueba del módulo Tipo de documento (Matriz de Casos de Prueba v6). Cada petición se nombra con su ID, ej: 006-AUTH.",
+      "item": [
+        {
+          "name": "[BASE] Listar tipos de documento",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/document-types",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "document-types"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Petición base de verificación del módulo (no es un caso de la matriz). Requiere haber iniciado sesión en \"00 - Sesiones\"."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respuesta 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve datos en JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 - Marcas",
+      "description": "Casos de prueba del módulo Marcas (Matriz de Casos de Prueba v6). Cada petición se nombra con su ID, ej: 006-AUTH.",
+      "item": [
+        {
+          "name": "[BASE] Listar marcas (todos los estados)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/brands?status=all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "brands"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "all"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Petición base de verificación del módulo (no es un caso de la matriz). Requiere haber iniciado sesión en \"00 - Sesiones\"."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respuesta 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve datos en JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 - Inventarios",
+      "description": "Casos de prueba del módulo Inventarios (Matriz de Casos de Prueba v6). Cada petición se nombra con su ID, ej: 006-AUTH.",
+      "item": [
+        {
+          "name": "[BASE] Listar inventarios (todos los estados)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/inventories?status=all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "inventories"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "all"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Petición base de verificación del módulo (no es un caso de la matriz). Requiere haber iniciado sesión en \"00 - Sesiones\"."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respuesta 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve datos en JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 - Categorías",
+      "description": "Casos de prueba del módulo Categorías (Matriz de Casos de Prueba v6). Cada petición se nombra con su ID, ej: 006-AUTH.",
+      "item": [
+        {
+          "name": "[BASE] Listar categorías",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Petición base de verificación del módulo (no es un caso de la matriz). Requiere haber iniciado sesión en \"00 - Sesiones\"."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respuesta 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve datos en JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08 - Permisos",
+      "description": "Casos de prueba del módulo Permisos (Matriz de Casos de Prueba v6). Cada petición se nombra con su ID, ej: 006-AUTH.",
+      "item": [
+        {
+          "name": "[BASE] Listar permisos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/permissions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "permissions"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Petición base de verificación del módulo (no es un caso de la matriz). Requiere haber iniciado sesión en \"00 - Sesiones\"."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respuesta 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve datos en JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "09 - Grupos",
+      "description": "Casos de prueba del módulo Grupos (Matriz de Casos de Prueba v6). Cada petición se nombra con su ID, ej: 006-AUTH.",
+      "item": [
+        {
+          "name": "[BASE] Listar grupos (todos los estados)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/groups?status=all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "groups"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "all"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Petición base de verificación del módulo (no es un caso de la matriz). Requiere haber iniciado sesión en \"00 - Sesiones\"."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respuesta 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve datos en JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10 - Materiales de Consumo",
+      "description": "Casos de prueba del módulo Materiales de Consumo (Matriz de Casos de Prueba v6). Cada petición se nombra con su ID, ej: 006-AUTH.",
+      "item": [
+        {
+          "name": "[BASE] Listar materiales de consumo (todos los estados)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/consumable-materials?status=all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "consumable-materials"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "all"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Petición base de verificación del módulo (no es un caso de la matriz). Requiere haber iniciado sesión en \"00 - Sesiones\"."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respuesta 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve datos en JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "11 - Materiales Devolutivos",
+      "description": "Casos de prueba del módulo Materiales Devolutivos (Matriz de Casos de Prueba v6). Cada petición se nombra con su ID, ej: 006-AUTH.",
+      "item": [
+        {
+          "name": "[BASE] Listar materiales devolutivos (todos los estados)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/returnable-materials?status=all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "returnable-materials"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "all"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Petición base de verificación del módulo (no es un caso de la matriz). Requiere haber iniciado sesión en \"00 - Sesiones\"."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respuesta 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve datos en JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "12 - Préstamos",
+      "description": "Casos de prueba del módulo Préstamos (Matriz de Casos de Prueba v6). Cada petición se nombra con su ID, ej: 006-AUTH.",
+      "item": [
+        {
+          "name": "[BASE] Listar préstamos (todos los estados)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/loans?status=all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "loans"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "all"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Petición base de verificación del módulo (no es un caso de la matriz). Requiere haber iniciado sesión en \"00 - Sesiones\"."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respuesta 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve datos en JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "13 - Devoluciones",
+      "description": "Casos de prueba del módulo Devoluciones (Matriz de Casos de Prueba v6). Cada petición se nombra con su ID, ej: 006-AUTH.",
+      "item": [
+        {
+          "name": "[BASE] Listar devoluciones",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/devolutions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "devolutions"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Petición base de verificación del módulo (no es un caso de la matriz). Requiere haber iniciado sesión en \"00 - Sesiones\"."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respuesta 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve datos en JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "14 - Tareas",
+      "description": "Casos de prueba del módulo Tareas (Matriz de Casos de Prueba v6). Cada petición se nombra con su ID, ej: 006-AUTH.",
+      "item": [
+        {
+          "name": "[BASE] Listar tareas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tasks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Petición base de verificación del módulo (no es un caso de la matriz). Requiere haber iniciado sesión en \"00 - Sesiones\"."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respuesta 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve datos en JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "15 - Cotizaciones",
+      "description": "Casos de prueba del módulo Cotizaciones (Matriz de Casos de Prueba v6). Cada petición se nombra con su ID, ej: 006-AUTH.",
+      "item": [
+        {
+          "name": "[BASE] Listar cotizaciones (todos los estados)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/quotations?status=all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "quotations"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "all"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Petición base de verificación del módulo (no es un caso de la matriz). Requiere haber iniciado sesión en \"00 - Sesiones\"."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respuesta 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve datos en JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "16 - Notificaciones",
+      "description": "Casos de prueba del módulo Notificaciones (Matriz de Casos de Prueba v6). Cada petición se nombra con su ID, ej: 006-AUTH.",
+      "item": [
+        {
+          "name": "[BASE] Mis notificaciones",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Petición base de verificación del módulo (no es un caso de la matriz). Requiere haber iniciado sesión en \"00 - Sesiones\"."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respuesta 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve datos en JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "17 - Auditoría",
+      "description": "Casos de prueba del módulo Auditoría (Matriz de Casos de Prueba v6). Cada petición se nombra con su ID, ej: 006-AUTH.",
+      "item": [
+        {
+          "name": "[BASE] Auditoría de hoy (SuperAdmin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit?from={{hoy}}&to={{hoy}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audit"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "{{hoy}}"
+                },
+                {
+                  "key": "to",
+                  "value": "{{hoy}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenSuperAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Petición base de verificación del módulo (no es un caso de la matriz). Requiere haber iniciado sesión en \"00 - Sesiones\"."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respuesta 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve datos en JSON', () => pm.response.to.be.json);"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('hoy', new Date().toLocaleDateString('en-CA'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "99 - Cerrar sesiones",
+      "description": "Cierra las sesiones abiertas en \"00 - Sesiones\". Si no se cierran, el usuario queda bloqueado para iniciar sesión (409) hasta que la sesión venza sola, a los 5 minutos sin actividad.",
+      "item": [
+        {
+          "name": "Cerrar sesión — Administrador",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sesión cerrada (200)', () => pm.response.to.have.status(200));",
+                  "pm.environment.set('tokenAdmin', '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cerrar sesión — Instructor",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenInstructor}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sesión cerrada (200)', () => pm.response.to.have.status(200));",
+                  "pm.environment.set('tokenInstructor', '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cerrar sesión — Invitado",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenInvitado}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sesión cerrada (200)', () => pm.response.to.have.status(200));",
+                  "pm.environment.set('tokenInvitado', '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cerrar sesión — Sin permisos",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenSinPermisos}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sesión cerrada (200)', () => pm.response.to.have.status(200));",
+                  "pm.environment.set('tokenSinPermisos', '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cerrar sesión — Contraseña temporal",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenTemporal}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sesión cerrada (200)', () => pm.response.to.have.status(200));",
+                  "pm.environment.set('tokenTemporal', '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cerrar sesión — SuperAdmin",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenSuperAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sesión cerrada (200)', () => pm.response.to.have.status(200));",
+                  "pm.environment.set('tokenSuperAdmin', '');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
