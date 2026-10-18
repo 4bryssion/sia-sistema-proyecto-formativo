@@ -1,5 +1,5 @@
 import { getStatusFilterLabel } from "@/shared/reports/statusLabel";
-import { DataTable, Button, FilterMenu, usePermissions , ListPageHeader, StatusFilterSelect } from "@/shared";
+import { DataTable, Button, FilterMenu, usePermissions, PermissionGate, ListPageHeader, StatusFilterSelect } from "@/shared";
 import { UserColumns } from "../table/UserColumns";
 import { useUsers } from "@/shared/hooks/useUsers";
 import ReportConfigModal from "../reports/components/ReportConfigModal";
@@ -43,9 +43,14 @@ export default function ListUserPage() {
       <ListPageHeader title="Usuarios">
         <StatusFilterSelect value={status} onChange={setStatus} />
 
-        <Button variant="secondary" onClick={() => setIsReportOpen(true)}>
-          Generar Reporte
-        </Button>
+        {/* (p51) El boton no desaparece sin permiso: se ve en gris y al pulsarlo
+            dice por que no se puede. Antes no consultaba el permiso en
+            absoluto y el reporte se generaba igual. */}
+        <PermissionGate codename="report_users" accion="generar el reporte de usuarios">
+          <Button variant="secondary" onClick={() => setIsReportOpen(true)}>
+            Generar Reporte
+          </Button>
+        </PermissionGate>
 
         {/* (p49) Crear usuario dejó de ser una página: es un modal por pasos,
             igual que crear tarea. Se abre desde aquí y al guardar refresca el
@@ -82,7 +87,7 @@ export default function ListUserPage() {
         onSaved={refetch}
       />
 
-      <ReportConfigModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} users={visibleUsers} statusLabel={getStatusFilterLabel(status)} />
+      <ReportConfigModal isOpen={isReportOpen && can("report_users")} onClose={() => setIsReportOpen(false)} users={visibleUsers} statusLabel={getStatusFilterLabel(status)} />
 
       <ReactivateUserModal
         isOpen={userToReactivate != null}

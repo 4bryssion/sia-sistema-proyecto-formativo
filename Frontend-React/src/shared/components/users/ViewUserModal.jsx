@@ -11,7 +11,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Modal, Button, ImageZoom, usePermissions, getCurrentUser,
+  Modal, Button, ImageZoom, ZoomTrigger, usePermissions, getCurrentUser,
   SupportContactButton, DataPolicyCheckbox,
 } from "@/shared";
 import { Pencil, KeyRound } from "lucide-react";
@@ -123,7 +123,10 @@ export default function ViewUserModal({ isOpen, userId, onClose, onEdit }) {
             <div className="mr-auto flex flex-wrap items-center gap-2">
               {/* Soporte solo en el perfil propio: ofrecerle a un administrador
                   ayuda "sobre la cuenta de otra persona" no tiene sentido */}
-              {isOwnProfile && <SupportContactButton />}
+              {/* (p53) El lápiz para cambiar el correo de soporte se enciende
+                  SOLO aquí —en el perfil propio, con la sesión iniciada— y solo
+                  con el permiso. En el login el mismo componente no lo ofrece. */}
+              {isOwnProfile && <SupportContactButton permitirEditar={can("edit_support_email")} />}
               <DataPolicyCheckbox mode="link" />
             </div>
 
@@ -151,15 +154,13 @@ export default function ViewUserModal({ isOpen, userId, onClose, onEdit }) {
               {/* (p48) La foto es opcional: sin ella se dibuja un icono y el
                   visor de ampliar no tiene nada que ampliar, así que el botón
                   queda deshabilitado en vez de abrir un recuadro vacío */}
-              <button
-                type="button"
-                onClick={() => user.userPhoto && setZoom(true)}
-                aria-label="Ampliar foto"
+              <ZoomTrigger
+                onZoom={() => setZoom(true)}
                 disabled={!user.userPhoto}
-                className="rounded-xl overflow-hidden border border-border cursor-zoom-in hover:opacity-90 transition-opacity disabled:cursor-default"
+                ariaLabel="Ampliar foto"
               >
                 <UserPhoto photo={user.userPhoto} alt={fullName} rounded="" />
-              </button>
+              </ZoomTrigger>
 
               <h3 className="font-main text-h3 text-center leading-tight">
                 @{getTopGroupName(user)} - {fullName}

@@ -1,8 +1,13 @@
 import api from "@/shared/services/axiosInstance";
 
 const devolutionService = {
-  async getAll(status = "active") {
-    const { data } = await api.get("/devolutions", { params: { status } });
+  // (p52) `silencioso` evita que una precarga de fondo levante el modal de «sin
+  // permisos»: el interceptor lo muestra ante un 403 salvo que la peticion pida
+  // lo contrario. El listado de prestamos pide las devoluciones aunque quien
+  // mira no tenga `list_loan_returns`, y entonces la alerta saltaba sobre una
+  // tabla que acababa de abrirse.
+  async getAll(status = "active", { silencioso = false } = {}) {
+    const { data } = await api.get("/devolutions", { params: { status }, silencioso });
     return data;
   },
 

@@ -23,6 +23,11 @@ import {
   MAX_POR_MATERIAL, MAX_POR_CARGA_EN_MATERIAL,
   toQuotationOptions, quotationUrl, assignedQuotationIds, assignedQuotations,
 } from "@/shared/utils/quotationFiles";
+import CreateBrandModal from "@/shared/components/brands/CreateBrandModal";
+import CreateInventoryModal from "@/shared/components/inventories/CreateInventoryModal";
+import CreateCategoryModal from "@/shared/components/categories/CreateCategoryModal";
+import categoryService from "@/shared/services/categoryService";
+import { separarClasificacion } from "@/shared/utils/materialClassification";
 import MaterialFilesBand from "@/shared/components/materials/MaterialFilesBand";
 import consumableMaterialService from "@/shared/services/consumableMaterialService";
 import { consumableMaterialUpdateSchema } from "../schemas/consumableMaterialSchema";
@@ -36,6 +41,8 @@ import { remoteImage, remoteSheet, buildFileOrder } from "@/shared/utils/materia
 // material y crearlo deben leerse igual.
 const CAMPOS_POR_PASO = [
   ["materialName", "description"],
+  // (p53) El mismo paso de clasificación que en crear, en el mismo lugar.
+  ["materialTypeId", "categoryId", "model", "serial"],
   ["brandId", "inventoryId", "location", "status", "senaPlate"],
   ["quantity", "unitPrice", "totalPrice", "purchaseDate", "entryDate", "quotationIds"],
   ["accountableIds"],
@@ -49,7 +56,13 @@ export default function EditConsumableMaterialModal({ isOpen, materialId, onClos
 }
 
 function EditConsumableBody({ materialId, onClose, onSaved }) {
-  const { brandOptions, inventoryOptions, accountableOptions } = useMaterialCatalogs(true);
+  // (p53) `refetchBrands` y `refetchInventories` hacían falta y no se pedían:
+  // este modal no tenía «crear y asignar», que sí tienen los de crear, así que
+  // para dar de alta una marca o un inventario había que salir del formulario.
+  const {
+    brandOptions, inventoryOptions, accountableOptions,
+    refetchBrands, refetchInventories,
+  } = useMaterialCatalogs(true);
 
   const [form, setForm]     = useState(null);
   // Las dos tiras mezclan lo ya guardado (descriptores) con lo recién elegido
@@ -63,6 +76,42 @@ function EditConsumableBody({ materialId, onClose, onSaved }) {
   // después, no estará entre las opciones y hay que reponerlo para no borrarlo
   // sin querer al guardar
   const [origen, setOrigen] = useState({ brand: null, inventory: null, accountables: [], quotations: [] });
+
+  // (p53) Las dos listas de clasificación y el modal de crear categoría, igual
+  // que en el formulario de crear.
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isBrandModalOpen, setIsBrandModalOpen] = useState(false);
+  const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
+  const [categoryOptions, setCategoryOptions] = useState([]);
+  const [materialTypeOptions, setMaterialTypeOptions] = useState([]);
+
+  const cargarClasificacion = () =>
+    categoryService.getAll()
+      .then((lista) => {
+        const { categoryOptions: cats, materialTypeOptions: tipos } = separarClasificacion(lista);
+        setCategoryOptions(cats);
+        setMaterialTypeOptions(tipos);
+      })
+      .catch(() => {});
+
+  useEffect(() => { cargarClasificacion(); }, []);
+
+  // (p53) Los tres se comportan igual: se recarga el catálogo y lo recién
+  // creado queda seleccionado, porque quien lo crea desde aquí es para asignarlo.
+  const handleBrandCreated = async (created) => {
+    await refetchBrands();
+    if (created?.id) setForm((prev) => ({ ...prev, brandId: String(created.id) }));
+  };
+
+  const handleInventoryCreated = async (created) => {
+    await refetchInventories();
+    if (created?.id) setForm((prev) => ({ ...prev, inventoryId: String(created.id) }));
+  };
+
+  const handleCategoryCreated = async (creada) => {
+    await cargarClasificacion();
+    if (creada?.id) setForm((prev) => ({ ...prev, categoryId: String(creada.id) }));
+  };
 
   // (p50) Solo se OFRECEN las habilitadas. Las que el material ya tenía se
   // reponen aparte aunque se hayan deshabilitado después: si no estuvieran en la
@@ -86,6 +135,12 @@ function EditConsumableBody({ materialId, onClose, onSaved }) {
           brandId:        String(m.brandId ?? ""),
           inventoryId:    String(m.inventoryId ?? ""),
           accountableIds: accountableIds(m.accountables),
+          // (p53) Un material anterior a p53 llega sin clasificación: los campos
+          // aparecen vacíos y el formulario los exige para poder guardar.
+          materialTypeId: String(m.materialTypeId ?? ""),
+          categoryId:     String(m.categoryId ?? ""),
+          model:          m.model ?? "",
+          serial:         m.serial ?? "",
           senaPlate:      m.senaPlate ?? "",
           // Con placa SENA (serializado, quantity null en BD) se muestra 1 fijo
           quantity:       m.quantity != null ? String(m.quantity) : (m.senaPlate ? "1" : ""),
@@ -103,6 +158,8 @@ function EditConsumableBody({ materialId, onClose, onSaved }) {
           inventory: m.inventory ?? null,
           accountables: m.accountables ?? [],
           quotations: assignedQuotations(m.quotations),
+          category: m.category ?? null,
+          materialType: m.materialType ?? null,
         });
         setImages((m.images ?? []).map(remoteImage));
         setSheets((m.technicalSheets ?? []).map(remoteSheet));
@@ -191,7 +248,12 @@ function EditConsumableBody({ materialId, onClose, onSaved }) {
       }
       // La marca vacía SÍ se envía: es como se le quita la marca a un material
       // (el backend la convierte en NULL). Ya es un campo opcional (p48)
-      if (key === "brandId") { fd.append(key, val ?? ""); return; }
+      // (p53) Modelo y serial, lo mismo: son opcionales y hay que poder
+      // quitárselos a un material que los tenía.
+      if (key === "brandId" || key === "model" || key === "serial") {
+        fd.append(key, val ?? "");
+        return;
+      }
       if (val !== undefined && val !== "") fd.append(key, val);
     });
 
@@ -265,9 +327,50 @@ function EditConsumableBody({ materialId, onClose, onSaved }) {
       ),
     },
     {
-      titulo: "Inventario y ubicación",
+      titulo: "Clasificación e identificación",
       validate: () => validarPaso(1),
-      contenido: rejilla(
+      contenido: (
+        <div className="flex flex-col gap-6">
+          {rejilla(
+            <>
+              {/* (p53) `ensureOption` repone la clasificación del material si la
+                  categoría o el tipo se desactivaron después de asignarlos: sin
+                  ella el select saldría en blanco aunque el material sí esté
+                  clasificado. Es lo mismo que ya se hacía con la marca. */}
+              <Select widthClass="w-full" variant="search"
+                label="Tipo de material" name="materialTypeId" required
+                options={ensureOption(materialTypeOptions, form.materialTypeId, origen.materialType?.categoryName)}
+                value={form.materialTypeId} onChange={handleChange} error={errors.materialTypeId} />
+
+              <Select widthClass="w-full" variant="search"
+                label="Categoría" name="categoryId" required
+                options={ensureOption(categoryOptions, form.categoryId, origen.category?.categoryName)}
+                value={form.categoryId} onChange={handleChange} error={errors.categoryId} />
+
+              <Input widthClass="w-full"
+                label="Modelo (opcional)" name="model"
+                value={form.model} onChange={handleChange} error={errors.model} />
+
+              <Input widthClass="w-full"
+                label="Serial (opcional)" name="serial"
+                value={form.serial} onChange={handleChange} error={errors.serial} />
+            </>,
+          )}
+
+          <CreateAndAssignTrigger
+            label="Crear y asignar nueva categoría"
+            onClick={() => setIsCategoryModalOpen(true)}
+            className="flex"
+          />
+        </div>
+      ),
+    },
+    {
+      titulo: "Inventario y ubicación",
+      validate: () => validarPaso(2),
+      contenido: (
+        <div className="flex flex-col gap-6">
+          {rejilla(
         <>
           {/* (p48) La marca dejó de ser obligatoria.
               ensureOption repone la marca del material si se desactivó después
@@ -299,11 +402,28 @@ function EditConsumableBody({ materialId, onClose, onSaved }) {
               value={form.senaPlate} onChange={handleChange} error={errors.senaPlate} />
           </div>
         </>,
+          )}
+
+          {/* (p53) Los mismos dos que el formulario de crear, en el mismo paso y
+              con la misma disposición: en columna hasta sm y en fila desde ahí. */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:gap-8">
+            <CreateAndAssignTrigger
+              label="Crear y asignar nueva marca"
+              onClick={() => setIsBrandModalOpen(true)}
+              className="flex"
+            />
+            <CreateAndAssignTrigger
+              label="Crear y asignar nuevo inventario"
+              onClick={() => setIsInventoryModalOpen(true)}
+              className="flex"
+            />
+          </div>
+        </div>
       ),
     },
     {
       titulo: "Valores y cotizaciones",
-      validate: () => validarPaso(2),
+      validate: () => validarPaso(3),
       contenido: rejilla(
         <>
           <Input widthClass="w-full"
@@ -362,7 +482,7 @@ function EditConsumableBody({ materialId, onClose, onSaved }) {
     },
     {
       titulo: "Cuentadantes",
-      validate: () => validarPaso(3),
+      validate: () => validarPaso(4),
       contenido: (
         <div className="flex flex-col gap-4">
           <p className="font-secondary text-body text-text-muted">
@@ -381,7 +501,7 @@ function EditConsumableBody({ materialId, onClose, onSaved }) {
     },
     {
       titulo: "Imágenes y ficha técnica",
-      validate: () => validarPaso(4),
+      validate: () => validarPaso(5),
       contenido: (
         <MaterialFilesBand
           images={images}
@@ -415,6 +535,25 @@ function EditConsumableBody({ materialId, onClose, onSaved }) {
       onClose={() => setIsQuotationModalOpen(false)}
       onSave={handleQuotationsUploaded}
       maxFiles={MAX_POR_CARGA_EN_MATERIAL}
+    />
+
+    {/* (p53) Crear y asignar una categoría sin salir de la edición. */}
+    <CreateBrandModal
+      isOpen={isBrandModalOpen}
+      onClose={() => setIsBrandModalOpen(false)}
+      onSave={handleBrandCreated}
+    />
+
+    <CreateInventoryModal
+      isOpen={isInventoryModalOpen}
+      onClose={() => setIsInventoryModalOpen(false)}
+      onSave={handleInventoryCreated}
+    />
+
+    <CreateCategoryModal
+      isOpen={isCategoryModalOpen}
+      onClose={() => setIsCategoryModalOpen(false)}
+      onSave={handleCategoryCreated}
     />
     </>
   );

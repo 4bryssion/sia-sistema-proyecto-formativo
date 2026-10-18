@@ -10,7 +10,7 @@ import MaterialFilesBand from "@/shared/components/materials/MaterialFilesBand";
 import { useMaterialCatalogs } from "@/shared/hooks/useMaterialCatalogs";
 import { STATUS_FILTER_OPTIONS } from "@/shared/utils/materialStatusLabel";
 import { aplicarCambioDeMaterial } from "@/shared/utils/materialForm";
-import { requiresDimensions, toCategoryOptions } from "../utils/categoryRules";
+import { requiresDimensions, separarClasificacion } from "@/shared/utils/materialClassification";
 import { Eye } from "lucide-react";
 import quotationService from "@/shared/services/quotationService";
 import UploadQuotationsModal from "@/shared/components/quotations/UploadQuotationsModal";
@@ -32,14 +32,14 @@ import {
 
 // Qué campos pertenecen a cada paso, para enseñar solo los errores del paso que
 // el usuario tiene delante. Son los cinco pasos del material de consumo más uno
-// propio: lo que distingue al devolutivo (categoría, modelo, serial y
-// dimensiones) va junto en su propio paso, no repartido entre los demás.
+// propio: la clasificación del material (tipo, categoría, modelo, serial y
+// dimensiones) va junta en su propio paso, no repartida entre los demás.
 //
 // `image` y `technicalSheet` no los valida el schema —los archivos viven fuera
 // de formData— pero se listan igual porque es en el último paso donde aparecen.
 const CAMPOS_POR_PASO = [
   ["materialName", "description"],
-  ["categoryId", "model", "serial", "dimensions"],
+  ["materialTypeId", "categoryId", "model", "serial", "dimensions"],
   ["brandId", "inventoryId", "location", "status", "senaPlate"],
   ["quantity", "unitPrice", "totalPrice", "purchaseDate", "entryDate", "quotationIds"],
   ["accountableIds"],
@@ -60,7 +60,10 @@ function CreateReturnableBody({ onClose, onSaved }) {
     refetchBrands, refetchInventories,
   } = useMaterialCatalogs();
 
+  // (p53) Dos listas de la misma tabla: los 3 tipos de material y las categorías
+  // creadas por el usuario. Las separa `isMaterialType`.
   const [categoryOptions, setCategoryOptions] = useState([]);
+  const [materialTypeOptions, setMaterialTypeOptions] = useState([]);
   const [isBrandModalOpen, setIsBrandModalOpen] = useState(false);
   const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -81,7 +84,11 @@ function CreateReturnableBody({ onClose, onSaved }) {
   // en useMaterialCatalogs (que es compartido con el material de consumo).
   useEffect(() => {
     categoryService.getAll()
-      .then((c) => setCategoryOptions(toCategoryOptions(c)))
+      .then((c) => {
+        const { categoryOptions: cats, materialTypeOptions: tipos } = separarClasificacion(c);
+        setCategoryOptions(cats);
+        setMaterialTypeOptions(tipos);
+      })
       .catch(() => {});
   }, []);
 
@@ -94,6 +101,7 @@ function CreateReturnableBody({ onClose, onSaved }) {
     inventoryId:    "",
     accountableIds: [],
     categoryId:     "",
+    materialTypeId: "",
     senaPlate:      "",
     quantity:       "",
     location:       "",
@@ -113,18 +121,19 @@ function CreateReturnableBody({ onClose, onSaved }) {
   const [errors, setErrors] = useState({});
   const [guardando, setGuardando] = useState(false);
 
-  // Solo "Muebles y enseres" pide dimensiones; para el resto el campo ni se
-  // muestra y viaja vacío (el backend lo guarda como NULL)
-  const showDimensions = requiresDimensions(categoryOptions, formData.categoryId);
+  // (p53) La regla la trae el TIPO de material, no la categoría: «Muebles y
+  // enseres» pasó a ser un tipo. Para el resto el campo ni se muestra y viaja
+  // vacío (el backend lo guarda como NULL).
+  const showDimensions = requiresDimensions(materialTypeOptions, formData.materialTypeId);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => {
       const next = aplicarCambioDeMaterial(prev, name, value);
-      // Al pasar a una categoría que no pide dimensiones se limpia lo escrito:
+      // Al pasar a un tipo que no pide dimensiones se limpia lo escrito:
       // dejarlo guardaría una medida que el usuario ya no ve. Es propio del
       // devolutivo, así que no vive en la regla compartida.
-      if (name === "categoryId" && !requiresDimensions(categoryOptions, value)) {
+      if (name === "materialTypeId" && !requiresDimensions(materialTypeOptions, value)) {
         next.dimensions = "";
       }
       return next;
@@ -141,12 +150,19 @@ function CreateReturnableBody({ onClose, onSaved }) {
     if (created?.id) setFormData((prev) => ({ ...prev, inventoryId: String(created.id) }));
   };
 
-  // (p50) Igual que marca e inventario. Las categorías no vienen de
-  // useMaterialCatalogs —son un catálogo propio de este módulo— así que la lista
-  // se recarga aquí antes de autoseleccionar la recién creada.
+  // (p50) Igual que marca e inventario: la lista se recarga aquí antes de
+  // autoseleccionar la recién creada.
+  //
+  // (p53) Lo que se crea desde aquí es una CATEGORÍA, nunca un tipo de material:
+  // los 3 tipos son del sistema y se dan de alta en el seed. Por eso solo se
+  // reasigna `categoryId`, aunque se repartan las dos listas.
   const handleCategoryCreated = async (creada) => {
     const lista = await categoryService.getAll().catch(() => null);
-    if (lista) setCategoryOptions(toCategoryOptions(lista));
+    if (lista) {
+      const { categoryOptions: cats, materialTypeOptions: tipos } = separarClasificacion(lista);
+      setCategoryOptions(cats);
+      setMaterialTypeOptions(tipos);
+    }
     if (creada?.id) setFormData((prev) => ({ ...prev, categoryId: String(creada.id) }));
   };
 
@@ -168,7 +184,7 @@ function CreateReturnableBody({ onClose, onSaved }) {
     if (!images.length) e.image = "La imagen es requerida";
     if (!sheets.length) e.technicalSheet = "La ficha técnica es requerida (PDF o Excel)";
     if (showDimensions && !formData.dimensions) {
-      e.dimensions = "Las dimensiones son obligatorias para muebles y enseres";
+      e.dimensions = "Las dimensiones son obligatorias para este tipo de material";
     }
     return e;
   };
@@ -271,12 +287,20 @@ function CreateReturnableBody({ onClose, onSaved }) {
       ),
     },
     {
-      titulo: "Categoría y características",
+      titulo: "Clasificación y características",
       validate: () => validarPaso(1),
       contenido: (
         <div className="flex flex-col gap-6">
           {rejilla(
         <>
+          {/* (p53) Dos niveles. El tipo va primero porque es el que decide si
+              se piden dimensiones, y porque es la clasificación más gruesa:
+              una categoría «Mesas» pertenece al tipo «Muebles y enseres». */}
+          <Select widthClass="w-full" variant="search"
+            label="Tipo de material" name="materialTypeId" required
+            options={materialTypeOptions}
+            value={formData.materialTypeId} onChange={handleChange} error={errors.materialTypeId} />
+
           <Select widthClass="w-full" variant="search"
             label="Categoría" name="categoryId" required
             options={categoryOptions}
@@ -293,8 +317,8 @@ function CreateReturnableBody({ onClose, onSaved }) {
             placeholder="Ej: 4F72K19A"
             value={formData.serial} onChange={handleChange} error={errors.serial} />
 
-          {/* Solo aparece para la categoría que las pide. Para el resto el campo
-              ni se muestra y viaja vacío (el backend lo guarda como NULL). */}
+          {/* Solo aparece para el tipo de material que las pide. Para el resto el
+              campo ni se muestra y viaja vacío (el backend lo guarda como NULL). */}
           {showDimensions && (
             <Input widthClass="w-full"
               label="Dimensiones" name="dimensions" required

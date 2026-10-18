@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
-
-import { 
-  Select, 
-  Button 
+import {
+  Select,
+  Alert,
+  PermissionGate,
+  usePermissions
 } from "@/shared";
 
 export default function AccessLeft({
@@ -16,37 +16,49 @@ export default function AccessLeft({
   onAssignGroup,
   onRemoveGroup,
 }) {
-
-  const [groupToAssign, setGroupToAssign] = useState("");
-
-  useEffect(() => {
-    setGroupToAssign("");
-  }, [selectedUserId]);
+  const { can } = usePermissions();
 
   const groupOptions = [
     ...groups.map((g) => ({ value: String(g.id), label: g.groupName })),
   ];
 
   const userOptions = [
-    // { value: "", label: "— Selecciona un usuario —" },
     ...users.map((u) => ({
       value: String(u.id),
       label: `${u.userFirstName} ${u.userLastName}`,
     })),
   ];
 
-  const assignedGroupIds = new Set(userGroups.map((ug) => ug.groupId));
+  // (p51) La pertenencia a grupos se gestiona con UN solo control: el select
+  // con buscador y selección múltiple, el mismo que el resto del sistema. Antes
+  // eran dos cosas distintas —una lista de recuadros con una ✕ para quitar, y
+  // debajo un select básico con un botón para añadir—, lo que obligaba a
+  // aprender dos gestos para una sola idea: a qué grupos pertenece esta persona.
+  //
+  // El componente ya pone los marcados de primeros, así que lo que el usuario
+  // tiene ahora mismo se lee de un vistazo sin desplegar nada.
+  const gruposActuales = userGroups.map((ug) => String(ug.groupId));
 
-  const availableGroups = groups.filter((g) => !assignedGroupIds.has(g.id));
+  const puedeAsignar = can("assign_group_to_user");
+  const puedeRemover = can("remove_group_from_user");
 
-  const assignOptions = [
-    ...availableGroups.map((g) => ({ value: String(g.id), label: g.groupName })),
-  ];
+  // Marcar y desmarcar son DOS permisos distintos, y el control es uno solo. El
+  // gate de fuera deja pasar a quien tenga al menos uno; aquí se comprueba la
+  // dirección concreta, para que a quien solo puede asignar no se le deshaga en
+  // silencio un intento de quitar.
+  const cambiarGrupos = async (e) => {
+    const siguiente = (e.target.value ?? []).map(String);
+    const agregados = siguiente.filter((id) => !gruposActuales.includes(id));
+    const quitados = gruposActuales.filter((id) => !siguiente.includes(id));
 
-  const handleAssign = () => {
-    if (!groupToAssign) return;
-    onAssignGroup(groupToAssign);
-    setGroupToAssign("");
+    for (const id of agregados) {
+      if (!puedeAsignar) { Alert.sinPermiso("asignarle un grupo a un usuario"); continue; }
+      await onAssignGroup(id);
+    }
+    for (const id of quitados) {
+      if (!puedeRemover) { Alert.sinPermiso("quitarle un grupo a un usuario"); continue; }
+      await onRemoveGroup(Number(id));
+    }
   };
 
   return (
@@ -97,53 +109,30 @@ export default function AccessLeft({
         />
 
         {selectedUserId && (
-          <div className="w-full grid gap-2 mt-1 justify-self-center min-w-0">
-            {userGroups.length > 0 ? (
-              <div className="grid gap-2 w-full justify-self-center min-w-0">
-                {userGroups.map((ug) => (
-                  <div
-                    key={ug.groupId}
-                    className="flex items-center justify-between bg-white rounded px-2 py-1 w-full min-w-0 box-border"
-                  >
-                    <span className="bg-white rounded-md w-full min-w-0 truncate font-secondary">
-                      {ug.group.groupName}
-                    </span>
-                    <button
-                      onClick={() => onRemoveGroup(ug.groupId)}
-                      className="font-secondary text-error hover:opacity-70 text-small "
-                      title="Remover grupo"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="font-secondary text-text-inverse/60 text-small text-center">
-                Sin grupos asignados
-              </p>
-            )}
+          <div className="w-full grid gap-1.5 mt-1 justify-self-center min-w-0">
+            <span className="font-secondary text-small text-text-inverse/70">
+              Grupos del usuario
+            </span>
 
-            {availableGroups.length > 0 && (
-              <div className="grid gap-1.5 w-full">
-                <Select
-                  name="groupToAssign"
-                  value={groupToAssign}
-                  onChange={(e) => setGroupToAssign(e.target.value)}
-                  options={assignOptions}
-                  className="w-full min-w-0 justify-self-center"
-                />
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleAssign}
-                  disabled={!groupToAssign}
-                  className="w-full justify-self-center"
-                >
-                  Agregar grupo
-                </Button>
-              </div>
-            )}
+            {/* Un solo gate, con los dos permisos: basta tener uno para que el
+                control sirva de algo, y la dirección que falte se avisa dentro. */}
+            <PermissionGate
+              codename={["assign_group_to_user", "remove_group_from_user"]}
+              accion="gestionar los grupos de un usuario"
+              className="w-full min-w-0"
+            >
+              <Select
+                variant="search"
+                multiple
+                name="userGroupIds"
+                value={gruposActuales}
+                onChange={cambiarGrupos}
+                options={groupOptions}
+                placeholder="Sin grupos asignados"
+                filasVisibles={4}
+                className="w-full min-w-0 justify-self-center"
+              />
+            </PermissionGate>
           </div>
         )}
       </div>

@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { DataTable, Button, IconButton, StatusFilterSelect } from "@/shared";
+import { DataTable, Button, StatusFilterSelect, PermissionGate, ListPageHeader } from "@/shared";
 import { categoryColumns } from "../table/CategoriesColumns";
 import { useCategories } from "../hooks/useCategories";
-import { useNavigate } from "react-router-dom";
-import { Undo2 } from "lucide-react";
 import CreateCategoryModal from "@/shared/components/categories/CreateCategoryModal";
 
 // (p50) Módulo nuevo, construido directamente sobre el patrón de grupos —
@@ -13,7 +11,6 @@ import CreateCategoryModal from "@/shared/components/categories/CreateCategoryMo
 // La base de datos, el backend, los cuatro permisos y las tres categorías de
 // origen YA existían: lo único que faltaba era esta pantalla.
 export default function ListCategoryPage() {
-  const navigate = useNavigate();
   const [status, setStatus] = useState("active");
   const { categories, loading, error, refetch } = useCategories(status);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -21,22 +18,18 @@ export default function ListCategoryPage() {
   return (
     <div className="p-6">
 
-      <div className="flex justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <IconButton ariaLabel="Devolverse" onClick={() => navigate(-1)}>
-            <Undo2 strokeWidth={2.8} />
-          </IconButton>
-          <h1 className="font-main font-semibold mb-0 text-h3 sm:text-h2">Categorías</h1>
-        </div>
+      <ListPageHeader title="Categorías">
+        <StatusFilterSelect value={status} onChange={setStatus} />
 
-        <div className="grid sm:flex gap-6 items-center">
-          <StatusFilterSelect value={status} onChange={setStatus} />
-
+        {/* (p51) El permiso se consulta ANTES, no después: sin el gate el
+            botón se veía igual para todos y el "no" llegaba del servidor
+            cuando el formulario ya estaba lleno. */}
+        <PermissionGate codename="create_category" accion="crear categorías">
           <Button variant="primary" onClick={() => setIsCreateOpen(true)}>
             Crear Categoría
           </Button>
-        </div>
-      </div>
+        </PermissionGate>
+      </ListPageHeader>
 
       {loading ? (
         <p className="font-secondary text-body text-text-muted">Cargando categorías...</p>

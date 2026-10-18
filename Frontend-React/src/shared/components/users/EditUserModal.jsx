@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { Modal, Input, Select, Button, FileInput, Alert } from "@/shared";
 import { Save } from "lucide-react";
 import userService from "@/shared/services/userService";
-import documentTypeService from "@/shared/services/documentTypeService";
+import { useDocumentTypes } from "@/shared/hooks/useDocumentTypes";
 import { userUpdateSchema } from "@/shared/schemas/userSchema";
 import UserPhoto from "./UserPhoto";
 
@@ -22,7 +22,7 @@ const ACCOUNT_TYPE_OPTIONS = [
 
 export default function EditUserModal({ isOpen, userId, onClose, onSaved }) {
   const [user, setUser] = useState(null);
-  const [documentTypes, setDocumentTypes] = useState([]);
+  const { documentTypes } = useDocumentTypes(isOpen);
   const [form, setForm] = useState(null);
   const [image, setImage] = useState([]);
   const [errors, setErrors] = useState({});
@@ -67,9 +67,7 @@ export default function EditUserModal({ isOpen, userId, onClose, onSaved }) {
       }
     })();
 
-    documentTypeService.getAll()
-      .then((dts) => setDocumentTypes(dts.map((d) => ({ id: d.id, value: String(d.id), label: d.documentName }))))
-      .catch(() => setDocumentTypes([]));
+
   }, [isOpen, userId]);
 
   const handleChange = (e) => {

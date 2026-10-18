@@ -84,10 +84,11 @@ export const loanColumns = (refetch, can = () => true, acciones = {}) => [
       return (
           <span
               onDoubleClick={handleDoubleClick}
-              className="cursor-pointer hover:underline"
+              className="cursor-pointer hover:underline wrap-anywhere"
           >
               {/* (p48) Con un receptor externo no hay nombre: se muestra su
-                  correo, que es lo único que lo identifica */}
+                  correo, que es lo único que lo identifica.
+                  (p53) `wrap-anywhere` para que ese correo no ensanche la columna. */}
               {partyLabel(loan, "Receptor")}
           </span>
       );

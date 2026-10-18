@@ -3,6 +3,7 @@
 
 import { generateReport } from "@/shared/reports/generateReport";
 import { TASK_STATUS_LABELS } from "../../constants/taskStatus";
+import { estadoDeTarea } from "../../utils/asignaciones";
 
 export function generateTaskReport({
   tasks = [],
@@ -11,7 +12,10 @@ export function generateTaskReport({
   // Alcance: "all" o un estado concreto del enum TaskStatus
   scope = "all",
 }) {
-  const filtered = scope === "all" ? tasks : tasks.filter((t) => t.status === scope);
+  // (p51) El estado de la TAREA lo deriva el backend en `resumen`: `t.status`
+  // ya no existe y comparar contra él dejaba el reporte sin una sola fila en
+  // cuanto se elegía un estado.
+  const filtered = scope === "all" ? tasks : tasks.filter((t) => estadoDeTarea(t) === scope);
 
   const headers = selectedFields.map((f) => f.label);
   const rows = filtered.map((t) =>

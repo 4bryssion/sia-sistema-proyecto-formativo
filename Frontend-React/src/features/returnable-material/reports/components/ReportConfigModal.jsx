@@ -9,8 +9,17 @@ import ReportConfigModal from "@/shared/components/reports/ReportConfigModal";
 import { returnableReportFields } from "../config/returnableReportFields";
 import { generateReturnableReport } from "../services/generateReturnableReport";
 import inventoryService from "@/shared/services/inventoryService";
+import { usePermissions } from "@/shared";
 
 export default function ReturnableReportConfigModal({ isOpen, onClose, materials = [], statusLabel }) {
+    const { can } = usePermissions();
+
+    // (p51) El filtro por inventarios solo se ofrece a quien puede listarlos.
+    // Antes se pedían siempre, y a quien no tenía `list_inventories` el
+    // servidor le respondía 403: el interceptor de axios le mostraba
+    // "Acción no permitida" encima de un modal que se abría igual y generaba
+    // el reporte igual. El aviso no venía del reporte, pero parecía que sí.
+    const puedeFiltrarPorInventario = can("list_inventories");
     const [inventoryOptions, setInventoryOptions] = useState([]);
 
     // (p50) La placa SENA se elige de una lista con buscador. El filtro compara
@@ -47,10 +56,11 @@ export default function ReturnableReportConfigModal({ isOpen, onClose, materials
     // material de un inventario desactivado después
     useEffect(() => {
         if (!isOpen) return;
+        if (!puedeFiltrarPorInventario) return;
         inventoryService.getAll({ status: "all" })
             .then((inv) => setInventoryOptions(inv.map((i) => ({ value: String(i.id), label: i.inventoryName }))))
             .catch(() => {});
-    }, [isOpen]);
+    }, [isOpen, puedeFiltrarPorInventario]);
 
     const handleGenerate = ({ format, selectedFields, scope, scopeValue, inventoryIds }) => {
         generateReturnableReport({
@@ -74,7 +84,7 @@ export default function ReturnableReportConfigModal({ isOpen, onClose, materials
             title="Generar reporte de materiales devolutivos"
             fields={returnableReportFields}
             scopeOptions={scopeOptions}
-            inventoryOptions={inventoryOptions}
+            inventoryOptions={puedeFiltrarPorInventario ? inventoryOptions : undefined}
             onGenerate={handleGenerate}
         />
     );

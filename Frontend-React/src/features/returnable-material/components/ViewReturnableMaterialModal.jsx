@@ -95,9 +95,12 @@ export default function ViewReturnableMaterialModal({ isOpen, materialId, onClos
               </p>
               <LabelValue label="Marca" value={cm.brand?.brandName} />
               <LabelValue label="Inventario" value={cm.inventory?.inventoryName} />
-              <LabelValue label="Categoría" value={material.category?.categoryName} />
-              <LabelValue label="Modelo" value={material.model} />
-              <LabelValue label="Serial" value={material.serial} />
+              {/* (p53) Las dos clasificaciones y la identificación llegan en la
+                  tabla padre (`cm`), no en la fila del devolutivo. */}
+              <LabelValue label="Tipo de material" value={cm?.materialType?.categoryName} />
+              <LabelValue label="Categoría" value={cm?.category?.categoryName} />
+              <LabelValue label="Modelo" value={cm?.model} />
+              <LabelValue label="Serial" value={cm?.serial} />
               <LabelValue label="Placa SENA" value={cm.senaPlate} />
               <LabelValue label="Ubicación" value={cm.location} />
               {/* Dimensiones solo la pide "Muebles y enseres": en el resto de

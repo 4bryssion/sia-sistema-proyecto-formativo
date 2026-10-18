@@ -84,6 +84,36 @@ export const accessRepository = {
     return rows.length > 0;
   },
 
+  // (p51) Quién pertenece a un grupo DEL SISTEMA, de una lista de usuarios.
+  //
+  // Lo usa la regla de encargados de tareas: a quien administra el sistema solo
+  // le asigna tareas un superadministrador o alguien de su mismo grupo. Se
+  // pregunta por `is_system` y no por el nombre del grupo para no repartir
+  // literales como 'Administrador' por el código: marcar otro rol como del
+  // sistema no tiene que obligar a tocar esta consulta.
+  //
+  // Devuelve también `isActive` del grupo porque las dos caras de la regla no
+  // miran lo mismo: ser miembro de un grupo deshabilitado no te habilita a
+  // asignar (igual que `isSuperUser`), pero sí te sigue protegiendo.
+  async findSystemGroupMembership(userIds) {
+    const ids = [...new Set((userIds ?? []).map(Number))].filter(Number.isInteger);
+    if (!ids.length) return [];
+    const filas = await prisma.userGroup.findMany({
+      where: { userId: { in: ids }, group: { isSystem: true } },
+      select: {
+        userId: true,
+        group: { select: { groupName: true, isActive: true } },
+        user: { select: { userFirstName: true, userLastName: true } },
+      },
+    });
+    return filas.map((f) => ({
+      userId: f.userId,
+      groupName: f.group.groupName,
+      groupIsActive: f.group.isActive,
+      userName: `${f.user.userFirstName} ${f.user.userLastName}`.trim(),
+    }));
+  },
+
   // Catálogo completo de codenames (usado para SuperAdmin: tiene acceso total)
   async getAllPermissionCodenames() {
     const rows = await prisma.$queryRaw`

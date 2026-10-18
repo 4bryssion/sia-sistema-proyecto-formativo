@@ -1,5 +1,5 @@
 import { getStatusFilterLabel } from "@/shared/reports/statusLabel";
-import { Button, Checkbox, DataTable, FilterMenu, usePermissions, ListPageHeader, StatusFilterSelect, getCurrentUser } from "@/shared";
+import { Button, Checkbox, DataTable, FilterMenu, usePermissions, PermissionGate, ListPageHeader, StatusFilterSelect } from "@/shared";
 import { useMemo, useState } from "react";
 import { useLoans } from "../hooks/useLoans";
 import { loanColumns } from "../table/loanColumns";
@@ -36,15 +36,20 @@ export default function ListLoanPage() {
   const { loans, loading, error, refetch } = useLoans(status);
   // Las solicitudes de devolución se listan junto a los préstamos: el
   // requerimiento pide que la devolución en espera se vea como un registro más
-  const { devolutions, refetch: refetchDevolutions } = useDevolutions("active");
+  // (p52) Solo se piden si quien mira puede verlas. El backend las protege con
+  // `list_loan_returns`, que no es el permiso de esta pantalla.
+  const { devolutions, refetch: refetchDevolutions } = useDevolutions(
+    "active",
+    can("list_loan_returns"),
+  );
 
   const refrescarTodo = () => { refetch(); refetchDevolutions(); };
 
-  // Sin permiso para listar todos los préstamos, solo se ven aquellos donde participa
-  const ownId = getCurrentUser()?.id ?? null;
-  const ownLoans = can("list_loans")
-    ? loans
-    : loans.filter((l) => l.signatures?.some((sig) => Number(sig.userId ?? sig.user?.id) === Number(ownId)));
+  // (p51) El recorte lo hace el BACKEND: `list_all_loans` decide si la consulta
+  // devuelve los préstamos de todo el mundo o solo los del usuario. El filtro que
+  // había aquí no servía de nada —el invitado tiene `list_loans`, así que entraba
+  // por la rama de "ver todo"— y aunque hubiera estado bien escrito, filtrar en
+  // la pantalla no impide pedir los datos al API a mano. Es el RFINV11.
 
   // Una devolución se muestra como fila con los datos de SU préstamo (usuario,
   // grupo, fecha) y su propio estado y materiales.
@@ -71,7 +76,7 @@ export default function ListLoanPage() {
 
   const filas = [
     ...(verDevoluciones ? devolutionRows : []),
-    ...(verPrestamos ? ownLoans.map((l) => ({ ...l, statusKey: l.status })) : []),
+    ...(verPrestamos ? loans.map((l) => ({ ...l, statusKey: l.status })) : []),
   ];
   const visibleLoans = filas.filter((f) => !loanStatus || f.statusKey === loanStatus);
 
@@ -80,9 +85,14 @@ export default function ListLoanPage() {
       <ListPageHeader title="Préstamos">
         <StatusFilterSelect value={status} onChange={setStatus} />
 
-        <Button variant="secondary" onClick={() => setIsReportModalOpen(true)}>
-          Generar Reporte
-        </Button>
+        {/* (p51) El boton no desaparece sin permiso: se ve en gris y al pulsarlo
+            dice por que no se puede. Antes no consultaba el permiso en
+            absoluto y el reporte se generaba igual. */}
+        <PermissionGate codename="report_loans" accion="generar el reporte de préstamos">
+          <Button variant="secondary" onClick={() => setIsReportModalOpen(true)}>
+            Generar Reporte
+          </Button>
+        </PermissionGate>
 
         {/* (p49) Crear préstamo dejó de ser una página: es un modal por pasos.
             Al guardar refresca el listado sin navegar a ninguna parte. */}
@@ -173,7 +183,7 @@ export default function ListLoanPage() {
       />
 
       <ReportConfigModal
-        isOpen={isReportModalOpen}
+        isOpen={isReportModalOpen && can("report_loans")}
         onClose={() => setIsReportModalOpen(false)}
         loans={visibleLoans.filter((f) => !f.__devolution)}
         statusLabel={getStatusFilterLabel(status)}

@@ -20,6 +20,10 @@ const loanInclude = {
   // pide la vista: bajo el nombre del receptor van su tipo y número de documento.
   signatures: {
     include: {
+      // (p51) Del receptor NO registrado se guardan su tipo y número de
+      // documento en la propia firma. El tipo se trae resuelto para que la vista
+      // enseñe "Cédula de Ciudadanía" y no un id, igual que con el registrado.
+      externalDocumentType: { select: { id: true, documentName: true } },
       user: {
         select: {
           id: true,
@@ -36,11 +40,18 @@ const loanInclude = {
 };
 
 export const loanRepository = {
-  async findAll(status = 'active') {
-    const where =
-      status === 'all'      ? {} :
-      status === 'inactive' ? { isActive: false } :
-                              { isActive: true };
+  // (p51) `participacion` recorta el listado a los préstamos en los que el
+  // actor es parte. Llega ya construida desde el service (clausulaParticipacion)
+  // y se aplica EN LA CONSULTA: si se filtrara después de leer, los préstamos
+  // ajenos ya habrían salido de la base y bastaría con llamar al API a mano para
+  // verlos. `undefined` significa "sin recorte", que es lo que Prisma ignora.
+  async findAll(status = 'active', participacion = undefined) {
+    const where = {
+      ...(status === 'all'      ? {} :
+          status === 'inactive' ? { isActive: false } :
+                                  { isActive: true }),
+      ...(participacion ? { signatures: participacion } : {}),
+    };
     return prisma.loan.findMany({ where, orderBy: { loanDate: 'desc' }, include: loanInclude });
   },
 
@@ -75,6 +86,11 @@ export const loanRepository = {
             party: 'Receptor',
             userId: parties.receiverId ?? null,
             externalEmail: parties.receiverEmail ?? null,
+            // (p51) Solo viajan con el receptor externo. Con uno registrado
+            // llegan como undefined y la columna queda en NULL, que es lo
+            // correcto: su documento está en su ficha de usuario.
+            externalDocumentTypeId: parties.receiverDocumentTypeId ?? null,
+            externalDocumentNumber: parties.receiverDocumentNumber ?? null,
           },
         ],
       });
@@ -163,6 +179,8 @@ export const loanRepository = {
         data: {
           userId: parties.receiverId ?? null,
           externalEmail: parties.receiverEmail ?? null,
+          externalDocumentTypeId: parties.receiverDocumentTypeId ?? null,
+          externalDocumentNumber: parties.receiverDocumentNumber ?? null,
           ...(cambioReceptor ? reinicio : {}),
         },
       });

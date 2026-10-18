@@ -41,6 +41,15 @@ export const createConsumableMaterialSchema = Joi.object({
   // (p48) El inventario SÍ es obligatorio
   inventoryId: Joi.number().integer().positive().required(),
   senaPlate: Joi.string().max(20).optional().allow('', null),
+  // (p53) El material de consumo también se clasifica: los dos son obligatorios.
+  // Antes no tenía ninguno de los dos —la categoría solo existía en el
+  // devolutivo—, así que el inventario de consumo no se podía clasificar.
+  categoryId: Joi.number().integer().positive().required(),
+  materialTypeId: Joi.number().integer().positive().required(),
+  // (p53) Modelo y serial, opcionales en los dos materiales. Estaban solo en el
+  // devolutivo.
+  model: Joi.string().max(100).optional().allow('', null),
+  serial: Joi.string().max(20).optional().allow('', null),
   materialName: Joi.string().max(100).required(),
   quantity: Joi.number().integer().min(0).optional().allow(null),
   unitPrice: Joi.number().precision(2).positive().required(),
@@ -62,6 +71,10 @@ export const updateConsumableMaterialSchema = Joi.object({
   brandId: Joi.number().integer().positive().allow('', null),
   inventoryId: Joi.number().integer().positive(),
   senaPlate: Joi.string().max(20).allow('', null),
+  categoryId: Joi.number().integer().positive(),
+  materialTypeId: Joi.number().integer().positive(),
+  model: Joi.string().max(100).allow('', null),
+  serial: Joi.string().max(20).allow('', null),
   materialName: Joi.string().max(100),
   // (p48) El vacío significa "no tiene cantidad", o sea material serializado: es
   // lo que permite convertir uno por cantidad en uno con placa SENA. El service

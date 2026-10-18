@@ -5,6 +5,7 @@ import { validate, createReturnableMaterialSchema, updateReturnableMaterialSchem
 import { uploadFiles, limitarTamanoTotal } from '../../middleware/multerConfig.js';
 import { authenticateToken } from '../../middleware/auth.middleware.js';
 import { requirePermission } from '../../middleware/permission.middleware.js';
+import { errorDeNegocio } from '../../middleware/errorHandler.js';
 
 const router = Router();
 
@@ -41,10 +42,9 @@ router.use((err, req, res, next) => {
     };
     return res.status(400).json({ error: mensajes[err.code] ?? err.message });
   }
-  if (err.message && !err.code) {
-    return res.status(400).json({ error: err.message });
-  }
-  next(err);
+  // (p52) Lo que no es de multer lo decide el manejador compartido: un fallo de
+  // programacion no puede salir como 400 con el texto de JavaScript.
+  return errorDeNegocio(err, req, res, next);
 });
 
 export default router;

@@ -15,11 +15,17 @@ export const categoryRepository = {
     });
   },
 
-  // Cuántos materiales devolutivos usan la categoría. Se consulta antes de
-  // desactivarla para poder decirlo en el aviso: desactivarla no deja a esos
-  // materiales sin categoría, pero sí la saca del select de crear.
+  // Cuántos materiales usan la categoría. Se consulta antes de desactivarla para
+  // poder decirlo en el aviso: desactivarla no deja a esos materiales sin
+  // categoría, pero sí la saca de los selects de crear.
+  //
+  // (p53) Cuenta sobre la tabla PADRE y por los DOS campos: la misma fila de
+  // `categories` puede estar usada como categoría de unos materiales y como tipo
+  // de material de otros, y los dos tipos de material cuentan.
   async countMaterials(id) {
-    return prisma.returnableMaterial.count({ where: { categoryId: id } });
+    return prisma.consumableMaterial.count({
+      where: { OR: [{ categoryId: id }, { materialTypeId: id }] },
+    });
   },
 
   async findById(id) {

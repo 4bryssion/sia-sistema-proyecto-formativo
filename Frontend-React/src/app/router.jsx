@@ -171,7 +171,11 @@ const router = createBrowserRouter([
             // Módulo users:
             {
                 path: "users",
-                element: <RequirePermission codename={["create_user", "edit_user"]}><ListUserPage /></RequirePermission>
+                // (p51) Se abre con `list_users`, no con crear-o-editar. Tener permiso para
+                // ver el listado y no poder abrir el listado era una incongruencia entre
+                // las dos capas. Las acciones de dentro siguen cada una con su permiso,
+                // así que quien solo pueda listar ve una tabla de solo lectura.
+                element: <RequirePermission codename="list_users"><ListUserPage /></RequirePermission>
             },
             // Módulo tasks:
             // (p50) Dos permisos entran: `list_tasks` ve las de todo el mundo y
@@ -272,15 +276,9 @@ const router = createBrowserRouter([
             // Módulo loan-returns: retornar es un modal abierto desde la tabla
             // de listar préstamos, ya no tiene ruta propia
 
-            // Módulo groups:
-            {
-                path: "groups/:id",
-                element: <h1>Ver Grupos</h1>,
-            },
-            {
-                path: "groups/:id/edit",
-                element: <h1>Editar Grupos</h1>,
-            },
+            // Módulo groups: ver y editar un rol son modales que abre la tabla
+            // de listar, así que no tienen ruta propia. (p52) Aquí quedaban dos
+            // rutas de maqueta que respondían con un <h1> de marcador.
 
         ],
     },    

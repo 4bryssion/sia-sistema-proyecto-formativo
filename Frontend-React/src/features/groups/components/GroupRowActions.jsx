@@ -1,18 +1,30 @@
 import { useState } from "react";
 import { Pencil, Users } from "lucide-react";
-import { Switch, Alert, usePermissions, IconButton } from "@/shared";
+import { Switch, Alert, IconButton, PermissionGate, BlockedControl } from "@/shared";
 import groupService from "@/shared/services/groupService";
 import EditGroupModal from "../pages/EditGroupModal.jsx";
 import GroupUsersModal from "../pages/GroupUsersModal.jsx";
 
 export default function GroupRowActions({ group, onChanged }) {
-  const { can } = usePermissions();
-
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isUsersOpen, setIsUsersOpen] = useState(false);
   const [toggling, setToggling] = useState(false);
 
+  // (p51) RFADMIN43.1 y RFADMIN44.1: un rol del sistema no se renombra ni se
+  // deshabilita. El backend lo rechaza igual, pero avisar aquí es decirlo ANTES
+  // en vez de después de que la persona confirme una acción que iba a fallar.
+  const esDelSistema = group.isSystem;
+  const avisarProtegido = () => Alert.error(
+    "Rol del sistema",
+    `"${group.groupName}" es uno de los roles con los que el sistema se administra: `
+    + 'su nombre y su estado no se pueden cambiar. Sus permisos sí, desde el panel de accesos.',
+  );
+
   const handleToggle = async () => {
+    // La petición en curso se corta aquí y no con `disabled`: un interruptor
+    // deshabilitado no emite clic, y el envoltorio que avisa necesita el clic.
+    if (toggling) return;
+
     // Confirmación obligatoria antes de activar/desactivar (soft-delete)
     const result = await Alert.warning(
       `¿${group.isActive ? "Desactivar" : "Activar"} grupo?`,
@@ -35,21 +47,24 @@ export default function GroupRowActions({ group, onChanged }) {
   return (
     <div className="flex items-center gap-3">
 
-      {can("toggle_group") && (
-      <Switch
-        checked={group.isActive}
-        onChange={handleToggle}
-        disabled={toggling}
-        size="sm"
-        className="inline-flex"
-      />
-      )}
+      <PermissionGate codename="toggle_group" accion="cambiar el estado de un rol">
+        <BlockedControl bloqueado={esDelSistema} avisar={avisarProtegido}>
+          <Switch
+            checked={group.isActive}
+            onChange={handleToggle}
+            size="sm"
+            className="inline-flex"
+          />
+        </BlockedControl>
+      </PermissionGate>
 
-      {can("edit_group") && (
-      <IconButton ariaLabel="Editar grupo" hitSize={36} iconSize={16} onClick={() => setIsEditOpen(true)}>
-        <Pencil size={16} />
-      </IconButton>
-      )}
+      <PermissionGate codename="edit_group" accion="editar un rol">
+        <BlockedControl bloqueado={esDelSistema} avisar={avisarProtegido}>
+          <IconButton ariaLabel="Editar grupo" hitSize={36} iconSize={16} onClick={() => setIsEditOpen(true)}>
+            <Pencil size={16} />
+          </IconButton>
+        </BlockedControl>
+      </PermissionGate>
 
       {/* Ver usuarios del grupo: mismo permiso que listar grupos */}
       <IconButton

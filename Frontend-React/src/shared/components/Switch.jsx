@@ -1,113 +1,80 @@
-// Hooks de react para manejar estado y efectos
-import { useState, useEffect } from "react";
-
-// Iconos usados dentro del switch
 import { Check, X } from "lucide-react";
 
-// Componente reutlizable para representar un switch de estado (activo/inactivo)
+/**
+ * Switch de estado (activo / inactivo).
+ *
+ * (p51) CONTROLADO POR EL PADRE, sin estado propio. Antes guardaba el suyo y lo
+ * invertía en el clic, antes de que el padre decidiera nada. Como casi todos los
+ * usos abren una confirmación —"¿seguro que quieres desactivar esto?"—, al
+ * cancelar el switch ya se había movido: el dato seguía activo y el switch decía
+ * inactivo. Y no se recuperaba, porque el efecto que lo sincronizaba dependía de
+ * `checked`, que no había cambiado; para el padre no pasó nada. El siguiente
+ * clic pedía entonces lo contrario de lo que mostraba.
+ *
+ * Afectaba a los diez módulos que lo usan. Ahora lo que se ve es siempre el
+ * dato: el switch avisa del clic y se mueve cuando el padre cambia `checked`,
+ * que es después de que el servidor confirme. Si la operación se cancela o
+ * falla, no se mueve, que es justo lo correcto.
+ */
 export default function StatusSwitch({
-    checked = false, // Valor inicial del switch (controlado desde el padre)
-    onChange, // Callback que se ejecuta cuando cambia el estado
-    disabled = false, // Permite deshabilitar la interacción
-    size = "md", // Tamaño del switch (sm, md, lg)
+    checked = false,
+    onChange,
+    disabled = false,
+    size = "md",
     className = "",
-}){
-
-    // Estado interno del componente
-    // Se inicializa con el valor recibido desde la prop "checked"
-    const [ isActive, setIsActive ] = useState(checked)
-
-    // Efecto que sincroniza el estado interno con el valor recibido desde el componente padre
-    useEffect(() => {
-        setIsActive(checked);
-    }, [checked]); // Se ejecuta cada vez que cambia "checked"
-
-    // Función que maneja el cambio del switch
+}) {
     const handleToggle = () => {
-
-        // Si el switch está deshabilitado no permite interacción
-        if(disabled) return;
-
-        // Calcula el nuevo estado (Invierte el valor actual)
-        const newValue = !isActive;
-
-        // Actualiza el estado interno
-        setIsActive(newValue);
-
-        // Si existe un callback onChange, se ejecuta enviando el nuevo valor al componente padre
-        if (onChange){
-            onChange(newValue);
-        }
+        if (disabled) return;
+        // Se propone el valor contrario; quien manda sobre el estado es el padre.
+        onChange?.(!checked);
     };
 
-    // Clases de tamaño del contenedor del switch
     const sizes = {
         sm: "h-5 w-9",
         md: "h-6 w-11",
         lg: "h-7 w-14",
     };
 
-    // Clases de tamaño del "knob" (el círculo que se mueve)
+    // El círculo que se desplaza
     const knobSizes = {
         sm: "h-4 w-4",
         md: "h-5 w-5",
         lg: "h-6 w-6",
     };
 
-    return(
-
-        // Botón que funciona como switch
+    return (
         <button
-            onClick={handleToggle} // Evento que cambia el estado
-            disabled={disabled} // Permite deshabilitar el botón 
+            type="button"
+            role="switch"
+            aria-checked={checked}
+            aria-label={checked ? "Desactivar" : "Activar"}
+            onClick={handleToggle}
+            disabled={disabled}
+            // Los comentarios ya no van dentro de la cadena de clases: ahí dentro
+            // no son comentarios, son nombres de clase que Tailwind no conoce y
+            // que acababan en el atributo `class` del elemento.
             className={`
-                / /Posicionamento base del switch
-                relative items-center
-                
-                // Forma redondeada del contenedor
-                rounded-full transition-colors
-
-                // Tamaño dinámico según la prop "size"
+                relative items-center rounded-full transition-colors
                 ${sizes[size]}
-
-                // Color dependiendo del estado
-                ${isActive ? "bg-green-500" : "bg-gray-300"}
-
-                // Estilo cuando está deshabilitado
+                ${checked ? "bg-green-500" : "bg-gray-300"}
                 ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-
                 ${className}
             `}
         >
-            {/* "Knob" del switch (el círculo que se mueve de izquierda a derecha) */}
             <span
                 className={`
-                    absolute left-0.5 flex items-center justify-center    
-
-                    // Forma del knob
-                    rounded-full bg-white shadow
-
-                    // Animación de movimiento
-                    transition-transform
-
-                    // Tamaño dinámico del knob
+                    absolute left-0.5 flex items-center justify-center
+                    rounded-full bg-white shadow transition-transform
                     ${knobSizes[size]}
-
-                    // Posición dependiendo del estado
-                    ${isActive ? "translate-x-full" : "translate-x-0"}
+                    ${checked ? "translate-x-full" : "translate-x-0"}
                 `}
             >
-                {/* Icono que cambia dependiendo del estado activo-inactivo */}
-
-                {isActive ? (
-                    <Check size={12} className="text-green-600"/>
+                {checked ? (
+                    <Check size={12} className="text-green-600" />
                 ) : (
-                    <X size={12} className="text-gray-500"/>
+                    <X size={12} className="text-gray-500" />
                 )}
-
             </span>
-
         </button>
-
     );
 }

@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { DataTable, Button, IconButton, StatusFilterSelect } from "@/shared";
+import { DataTable, Button, StatusFilterSelect, PermissionGate, ListPageHeader } from "@/shared";
 import { inventoryColumns } from "../table/InventoriesColumns";
 import { useInventories } from "../hooks/useInventories";
-import { useNavigate } from "react-router-dom";
-import { Undo2 } from "lucide-react";
 import CreateInventoryModal from "@/shared/components/inventories/CreateInventoryModal";
 
 // (p50) Estandarizado contra el listado de grupos.
@@ -23,7 +21,6 @@ import CreateInventoryModal from "@/shared/components/inventories/CreateInventor
 // se reutiliza el mismo, que además garantiza que crear desde el listado y
 // crear desde un material se comporten igual.
 export default function ListInventoryPage() {
-  const navigate = useNavigate();
   const [status, setStatus] = useState("active");
   const { inventories, loading, error, refetch } = useInventories(status);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -31,22 +28,18 @@ export default function ListInventoryPage() {
   return (
     <div className="p-6">
 
-      <div className="flex justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <IconButton ariaLabel="Devolverse" onClick={() => navigate(-1)}>
-            <Undo2 strokeWidth={2.8} />
-          </IconButton>
-          <h1 className="font-main font-semibold mb-0 text-h3 sm:text-h2">Inventarios</h1>
-        </div>
+      <ListPageHeader title="Inventarios">
+        <StatusFilterSelect value={status} onChange={setStatus} />
 
-        <div className="grid sm:flex gap-6 items-center">
-          <StatusFilterSelect value={status} onChange={setStatus} />
-
+        {/* (p51) El permiso se consulta ANTES, no después: sin el gate el
+            botón se veía igual para todos y el "no" llegaba del servidor
+            cuando el formulario ya estaba lleno. */}
+        <PermissionGate codename="create_inventory" accion="crear inventarios">
           <Button variant="primary" onClick={() => setIsCreateOpen(true)}>
             Crear Inventario
           </Button>
-        </div>
-      </div>
+        </PermissionGate>
+      </ListPageHeader>
 
       {loading ? (
         <p className="font-secondary text-body text-text-muted">Cargando inventarios...</p>

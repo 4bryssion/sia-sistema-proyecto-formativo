@@ -62,6 +62,14 @@ const parseNumericos = (data) => ({
   // ignora la columna y la marca vieja se quedaba pegada para siempre.
   brandId:      data.brandId === '' ? null : (data.brandId ? Number(data.brandId) : undefined),
   inventoryId:  data.inventoryId ? Number(data.inventoryId) : undefined,
+  // (p53) Clasificación. Mismo criterio que la marca: el campo vacío significa
+  // "quítasela" y viaja como null; `undefined` es "no lo toqué".
+  categoryId:     data.categoryId === ''     ? null : (data.categoryId     ? Number(data.categoryId)     : undefined),
+  materialTypeId: data.materialTypeId === '' ? null : (data.materialTypeId ? Number(data.materialTypeId) : undefined),
+  // (p53) Opcionales en los dos materiales. Vacío = "no tiene", no cadena vacía:
+  // el serial es único y dos cadenas vacías chocarían, dos NULL no.
+  model:        data.model === '' ? null : data.model,
+  serial:       data.serial === '' ? null : data.serial,
   // (p48) Vacío = "no tiene", igual que la marca. Es lo que permite convertir un
   // material serializado en uno por cantidad y al revés. Con `undefined` (que es
   // lo que significa "no lo toqué") Prisma ignora la columna y el valor viejo se

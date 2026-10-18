@@ -1,4 +1,4 @@
-// Plantillas HTML de los correos del S.I.I.
+// Plantillas HTML de los correos del S.I.A.
 //
 // Por qué maquetación con <table> y estilos en línea: los clientes de correo
 // (Gmail, Outlook, Apple Mail) descartan <style>, flexbox y grid. El HTML de correo
@@ -51,8 +51,8 @@ export const layout = ({ title, preview, body }) => `<!DOCTYPE html>
           <!-- Cabecera institucional -->
           <tr>
             <td style="background:${COLORS.primary};background-image:linear-gradient(to right, ${COLORS.primary} 63%, ${COLORS.primaryDark} 100%);padding:20px 28px;">
-              <p style="margin:0;font-family:${FONT};font-size:22px;font-weight:700;color:#FFFFFF;letter-spacing:1px;">S.I.I</p>
-              <p style="margin:4px 0 0;font-family:${FONT};font-size:13px;color:#EAFBE2;">Software de Inventario de Infraestructura</p>
+              <p style="margin:0;font-family:${FONT};font-size:22px;font-weight:700;color:#FFFFFF;letter-spacing:1px;">S.I.A</p>
+              <p style="margin:4px 0 0;font-family:${FONT};font-size:13px;color:#EAFBE2;">Software de Inventario y Administración</p>
             </td>
           </tr>
 
@@ -68,7 +68,7 @@ export const layout = ({ title, preview, body }) => `<!DOCTYPE html>
           <tr>
             <td style="padding:16px 28px 24px;border-top:1px solid ${COLORS.border};">
               <p style="margin:0;font-family:${FONT};font-size:11px;line-height:1.6;color:${COLORS.textSoft};">
-                Este es un mensaje automático del S.I.I — Software de Inventario de Infraestructura. Por favor no respondas a este correo.
+                Este es un mensaje automático del S.I.A — Software de Inventario y Administración. Por favor no respondas a este correo.
               </p>
             </td>
           </tr>

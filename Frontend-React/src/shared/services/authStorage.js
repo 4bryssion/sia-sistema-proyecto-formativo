@@ -169,7 +169,7 @@ export function getCurrentUserLabel() {
 // en la que escribe. Como el flag lo puede activar el interceptor de axios en
 // cualquier momento (un 403 con mustChangePassword), se avisa con un evento
 // propio para que el bloqueo aparezca sin recargar.
-export const MUST_CHANGE_EVENT = "sii:must-change-password";
+export const MUST_CHANGE_EVENT = "sia:must-change-password";
 
 export function setMustChangePassword(value) {
   if (value) guardar(MUST_CHANGE_KEY, "1");

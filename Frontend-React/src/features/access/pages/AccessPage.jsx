@@ -28,7 +28,15 @@ export default function AccessPage() {
   const [isEditing, setIsEditing]       = useState(false);
   const [userGroupIds, setUserGroupIds] = useState([]);
   const [loadingPerms, setLoadingPerms] = useState(false);
-  const [error, setError]               = useState(null);
+  // (p51) Los errores de esta pantalla salían como un párrafo suelto encima del
+  // panel, fuera del componente de alertas. La regla del proyecto es que TODO
+  // mensaje al usuario va por `Alert`: un texto suelto arriba se pierde —sobre
+  // todo en una pantalla que se desplaza— y no se parece a ningún otro aviso del
+  // sistema. `setError` conserva el nombre para no tocar los once sitios que lo
+  // llaman; lo que cambia es a dónde va lo que recibe.
+  const setError = (mensaje) => {
+    if (mensaje) Alert.error("No se pudo completar la acción", mensaje);
+  };
 
   useEffect(() => {
     Promise.all([
@@ -190,6 +198,16 @@ export default function AccessPage() {
     else entityName = "";
   }
 
+  // (p51) Editar los permisos de un GRUPO y los de un USUARIO son dos permisos
+  // distintos. El panel es el mismo, así que la decisión se toma aquí, donde se
+  // sabe qué hay seleccionado, y viaja como prop.
+  const codenameEditar = selectedGroupId
+    ? ["assign_permission_to_group", "remove_permission_from_group"]
+    : ["assign_permission_to_user", "remove_permission_from_user"];
+  const accionEditar = selectedGroupId
+    ? "cambiar los permisos de un grupo"
+    : "cambiar los permisos directos de un usuario";
+
   return (
     <div className="p-2">
       <div className="mb-2">
@@ -198,9 +216,6 @@ export default function AccessPage() {
         </IconButton>
       </div>
 
-      {error && (
-        <p className="font-secondary mb-2 text-medium text-error px-4">{error}</p>
-      )}
 
       <div className="p-6 grid 1400:grid-cols-[380px_1fr] 1400:h-[calc(100vh-160px)]">
         <div className="bg-black p-16 1400:h-full overflow-y-auto">
@@ -230,6 +245,8 @@ export default function AccessPage() {
             onEdit={handleEdit}
             onSave={handleSave}
             onCancel={handleCancel}
+            codenameEditar={codenameEditar}
+            accionEditar={accionEditar}
           />
         </div>
       </div>

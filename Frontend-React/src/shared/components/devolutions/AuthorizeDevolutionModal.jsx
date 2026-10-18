@@ -22,7 +22,19 @@ import { formatAuditDate } from "@/shared/utils/formatDate";
 
 const nombreDe = (u) => (u ? `${u.userFirstName} ${u.userLastName}` : "—");
 
+// (p52) El envoltorio existe porque un modal con `isOpen={false}` SIGUE
+// MONTADO: sus hooks viven igual. Con el estado dentro del cuerpo, lo decidido
+// —y los errores rojos— sobrevivian al cierre, y al reabrir el formulario
+// aparecia con las decisiones de la vez anterior. Justo lo contrario de lo que
+// dice el comentario de arriba: el estado tiene que arrancar vacio para obligar
+// a decidir material por material. Devolver null aqui desmonta el cuerpo y con
+// el su estado, que es el patron que ya usan los otros trece modales.
 export default function AuthorizeDevolutionModal({ isOpen, devolution, onClose, onSaved }) {
+  if (!isOpen || !devolution) return null;
+  return <CuerpoAutorizar devolution={devolution} onClose={onClose} onSaved={onSaved} />;
+}
+
+function CuerpoAutorizar({ devolution, onClose, onSaved }) {
   // El estado arranca vacío para obligar a decidir material por material: un
   // valor por defecto haría que autorizar sin mirar dejara todo "Disponible"
   const [decisiones, setDecisiones] = useState({});
@@ -75,11 +87,9 @@ export default function AuthorizeDevolutionModal({ isOpen, devolution, onClose, 
     }
   };
 
-  if (!devolution) return null;
-
   return (
     <Modal
-      isOpen={isOpen}
+      isOpen
       onClose={onClose}
       title={getAuthorizeActionLabel(devolution)}
       size="lg"

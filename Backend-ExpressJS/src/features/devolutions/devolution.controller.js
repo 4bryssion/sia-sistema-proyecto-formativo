@@ -4,12 +4,12 @@ export const devolutionController = {
   async getAll(req, res, next) {
     try {
       const { status = 'active' } = req.query;
-      res.json(await devolutionService.getAll(status));
+      res.json(await devolutionService.getAll(status, req.user));
     } catch (err) { next(err); }
   },
 
   async getById(req, res, next) {
-    try { res.json(await devolutionService.getById(Number(req.params.id))); }
+    try { res.json(await devolutionService.getById(Number(req.params.id), req.user)); }
     catch (err) { next(err); }
   },
 
@@ -31,7 +31,7 @@ export const devolutionController = {
 
   async toggle(req, res, next) {
     try {
-      const data = await devolutionService.toggle(Number(req.params.id));
+      const data = await devolutionService.toggle(Number(req.params.id), req.user);
       res.json({ mensaje: data.isActive ? 'Devolución reactivada.' : 'Devolución descartada.', data });
     } catch (err) { next(err); }
   },

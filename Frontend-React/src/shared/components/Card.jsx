@@ -13,7 +13,7 @@ export default function Card({
         <div
             className={`
                 w-80 h-full flex flex-col
-                text-text
+                text-text-primary
                 border
                 bg-white/80 hover:bg-neutral-100/80 backdrop-blur-[2px] shadow-lg rounded-2xl overflow-hidden hover:shadow-black transition-all duration-700
                 ${className}

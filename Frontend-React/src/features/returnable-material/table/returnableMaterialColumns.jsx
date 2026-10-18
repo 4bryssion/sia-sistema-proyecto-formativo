@@ -35,10 +35,18 @@ export const returnableMaterialColumns = (refetch, can = () => true, onView, onE
         },
     },
   {
+    // (p53) Las dos clasificaciones cuelgan de la tabla PADRE, como el
+    // inventario. accessorFn para que el buscador global las encuentre.
+    id: "materialType",
+    header: "Tipo de material",
+    accessorFn: (row) => row.consumableMaterial?.materialType?.categoryName ?? "",
+    cell: ({ row }) => row.original.consumableMaterial?.materialType?.categoryName ?? "—",
+  },
+  {
     id: "category",
     header: "Categoría",
-    accessorFn: (row) => row.category?.categoryName ?? "",
-    cell: ({ row }) => row.original.category?.categoryName ?? "—",
+    accessorFn: (row) => row.consumableMaterial?.category?.categoryName ?? "",
+    cell: ({ row }) => row.original.consumableMaterial?.category?.categoryName ?? "—",
   },
   {
     id: "inventory",

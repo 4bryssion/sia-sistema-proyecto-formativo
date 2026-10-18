@@ -34,10 +34,17 @@ export const returnableReportFields = [
     getter: (m) => accountableNames(m.consumableMaterial?.accountables).join(", "),
   },
   {
+    // (p53) La clasificación se mudó a la tabla padre, igual que el inventario.
+    key: "materialType",
+    label: "Tipo de material",
+    default: true,
+    getter: (m) => m.consumableMaterial?.materialType?.categoryName ?? "",
+  },
+  {
     key: "category",
     label: "Categoría",
     default: true,
-    getter: (m) => m.category?.categoryName ?? "",
+    getter: (m) => m.consumableMaterial?.category?.categoryName ?? "",
   },
   {
     key: "senaPlate",
@@ -64,13 +71,13 @@ export const returnableReportFields = [
     key: "model",
     label: "Modelo",
     default: false,
-    getter: (m) => m.model ?? "",
+    getter: (m) => m.consumableMaterial?.model ?? "",
   },
   {
     key: "serial",
     label: "Serial",
     default: false,
-    getter: (m) => m.serial ?? "",
+    getter: (m) => m.consumableMaterial?.serial ?? "",
   },
   {
     key: "dimensions",

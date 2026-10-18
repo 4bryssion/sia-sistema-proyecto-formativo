@@ -8,7 +8,7 @@
 import { formatAuditDate } from "@/shared/utils/formatDate";
 import { getCurrentUserLabel } from "@/shared/services/authStorage";
 
-export const SYSTEM_NAME = "S.I.I — Software de Inventario de Infraestructura";
+export const SYSTEM_NAME = "S.I.A — Software de Inventario y Administración";
 
 /**
  * Construye las líneas del encabezado.

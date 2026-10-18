@@ -95,7 +95,7 @@ export default function Navbar(){
                                 text-h1 hidden sm:flex
                             `}
                         >
-                            S.I.I
+                            S.I.A
                         </h1>
                     </Link>
 
@@ -168,7 +168,11 @@ export default function Navbar(){
                                             </DropdownItem>
                                             )}
 
-                                            {can(["create_user", "edit_user"]) && (
+                                            {/* (p51) El mismo permiso que guarda la ruta:
+                                                `list_users`. Con crear-o-editar, un rol con
+                                                solo listar no veía la entrada del menú de una
+                                                pantalla a la que sí puede entrar. */}
+                                            {can("list_users") && (
                                             <DropdownItem>
                                                 <Link to="/dashboard/users" className="block w-full">
                                                     Usuarios
@@ -293,18 +297,25 @@ export default function Navbar(){
 
             {/* Mi perfil: modales de visualizar y editar el usuario autenticado.
                 Viven en el Navbar para estar disponibles en cualquier pantalla. */}
-            <ViewUserModal
-                isOpen={profileUserId != null}
-                userId={profileUserId}
-                onClose={() => setProfileUserId(null)}
-                onEdit={(id) => { setProfileUserId(null); setEditProfileId(id); }}
-            />
+            {/* (p51) Montados solo al abrirse. Cerrados seguían montados y el de
+                perfil arrastra el de crear tarea, que pedía la lista de usuarios
+                nada más entrar al dashboard. */}
+            {profileUserId != null && (
+                <ViewUserModal
+                    isOpen
+                    userId={profileUserId}
+                    onClose={() => setProfileUserId(null)}
+                    onEdit={(id) => { setProfileUserId(null); setEditProfileId(id); }}
+                />
+            )}
 
-            <EditUserModal
-                isOpen={editProfileId != null}
-                userId={editProfileId}
-                onClose={() => setEditProfileId(null)}
-            />
+            {editProfileId != null && (
+                <EditUserModal
+                    isOpen
+                    userId={editProfileId}
+                    onClose={() => setEditProfileId(null)}
+                />
+            )}
         </nav>
     )
 }

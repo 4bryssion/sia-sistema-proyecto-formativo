@@ -13,6 +13,8 @@ model DocumentType {
   description  String? @db.VarChar(150)
   isActive     Boolean @default(true) @map("is_active")
   users        User[]
+  // (p51) Firmas de receptores no registrados que declararon este tipo.
+  loanSignatures LoanSignature[]
 
   @@map("document_types")
 }
@@ -26,6 +28,10 @@ model Group {
   // (src/shared/normalizeName.js): nunca llega desde el formulario.
   groupNameNormalized String @unique @map("group_name_normalized") @db.VarChar(100)
   isActive    Boolean           @default(true) @map("is_active")
+  // (p51) Grupo del sistema: no se renombra ni se deshabilita (RFADMIN43.1 y
+  // RFADMIN44.1). Es un dato y no una comparación de nombres en el código, para
+  // que marcar otro rol como protegido no exija tocar el backend.
+  isSystem    Boolean           @default(false) @map("is_system")
   created_at  DateTime          @default(now())
   updated_at  DateTime          @updatedAt
   permissions GroupPermission[]
@@ -50,6 +56,10 @@ model Permission {
   permissionName     String            @unique @map("permission_name") @db.VarChar(150)
   permissionCodename String            @unique @map("permission_codename") @db.VarChar(100)
   isActive           Boolean           @default(true) @map("is_active")
+  // (p51) Permiso de administración y seguridad: solo un superadministrador
+  // puede concederlo o quitarlo. El resto los reparte cualquiera con permiso
+  // para repartir, lo tenga él o no.
+  isRestricted       Boolean           @default(false) @map("is_restricted")
   created_at         DateTime          @default(now())
   updated_at         DateTime          @updatedAt
   contentTypeId      Int?              @map("content_type_id")
@@ -129,7 +139,9 @@ model User {
   // autoriza): Prisma exige nombrarlas para poder distinguirlas
   devolutionsRequested  DevolutionRequest[] @relation("DevolutionRequester")
   devolutionsAuthorized DevolutionRequest[] @relation("DevolutionAuthorizer")
-  tasks               Task[]
+  // (p51) El vínculo con las tareas pasa por la asignación: una tarea puede ser
+  // de varias personas y cada una tiene su propio estado.
+  taskAssignments     TaskAssignment[]
   groups              UserGroup[]
   directPermissions   UserPermission[]
   passwordResetCodes  PasswordResetCode[]
@@ -137,6 +149,8 @@ model User {
   // (p50) Avisos dirigidos a esta persona (tareas asignadas). Relación distinta
   // de `notifications`, que son los avisos que ESTA persona provocó.
   notificationsReceived Notification[]     @relation("NotificationRecipient")
+  // (p53) Ajustes del sistema que esta persona cambió por última vez.
+  systemSettings        SystemSetting[]
   // (p50) Última vez que abrió sus notificaciones. Enciende o apaga el punto
   // verde de la campana. NULL = nunca las ha abierto.
   notificationsSeenAt   DateTime?          @map("notifications_seen_at")
@@ -199,6 +213,24 @@ model Inventory {
   @@map("inventories")
 }
 
+// (p53) Ajustes del sistema, en clave/valor. Hoy solo el correo de soporte, que
+// estaba escrito en el frontend como constante con un aviso de PLACEHOLDER: dos
+// pantallas lo leen (login y Mi perfil) y una lo escribe, así que no puede vivir
+// en el código. El siguiente ajuste es una fila, no una migración.
+model SystemSetting {
+  id           Int      @id(map: "system_settings_pkey") @default(autoincrement())
+  settingKey   String   @unique @map("setting_key") @db.VarChar(60)
+  settingValue String   @map("setting_value") @db.VarChar(255)
+  // Quién lo cambió. Opcional y SetNull: el ajuste es del sistema y sobrevive a
+  // la baja de quien lo tocó.
+  updatedById  Int?     @map("updated_by")
+  updatedBy    User?    @relation(fields: [updatedById], references: [id], map: "system_settings_updated_by_fkey")
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
 model Category {
   id                  Int                  @id(map: "categories_pkey") @default(autoincrement())
   categoryName        String               @unique @map("category_name") @db.VarChar(100)
@@ -213,7 +245,18 @@ model Category {
   // desde que las categorías se pueden renombrar y desactivar, eso apagaría la
   // regla en silencio.
   requiresDimensions  Boolean              @default(false) @map("requires_dimensions")
-  returnableMaterials ReturnableMaterial[]
+  // (p53) ¿Es uno de los TIPOS de material (Herramienta, Maquinaria y equipos,
+  // Muebles y enseres) o una categoría creada por el usuario? Los dos selects
+  // del formulario de material salen de esta misma tabla y es esta marca la que
+  // decide en cuál aparece cada fila. Va en el dato por lo mismo que
+  // `requiresDimensions`: comparar nombres se rompe al renombrar la fila.
+  isMaterialType      Boolean              @default(false) @map("is_material_type")
+  // (p53) El material apunta dos veces a esta tabla: una por su categoría y otra
+  // por su tipo. Prisma exige nombrar las relaciones cuando hay más de una entre
+  // los mismos modelos. Las dos cuelgan de la tabla PADRE, así que sirven igual
+  // al material de consumo y al devolutivo.
+  materials           ConsumableMaterial[] @relation("MaterialCategory")
+  materialsOfType     ConsumableMaterial[] @relation("MaterialType")
 
   @@map("categories")
 }
@@ -226,6 +269,20 @@ model ConsumableMaterial {
   // columna en la tabla padre, no tabla intermedia.
   inventoryId   Int?                @map("inventory_id")
   senaPlate     String?             @unique @map("sena_plate") @db.VarChar(20)
+  // (p53) Clasificación en dos niveles, pedida en la revisión del instructor:
+  // `materialType` es una de las 3 filas marcadas `isMaterialType` y `category`
+  // una de las que crea el usuario. Las dos son opcionales EN LA BASE porque los
+  // materiales que ya existían no tienen categoría propia; el validador y el
+  // formulario las exigen para todo lo que se registre o edite desde ahora.
+  categoryId     Int?               @map("category_id")
+  materialTypeId Int?               @map("material_type_id")
+  // (p53) `model` y `serial` eran del devolutivo (tabla hija). El instructor los
+  // pide en los dos tipos de material, y duplicarlos habría dejado dos fuentes
+  // de verdad para un devolutivo, que es una fila de las dos tablas a la vez.
+  model          String?            @db.VarChar(100)
+  // Sigue siendo único: en Postgres varios NULL no colisionan, así que la
+  // unicidad solo aplica a los materiales que sí traen serial.
+  serial         String?            @unique @db.VarChar(20)
   materialName  String              @map("material_name") @db.VarChar(100)
   quantity      Int?
   unitPrice     Decimal             @map("unit_price") @db.Decimal(15, 2)
@@ -241,6 +298,10 @@ model ConsumableMaterial {
   created_at    DateTime            @default(now())
   updated_at    DateTime            @updatedAt
   brand         Brand?              @relation(fields: [brandId], references: [id], map: "consumable_materials_brand_id_fkey")
+  // Restrict en las dos: una categoría con material clasificado no se borra, se
+  // desactiva. Es lo que hace el módulo de categorías.
+  category      Category?           @relation("MaterialCategory", fields: [categoryId], references: [id], onDelete: Restrict, map: "consumable_materials_category_id_fkey")
+  materialType  Category?           @relation("MaterialType", fields: [materialTypeId], references: [id], onDelete: Restrict, map: "consumable_materials_material_type_id_fkey")
   inventory     Inventory?          @relation(fields: [inventoryId], references: [id], map: "consumable_materials_inventory_id_fkey")
   // (p48) El cuentadante dejó de ser la columna user_id: un material puede tener
   // varios, así que la relación pasa por una tabla intermedia.
@@ -259,6 +320,8 @@ model ConsumableMaterial {
   returnable    ReturnableMaterial?
   devolutionItems DevolutionRequestItem[]
 
+  @@index([materialTypeId], map: "consumable_materials_material_type_id_idx")
+  @@index([categoryId], map: "consumable_materials_category_id_idx")
   @@map("consumable_materials")
 }
 
@@ -295,18 +358,15 @@ model ConsumableMaterialImage {
 
 model ReturnableMaterial {
   id                 Int                @id(map: "returnable_materials_pkey")
-  categoryId         Int                @map("category_id")
-  // (p48) model y serial pasaron a opcionales: hay material devolutivo que no
-  // trae ninguno de los dos. serial sigue siendo @unique — en Postgres varios
-  // NULL no colisionan, así que la unicidad solo aplica a los que sí lo tienen.
-  // Lo que define "serializado" NO es el serial sino quantity == null (placa SENA),
-  // así que volverlo opcional no toca préstamos, retornos ni devoluciones.
-  model              String?            @db.VarChar(100)
-  serial             String?            @unique @db.VarChar(20)
-  // dimensions solo lo pide la categoría "Muebles y enseres"; para el resto
-  // queda null y no interfiere en la creación
+  // (p53) `category_id`, `model` y `serial` se fueron a la tabla PADRE: la
+  // clasificación y la identificación del material sirven a los dos tipos. Lo
+  // único que queda aquí es lo que SOLO tiene el devolutivo. La fila sigue
+  // existiendo porque es lo que distingue a un devolutivo de un consumible
+  // (`esDevolutivo = Boolean(material.returnable)`).
+  //
+  // dimensions lo pide el TIPO de material marcado con `requiresDimensions`
+  // —hoy «Muebles y enseres»—; para el resto queda null.
   dimensions         String?            @db.VarChar(100)
-  category           Category           @relation(fields: [categoryId], references: [id], map: "returnable_materials_category_id_fkey")
   consumableMaterial ConsumableMaterial @relation(fields: [id], references: [id], onDelete: Cascade, map: "returnable_materials_id_fkey")
   // (p48) technicalSheets se movió a ConsumableMaterial (la tabla padre) para que
   // el material de consumo también tenga fichas. Se leen desde consumableMaterial.
@@ -433,6 +493,13 @@ model LoanSignature {
   // porque la restricción depende de `party` y no de la columna sola.
   userId        Int?      @map("user_id")
   externalEmail String?   @map("external_email") @db.VarChar(150)
+  // (p51) Documento del receptor no registrado. Nullable porque la firma del
+  // prestador nunca lo lleva —él es un usuario del sistema— y porque los
+  // préstamos externos anteriores a la p51 se hicieron sin este dato. Para los
+  // nuevos lo exige el validador, junto al correo.
+  externalDocumentTypeId Int?    @map("external_document_type_id")
+  externalDocumentNumber String? @map("external_document_number") @db.VarChar(20)
+  externalDocumentType   DocumentType? @relation(fields: [externalDocumentTypeId], references: [id], onDelete: SetNull, map: "loan_signatures_external_document_type_id_fkey")
   party    LoanParty
   signed   Boolean   @default(false)
   signedAt DateTime? @map("signed_at")
@@ -440,6 +507,11 @@ model LoanSignature {
   user     User?     @relation(fields: [userId], references: [id])
 
   @@id([loanId, party])
+  // (p51) La migración creó este índice y el modelo no lo declaraba, así que
+  // `migrate dev` veía una diferencia entre el esquema y la base en cada
+  // ejecución. Se declara en vez de borrarlo: sirve para buscar un préstamo
+  // por el documento de un receptor que no está registrado.
+  @@index([externalDocumentNumber], map: "loan_signatures_external_document_number_idx")
   @@map("loan_signatures")
 }
 
@@ -513,17 +585,39 @@ enum DevolutionStatus {
 
 model Task {
   id          Int        @id(map: "tasks_pkey") @default(autoincrement())
-  userId      Int        @map("user_id")
   taskName    String     @map("task_name") @db.VarChar(100)
   description String     @db.VarChar(255)
   endDate     DateTime   @db.Date @map("end_date")
   isActive    Boolean    @default(true) @map("is_active")
-  status      TaskStatus @default(en_progreso) @map("task_status")
   created_at  DateTime   @default(now())
   updated_at  DateTime   @updatedAt
-  user        User       @relation(fields: [userId], references: [id], map: "tasks_user_id_fkey")
+  // (p51) El encargado y el estado salieron de aquí: una tarea puede ir a varias
+  // personas y cada una la lleva a su ritmo. La asignación individual es el caso
+  // de UNA fila en esta relación, no un camino aparte.
+  assignments TaskAssignment[]
 
   @@map("tasks")
+}
+
+/// (p51) Asignación de una tarea a una persona, con su propio estado.
+model TaskAssignment {
+  id        Int        @id(map: "task_assignments_pkey") @default(autoincrement()) @map("id_task_assignation")
+  taskId    Int        @map("id_tarea")
+  userId    Int        @map("id_user")
+  status    TaskStatus @default(en_progreso) @map("state_task")
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  task      Task @relation(fields: [taskId], references: [id], onDelete: Cascade, map: "task_assignments_id_tarea_fkey")
+  // RESTRICT: dar de baja a alguien con tareas asignadas debe fallar, no
+  // llevarse su historial. La baja en este sistema es `isActive`, no un DELETE.
+  user      User @relation(fields: [userId], references: [id], map: "task_assignments_id_user_fkey")
+
+  // La misma tarea no se asigna dos veces a la misma persona: serían dos estados
+  // para un solo encargo.
+  @@unique([taskId, userId], map: "task_assignments_id_tarea_id_user_key")
+  @@index([userId], map: "task_assignments_id_user_idx")
+  @@map("task_assignments")
 }
 
 model PasswordResetCode {

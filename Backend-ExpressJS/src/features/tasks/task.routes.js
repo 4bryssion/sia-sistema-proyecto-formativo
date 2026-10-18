@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { taskController } from './task.controller.js';
-import { taskService } from './task.service.js';
+import { taskRepository } from './task.repository.js';
 import { accessService } from '../access/access.service.js';
 import { validate, createTaskSchema, updateTaskSchema, statusTaskSchema } from './task.validator.js';
 import { authenticateToken } from '../../middleware/auth.middleware.js';
 import { requirePermission } from '../../middleware/permission.middleware.js';
+import { errorDeNegocio } from '../../middleware/errorHandler.js';
 
 // (p50) Dos permisos, dos alcances:
 //   - `list_tasks`      → las tareas de TODO el mundo (quien asigna y supervisa),
@@ -22,13 +23,16 @@ const ownTasksOrListAll = (req, res, next) => {
   return requirePermission('list_tasks')(req, res, next);
 };
 
-// (p50) Igual que el anterior pero para UNA tarea, cuyo dueño no se sabe hasta
-// leerla. Lo necesita el modal de visualizar: un aprendiz abre su propia tarea
-// desde el listado sin tener `list_tasks`.
+// (p50) Igual que el anterior pero para UNA tarea, cuyos dueños no se saben
+// hasta leerla. Lo necesita el modal de visualizar: un aprendiz abre su propia
+// tarea desde el listado sin tener `list_tasks`.
+//
+// (p51) "Suya" dejó de ser una comparación con un campo y pasó a ser "¿hay una
+// asignación a mi nombre?". Con una sola asignación es exactamente lo de antes.
 const ownTaskOrListAll = async (req, res, next) => {
   try {
-    const tarea = await taskService.getById(Number(req.params.id));
-    if (Number(tarea.userId) === Number(req.user.id)) {
+    const mia = await taskRepository.findAssignment(Number(req.params.id), Number(req.user.id));
+    if (mia) {
       return requirePermission(MIS_TAREAS)(req, res, next);
     }
     return requirePermission('list_tasks')(req, res, next);
@@ -65,11 +69,6 @@ router.patch(
 );
 router.patch('/:id/toggle', authenticateToken, requirePermission('toggle_task'), taskController.toggle);
 
-router.use((err, req, res, next) => {
-  if (err.message && !err.code) {
-    return res.status(400).json({ error: err.message });
-  }
-  next(err);
-});
+router.use(errorDeNegocio);
 
 export default router;

@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { DataTable, Button, IconButton, StatusFilterSelect } from "@/shared";
+import { DataTable, Button, StatusFilterSelect, PermissionGate, ListPageHeader } from "@/shared";
 import { quotationColumns } from "../table/QuotationsColumns";
 import { useQuotations } from "../hooks/useQuotations";
-import { useNavigate } from "react-router-dom";
-import { Undo2 } from "lucide-react";
 import UploadQuotationsModal from "@/shared/components/quotations/UploadQuotationsModal";
 
 // (p50) Módulo nuevo, sobre el mismo patrón de grupos que siguen marcas,
@@ -12,7 +10,6 @@ import UploadQuotationsModal from "@/shared/components/quotations/UploadQuotatio
 // Lo único que cambia es el botón: aquí no se "crea" nada escribiendo, se CARGA
 // un archivo, así que dice "Cargar cotización" y abre el modal de carga.
 export default function ListQuotationPage() {
-  const navigate = useNavigate();
   const [status, setStatus] = useState("active");
   const { quotations, loading, error, refetch } = useQuotations(status);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -20,22 +17,18 @@ export default function ListQuotationPage() {
   return (
     <div className="p-6">
 
-      <div className="flex justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <IconButton ariaLabel="Devolverse" onClick={() => navigate(-1)}>
-            <Undo2 strokeWidth={2.8} />
-          </IconButton>
-          <h1 className="font-main font-semibold mb-0 text-h3 sm:text-h2">Cotizaciones</h1>
-        </div>
+      <ListPageHeader title="Cotizaciones">
+        <StatusFilterSelect value={status} onChange={setStatus} />
 
-        <div className="grid sm:flex gap-6 items-center">
-          <StatusFilterSelect value={status} onChange={setStatus} />
-
+        {/* (p51) El permiso se consulta ANTES, no después: sin el gate el
+            botón se veía igual para todos y el "no" llegaba del servidor
+            cuando el formulario ya estaba lleno. */}
+        <PermissionGate codename="create_quotation" accion="cargar cotizaciones">
           <Button variant="primary" onClick={() => setIsUploadOpen(true)}>
             Cargar cotización
           </Button>
-        </div>
-      </div>
+        </PermissionGate>
+      </ListPageHeader>
 
       {loading ? (
         <p className="font-secondary text-body text-text-muted">Cargando cotizaciones...</p>

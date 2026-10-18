@@ -1,5 +1,5 @@
 import { getStatusFilterLabel } from "@/shared/reports/statusLabel";
-import { DataTable, Button, FilterMenu, usePermissions, ListPageHeader, StatusFilterSelect } from "@/shared";
+import { DataTable, Button, FilterMenu, usePermissions, PermissionGate, ListPageHeader, StatusFilterSelect } from "@/shared";
 import { useState } from "react";
 import { useReturnableMaterials } from "../hooks/useReturnableMaterials";
 import { returnableMaterialColumns } from "../table/returnableMaterialColumns";
@@ -35,9 +35,14 @@ export default function ListReturnableMaterialPage() {
       <ListPageHeader title="Materiales Devolutivos">
         <StatusFilterSelect value={status} onChange={setStatus} />
 
-        <Button variant="secondary" onClick={() => setIsReportModalOpen(true)}>
-          Generar Reporte
-        </Button>
+        {/* (p51) El boton no desaparece sin permiso: se ve en gris y al pulsarlo
+            dice por que no se puede. Antes no consultaba el permiso en
+            absoluto y el reporte se generaba igual. */}
+        <PermissionGate codename="report_returnable_materials" accion="generar el reporte de materiales devolutivos">
+          <Button variant="secondary" onClick={() => setIsReportModalOpen(true)}>
+            Generar Reporte
+          </Button>
+        </PermissionGate>
         {/* (p49) Crear material dejó de ser una página: es un modal de 6 pasos.
             Al guardar refresca el listado sin navegar a ninguna parte. */}
         {can("create_returnable_material") && (
@@ -67,7 +72,7 @@ export default function ListReturnableMaterialPage() {
       )}
 
       <ReportConfigModal
-        isOpen={isReportModalOpen}
+        isOpen={isReportModalOpen && can("report_returnable_materials")}
         onClose={() => setIsReportModalOpen(false)}
         materials={visibleMaterials}
         statusLabel={getStatusFilterLabel(status)}

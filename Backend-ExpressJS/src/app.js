@@ -33,6 +33,7 @@ import returnableMaterialRoutes from './features/returnable-materials/returnable
 import loanRoutes from './features/loans/loan.routes.js';
 
 import loanReturnRoutes from './features/loan-returns/loanReturn.routes.js';
+import settingRoutes from './features/settings/setting.routes.js';
 
 // Devoluciones en dos fases (P47): registrar y autorizar. Va aparte de
 // loan-returns, que es el retorno de una sola fase ya existente.
@@ -101,6 +102,10 @@ app.use('/api/devolutions',          devolutionRoutes);
 
 app.use('/api/tasks', taskRoutes);
 app.use('/api/notifications', notificationRoutes);
+
+// (p53) Ajustes del sistema. Su GET del correo de soporte es publico: lo lee el
+// modal de soporte del login, que se abre sin sesion.
+app.use('/api/settings', settingRoutes);
 
 // ===============================================
 

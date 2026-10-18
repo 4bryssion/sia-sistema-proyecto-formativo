@@ -6,7 +6,7 @@ import {
   CreateAndAssignTrigger, DataPolicyCheckbox,
 } from "@/shared";
 import userService from "@/shared/services/userService";
-import documentTypeService from "@/shared/services/documentTypeService";
+import { useDocumentTypes } from "@/shared/hooks/useDocumentTypes";
 import groupService from "@/shared/services/groupService";
 import CreateGroupModal from "@/shared/components/groups/CreateGroupModal";
 import { generatePassword } from "../utils/generatePassword.js";
@@ -55,7 +55,11 @@ export default function CreateUserModal({ isOpen, onClose, onSaved }) {
 function CreateUserBody({ onClose, onSaved }) {
   const navigate = useNavigate();
 
-  const [documentTypes, setDocumentTypes] = useState([]);
+  // (p51) El mismo `.map()` estaba aquí y en editar usuario; ahora vive una sola
+  // vez en el hook compartido.
+  // Sin bandera: este cuerpo solo se monta con el modal abierto (el componente
+  // de fuera devuelve null si no lo está), así que montarse ya es "está abierto".
+  const { documentTypes } = useDocumentTypes();
   const [groups, setGroups] = useState([]);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -97,15 +101,7 @@ function CreateUserBody({ onClose, onSaved }) {
       )
       .catch(() => setGroups([]));
 
-  useEffect(() => {
-    documentTypeService
-      .getAll()
-      .then((dts) =>
-        setDocumentTypes(dts.map((d) => ({ id: d.id, value: String(d.id), label: d.documentName }))),
-      )
-      .catch(() => setDocumentTypes([]));
-    fetchGroups();
-  }, []);
+  useEffect(() => { fetchGroups(); }, []);
 
   // Grupo recién creado desde el modal (sin permisos aún): al terminar se ofrece
   // ir al módulo de permisos a asignárselos

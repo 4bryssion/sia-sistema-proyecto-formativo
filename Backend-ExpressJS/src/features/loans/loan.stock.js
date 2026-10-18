@@ -53,9 +53,15 @@ export async function applyRestore(tx, material, q) {
     }
   } else {
     const newQty = material.quantity + q;
+    // (p52) `newQty > 0` faltaba aqui y si estaba en la otra via de reintegro
+    // (loanReturn.repository). Sin el, devolver 0 unidades de un consumible
+    // agotado lo dejaba «Disponible» con cantidad 0, que es un estado que miente.
     await tx.consumableMaterial.update({
       where: { id: material.id },
-      data: { quantity: newQty, ...(material.status === 'En_prestamo' ? { status: 'Disponible' } : {}) },
+      data: {
+        quantity: newQty,
+        ...(material.status === 'En_prestamo' && newQty > 0 ? { status: 'Disponible' } : {}),
+      },
     });
   }
 }

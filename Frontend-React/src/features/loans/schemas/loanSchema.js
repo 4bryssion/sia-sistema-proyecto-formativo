@@ -61,6 +61,10 @@ const camposLoan = {
   receiverRegistered: z.boolean(),
   receiverId: z.string().optional().or(z.literal("")),
   receiverEmail: z.string().optional().or(z.literal("")),
+  // (p51) Documento del receptor no registrado. Opcionales en el tipo y exigidos
+  // en el refine, igual que el correo: con receptor registrado NO se mandan.
+  receiverDocumentTypeId: z.string().optional().or(z.literal("")),
+  receiverDocumentNumber: z.string().optional().or(z.literal("")),
 
   materials: z
     .array(materialLineSchema)
@@ -98,6 +102,31 @@ const validarReceptor = (d, ctx) => {
       code: z.ZodIssueCode.custom,
       path: ["receiverEmail"],
       message: "Correo electrónico inválido",
+    });
+  }
+
+  // (p51) Quién recibe tiene que quedar identificado. El correo solo sirve para
+  // mandarle el enlace de firma: si el material no vuelve, un correo no dice a
+  // quién reclamar.
+  if (!d.receiverDocumentTypeId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["receiverDocumentTypeId"],
+      message: "Seleccione el tipo de documento",
+    });
+  }
+  const documento = (d.receiverDocumentNumber ?? "").trim();
+  if (!documento) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["receiverDocumentNumber"],
+      message: "Escriba el número de documento",
+    });
+  } else if (!/^\d{5,20}$/.test(documento)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["receiverDocumentNumber"],
+      message: "El documento debe tener entre 5 y 20 dígitos",
     });
   }
 };
