@@ -4,6 +4,9 @@ import { consumableMaterialSchema } from "../schemas/consumableMaterialSchema";
 import consumableMaterialService from "@/shared/services/consumableMaterialService";
 import CreateBrandModal from "@/shared/components/brands/CreateBrandModal";
 import CreateInventoryModal from "@/shared/components/inventories/CreateInventoryModal";
+import CreateCategoryModal from "@/shared/components/categories/CreateCategoryModal";
+import categoryService from "@/shared/services/categoryService";
+import { separarClasificacion } from "@/shared/utils/materialClassification";
 import MaterialFilesBand from "@/shared/components/materials/MaterialFilesBand";
 import { useMaterialCatalogs } from "@/shared/hooks/useMaterialCatalogs";
 import { STATUS_FILTER_OPTIONS } from "@/shared/utils/materialStatusLabel";
@@ -35,6 +38,10 @@ import { Eye } from "lucide-react";
 // paso 5 donde deben aparecer.
 const CAMPOS_POR_PASO = [
   ["materialName", "description"],
+  // (p53) Paso nuevo: el material de consumo también se clasifica. Va en el
+  // mismo sitio que en el devolutivo para que los dos formularios se recorran
+  // igual.
+  ["materialTypeId", "categoryId", "model", "serial"],
   ["brandId", "inventoryId", "location", "status", "senaPlate"],
   ["quantity", "unitPrice", "totalPrice", "purchaseDate", "entryDate", "quotationIds"],
   ["accountableIds"],
@@ -57,6 +64,19 @@ function CreateConsumableBody({ onClose, onSaved }) {
 
   const [isBrandModalOpen, setIsBrandModalOpen] = useState(false);
   const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
+  // (p53) Las dos listas salen de la misma tabla; las separa `isMaterialType`.
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [categoryOptions, setCategoryOptions] = useState([]);
+  const [materialTypeOptions, setMaterialTypeOptions] = useState([]);
+
+  const cargarClasificacion = () =>
+    categoryService.getAll()
+      .then((lista) => {
+        const { categoryOptions: cats, materialTypeOptions: tipos } = separarClasificacion(lista);
+        setCategoryOptions(cats);
+        setMaterialTypeOptions(tipos);
+      })
+      .catch(() => {});
 
   const [images, setImages] = useState([]);
   const [sheets, setSheets] = useState([]);
@@ -73,12 +93,18 @@ function CreateConsumableBody({ onClose, onSaved }) {
       .catch(() => setQuotationOptions([]));
 
   useEffect(() => { cargarCotizaciones(); }, []);
+  useEffect(() => { cargarClasificacion(); }, []);
 
   const [formData, setFormData] = useState({
     materialName:   "",
     brandId:        "",
     inventoryId:    "",
     accountableIds: [],
+    // (p53) Clasificación obligatoria y identificación opcional.
+    materialTypeId: "",
+    categoryId:     "",
+    model:          "",
+    serial:         "",
     senaPlate:      "",
     location:       "",
     quantity:       "",
@@ -110,6 +136,13 @@ function CreateConsumableBody({ onClose, onSaved }) {
   const handleInventoryCreated = async (created) => {
     await refetchInventories();
     if (created?.id) setFormData((prev) => ({ ...prev, inventoryId: String(created.id) }));
+  };
+
+  // (p53) Igual que marca e inventario: se recarga la lista y se autoselecciona
+  // la recién creada, que siempre es una categoría y nunca un tipo.
+  const handleCategoryCreated = async (creada) => {
+    await cargarClasificacion();
+    if (creada?.id) setFormData((prev) => ({ ...prev, categoryId: String(creada.id) }));
   };
 
   // Lo recién cargado se autoselecciona: quien lo sube desde aquí es porque lo
@@ -244,8 +277,52 @@ function CreateConsumableBody({ onClose, onSaved }) {
       ),
     },
     {
-      titulo: "Inventario y ubicación",
+      titulo: "Clasificación e identificación",
       validate: () => validarPaso(1),
+      contenido: (
+        <div className="flex flex-col gap-6">
+          {rejilla(
+            <>
+              {/* (p53) Dos niveles, pedidos en la revisión del instructor: el
+                  TIPO es la clasificación gruesa del inventario (las 3 filas del
+                  sistema) y la CATEGORÍA la que crea el usuario. Una categoría
+                  «Mesas» pertenece al tipo «Muebles y enseres». */}
+              <Select widthClass="w-full" variant="search"
+                label="Tipo de material" name="materialTypeId" required
+                options={materialTypeOptions}
+                value={formData.materialTypeId} onChange={handleChange} error={errors.materialTypeId} />
+
+              <Select widthClass="w-full" variant="search"
+                label="Categoría" name="categoryId" required
+                options={categoryOptions}
+                value={formData.categoryId} onChange={handleChange} error={errors.categoryId} />
+
+              {/* (p53) Opcionales: hay material de consumo sin modelo ni serial.
+                  El serial es único en toda la tabla, así que vacío viaja como
+                  NULL y no como cadena vacía. */}
+              <Input widthClass="w-full"
+                label="Modelo (opcional)" name="model"
+                placeholder="Ej: GSB 550"
+                value={formData.model} onChange={handleChange} error={errors.model} />
+
+              <Input widthClass="w-full"
+                label="Serial (opcional)" name="serial"
+                placeholder="Ej: 4F72K19A"
+                value={formData.serial} onChange={handleChange} error={errors.serial} />
+            </>,
+          )}
+
+          <CreateAndAssignTrigger
+            label="Crear y asignar nueva categoría"
+            onClick={() => setIsCategoryModalOpen(true)}
+            className="flex"
+          />
+        </div>
+      ),
+    },
+    {
+      titulo: "Inventario y ubicación",
+      validate: () => validarPaso(2),
       contenido: (
         <div className="flex flex-col gap-6">
           {rejilla(
@@ -298,7 +375,7 @@ function CreateConsumableBody({ onClose, onSaved }) {
     },
     {
       titulo: "Valores y cotizaciones",
-      validate: () => validarPaso(2),
+      validate: () => validarPaso(3),
       contenido: rejilla(
         <>
           <div>
@@ -374,7 +451,7 @@ function CreateConsumableBody({ onClose, onSaved }) {
     },
     {
       titulo: "Cuentadantes",
-      validate: () => validarPaso(3),
+      validate: () => validarPaso(4),
       contenido: (
         <div className="flex flex-col gap-4">
           <p className="font-secondary text-body text-text-muted">
@@ -393,7 +470,7 @@ function CreateConsumableBody({ onClose, onSaved }) {
     },
     {
       titulo: "Imágenes y ficha técnica",
-      validate: () => validarPaso(4),
+      validate: () => validarPaso(5),
       contenido: (
         <MaterialFilesBand
           images={images}
@@ -429,6 +506,14 @@ function CreateConsumableBody({ onClose, onSaved }) {
         isOpen={isInventoryModalOpen}
         onClose={() => setIsInventoryModalOpen(false)}
         onSave={handleInventoryCreated}
+      />
+
+      {/* (p53) Lo que se crea desde aquí es una CATEGORÍA: los 3 tipos de
+          material son del sistema y no se dan de alta desde un formulario. */}
+      <CreateCategoryModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        onSave={handleCategoryCreated}
       />
 
       {/* Tope de 3 y no de 6: aquí se carga para ASIGNAR en el acto, y un

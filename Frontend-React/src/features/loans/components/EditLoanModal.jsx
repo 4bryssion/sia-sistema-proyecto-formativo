@@ -69,6 +69,13 @@ export default function EditLoanModal({ isOpen, loanId, onClose, onSaved }) {
           receiverRegistered: receiver?.userId != null,
           receiverId:       receiver?.userId != null ? String(receiver.userId) : "",
           receiverEmail:    receiver?.externalEmail ?? "",
+          // (p51) El documento del receptor externo. En un préstamo creado antes
+          // de la p51 no existe, y los campos quedan vacíos: al guardar, el
+          // validador los pedirá. Es lo correcto —el dato falta de verdad— y es
+          // la vía por la que un préstamo antiguo se completa.
+          receiverDocumentTypeId: receiver?.externalDocumentTypeId != null
+            ? String(receiver.externalDocumentTypeId) : "",
+          receiverDocumentNumber: receiver?.externalDocumentNumber ?? "",
         });
 
         setMaterials(
@@ -121,7 +128,9 @@ export default function EditLoanModal({ isOpen, loanId, onClose, onSaved }) {
         [name]: checked,
         ...(name === "receiverRegistered"
           ? checked
-            ? { receiverEmail: "" }
+            // (p51) El documento también se limpia: con receptor registrado el
+            // backend lo rechaza.
+            ? { receiverEmail: "", receiverDocumentTypeId: "", receiverDocumentNumber: "" }
             : { receiverId: "" }
           : {}),
       }));
@@ -208,7 +217,11 @@ export default function EditLoanModal({ isOpen, loanId, onClose, onSaved }) {
         // (p48) Uno u otro, nunca ambos: es lo que exige el `xor` del backend
         ...(d.receiverRegistered
           ? { receiverId: Number(d.receiverId) }
-          : { receiverEmail: d.receiverEmail }),
+          : {
+              receiverEmail: d.receiverEmail,
+              receiverDocumentTypeId: Number(d.receiverDocumentTypeId),
+              receiverDocumentNumber: d.receiverDocumentNumber.trim(),
+            }),
         ...(d.status ? { status: d.status } : {}),
         materials: d.materials.map((m) => ({
           materialId:       Number(m.materialId),
@@ -290,6 +303,8 @@ export default function EditLoanModal({ isOpen, loanId, onClose, onSaved }) {
               registered={form.receiverRegistered}
               receiverId={form.receiverId}
               receiverEmail={form.receiverEmail}
+              receiverDocumentTypeId={form.receiverDocumentTypeId}
+              receiverDocumentNumber={form.receiverDocumentNumber}
               userOptions={userOptions}
               onChange={handleChange}
               errors={errors}

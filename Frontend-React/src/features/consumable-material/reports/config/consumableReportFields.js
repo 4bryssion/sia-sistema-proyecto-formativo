@@ -20,10 +20,37 @@ export const consumableReportFields = [
     getter: (m) => m.inventory?.inventoryName ?? "",
   },
   {
+    // (p53) El material de consumo también se clasifica.
+    key: "materialType",
+    label: "Tipo de material",
+    default: true,
+    getter: (m) => m.materialType?.categoryName ?? "",
+  },
+  {
+    key: "category",
+    label: "Categoría",
+    default: true,
+    getter: (m) => m.category?.categoryName ?? "",
+  },
+  {
     key: "brand",
     label: "Marca",
     default: true,
     getter: (m) => m.brand?.brandName ?? "",
+  },
+  {
+    // (p53) Opcionales, igual que en el devolutivo: fuera del reporte por
+    // defecto para no alargarlo, disponibles al configurarlo.
+    key: "model",
+    label: "Modelo",
+    default: false,
+    getter: (m) => m.model ?? "",
+  },
+  {
+    key: "serial",
+    label: "Serial",
+    default: false,
+    getter: (m) => m.serial ?? "",
   },
   {
     key: "userAccount",

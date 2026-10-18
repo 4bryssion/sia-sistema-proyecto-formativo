@@ -5,7 +5,12 @@ import taskService from "@/shared/services/taskService";
 // la zona horaria local le restaría un día.
 import { formatDateOnly } from "@/shared/utils/formatDate";
 import TaskRowActions from "../components/TaskRowActions";
-import { getTaskStatusLabel } from "../constants/taskStatus";
+import {
+  etiquetaEncargados,
+  textoBusquedaEncargados,
+  etiquetaEstado,
+  etiquetaAvance,
+} from "../utils/asignaciones";
 
 /**
  * Casilla de estado del listado.
@@ -22,13 +27,37 @@ import { getTaskStatusLabel } from "../constants/taskStatus";
  *    Ahora se avisa.
  * 4. Usa la ruta de solo-estado, no el PUT de editar: así la persona que tiene
  *    la tarea asignada puede cerrarla sin tener permiso para reescribirla.
+ *
+ * (p51) La casilla actúa sobre MI asignación, no sobre "el estado de la tarea",
+ * que ya no existe como dato único: una tarea con cinco encargados tiene cinco
+ * estados. Si la tarea no es mía no hay casilla, y eso NO es un bloqueo que haya
+ * que explicar con una alerta —no me corresponde marcarla, igual que no me
+ * corresponde la tarea—: en su lugar se lee el avance del conjunto. Cambiar el
+ * estado de OTRA persona se hace desde el modal de consulta, que es donde caben
+ * los cinco encargados; una fila de tabla no puede mostrar cinco casillas.
  */
 function StatusCheckboxCell({ task, onChanged }) {
   const { can } = usePermissions();
   const [ocupado, setOcupado] = useState(false);
 
-  const completada = task.status === "completada";
-  const vencida = task.status === "no_completada";
+  const mia = task.miAsignacion ?? null;
+  const avance = etiquetaAvance(task);
+
+  // Sin asignación propia: solo se informa. El avance del conjunto es lo único
+  // que esta fila puede decir de una tarea que no es mía.
+  if (!mia) {
+    return (
+      <div className="grid">
+        <span className="font-secondary text-medium">{etiquetaEstado(task)}</span>
+        {avance && (
+          <span className="font-secondary text-caption text-text-muted">{avance}</span>
+        )}
+      </div>
+    );
+  }
+
+  const completada = mia.status === "completada";
+  const vencida = mia.status === "no_completada";
   const inactiva = !task.isActive;
   // Quien gestiona tareas, o la persona a la que está asignada.
   const puedeMarcar = can("edit_task") || can("manage_own_tasks");
@@ -51,10 +80,10 @@ function StatusCheckboxCell({ task, onChanged }) {
       );
       return;
     }
-    Alert.error(
-      "Sin permiso",
-      "No tienes permiso para cambiar el estado de esta tarea.",
-    );
+    // (p51) La falta de permiso se avisa con `sinPermiso`, que se cierra sola:
+    // los otros dos bloqueos sí son hechos que conviene leer y confirmar, pero
+    // aquí el usuario solo necesita saber que no es suyo ese botón.
+    Alert.sinPermiso("cambiar el estado de esta tarea");
   };
 
   const cambiar = async () => {
@@ -80,19 +109,27 @@ function StatusCheckboxCell({ task, onChanged }) {
     // input deshabilitado no dispara eventos en ningún navegador, así que sin
     // esto la alerta no llegaría a salir nunca.
     <div
-      className="flex items-center gap-2"
       onClick={bloqueada ? explicarBloqueo : undefined}
       role={bloqueada ? "button" : undefined}
       tabIndex={bloqueada ? 0 : undefined}
       onKeyDown={bloqueada ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); explicarBloqueo(); } } : undefined}
     >
-      <Checkbox
-        checked={completada}
-        disable={bloqueada || ocupado}
-        onChange={cambiar}
-        className={bloqueada ? "pointer-events-none" : ""}
-      />
-      <span className="font-secondary text-medium">{getTaskStatusLabel(task.status)}</span>
+      <div className="flex items-center gap-2">
+        <Checkbox
+          checked={completada}
+          disable={bloqueada || ocupado}
+          onChange={cambiar}
+          className={bloqueada ? "pointer-events-none" : ""}
+        />
+        <span className="font-secondary text-medium">
+          {/* El estado que se lee aquí es EL MÍO, que es el que la casilla
+              cambia. El del conjunto va debajo, para no confundirlos. */}
+          {etiquetaEstado({ miAsignacion: mia })}
+        </span>
+      </div>
+      {avance && (
+        <span className="font-secondary text-caption text-text-muted">{avance}</span>
+      )}
     </div>
   );
 }
@@ -105,8 +142,14 @@ export const TaskColumns = (onChanged, onView, onEdit) => [
   {
     id: "assignee",
     header: "Encargado",
-    accessorFn: (row) =>
-      row.user ? `${row.user.userFirstName} ${row.user.userLastName}` : "—",
+    // (p51) El valor que entrega la columna lleva TODOS los nombres y la celda
+    // muestra el recuento. Son dos cosas distintas a propósito: si el buscador
+    // recibiera "5 personas", buscar a alguien por su nombre no encontraría su
+    // tarea, y sería justo el caso nuevo el que quedaría roto.
+    accessorFn: (row) => textoBusquedaEncargados(row),
+    cell: ({ row }) => (
+      <span className="font-secondary text-medium">{etiquetaEncargados(row.original)}</span>
+    ),
   },
   {
     id: "endDate",
@@ -116,7 +159,7 @@ export const TaskColumns = (onChanged, onView, onEdit) => [
   {
     id: "estado",
     header: "Estado",
-    accessorFn: (row) => getTaskStatusLabel(row.status),
+    accessorFn: (row) => etiquetaEstado(row),
     cell: ({ row }) => (
       <StatusCheckboxCell task={row.original} onChanged={onChanged} />
     ),

@@ -34,7 +34,18 @@ api.interceptors.response.use(
       // - Cualquier otro 403 sí es autorización real del servidor.
       if (error.response?.data?.mustChangePassword) {
         setMustChangePassword(true);
-      } else {
+      } else if (!error.config?.silencioso) {
+        // (p51) `silencioso` lo pone quien hace una petición de FONDO: la que
+        // dispara la interfaz por su cuenta, sin que nadie haya pulsado nada
+        // —el sondeo de la campana, una lista que se pide para rellenar un
+        // desplegable—. Un 403 ahí no es un "no puedes hacer eso": es la
+        // pantalla preguntando algo que no le correspondía, y el usuario no
+        // tiene nada que entender ni que confirmar. Levantarle un modal encima
+        // del dashboard recién abierto es ruido, y además engañoso: parece que
+        // falló lo que acaba de hacer.
+        //
+        // Para lo que SÍ pulsó una persona, la alerta se queda: ahí el "no
+        // puedes" es la respuesta a su gesto.
         Alert.error(
           "Acción no permitida",
           error.response?.data?.error ?? "No tienes permisos para realizar esta acción."

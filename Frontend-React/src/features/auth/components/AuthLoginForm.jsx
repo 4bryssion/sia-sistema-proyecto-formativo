@@ -162,7 +162,7 @@ export default function AuthRegisterForm(){
                     {/* Presentación del software: va arriba del logo, con las variables
                         de tipografía del proyecto (font-main + text-body) */}
                     <p className="font-main text-h2 font-heading text-center text-text-primary">
-                        S.I.I - Software de Inventario de Infraestructura
+                        S.I.A - Software de Inventario y Administración
                     </p>
 
                     <img src={logo} alt="logo" className="h-24"/>

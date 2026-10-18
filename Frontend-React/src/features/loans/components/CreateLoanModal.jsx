@@ -26,7 +26,8 @@ import LoanMaterialLines from "./LoanMaterialLines.jsx";
 // Qué campos pertenecen a cada paso, para enseñar solo los errores del paso que
 // el usuario tiene delante. El cuarto no tiene campos propios: solo resume.
 const CAMPOS_POR_PASO = [
-  ["lenderId", "receiverRegistered", "receiverId", "receiverEmail", "loanType"],
+  ["lenderId", "receiverRegistered", "receiverId", "receiverEmail",
+   "receiverDocumentTypeId", "receiverDocumentNumber", "loanType"],
   ["materials"],
   ["returnDate", "apprenticeGroup", "useJustification"],
   [],
@@ -54,6 +55,8 @@ function CreateLoanBody({ onClose, onSaved }) {
     receiverRegistered: true,
     receiverId: "",
     receiverEmail: "",
+    receiverDocumentTypeId: "",
+    receiverDocumentNumber: "",
   });
   const [materials, setMaterials]             = useState([{ materialId: "", borrowedQuantity: "" }]);
   const [userOptions, setUserOptions]         = useState([]);
@@ -109,7 +112,9 @@ function CreateLoanBody({ onClose, onSaved }) {
         [name]: checked,
         ...(name === "receiverRegistered"
           ? checked
-            ? { receiverEmail: "" }
+            // (p51) Al volver a "registrado" se limpia también el documento: el
+            // backend RECHAZA que viaje junto a un receptor registrado.
+            ? { receiverEmail: "", receiverDocumentTypeId: "", receiverDocumentNumber: "" }
             : { receiverId: "" }
           : {}),
       }));
@@ -211,7 +216,11 @@ function CreateLoanBody({ onClose, onSaved }) {
         // (p48) Uno u otro, nunca ambos: es lo que exige el `xor` del backend
         ...(d.receiverRegistered
           ? { receiverId: Number(d.receiverId) }
-          : { receiverEmail: d.receiverEmail }),
+          : {
+              receiverEmail: d.receiverEmail,
+              receiverDocumentTypeId: Number(d.receiverDocumentTypeId),
+              receiverDocumentNumber: d.receiverDocumentNumber.trim(),
+            }),
         materials: d.materials.map((m) => ({
           materialId: Number(m.materialId),
           borrowedQuantity: Number(m.borrowedQuantity),
@@ -285,6 +294,8 @@ function CreateLoanBody({ onClose, onSaved }) {
               registered={formData.receiverRegistered}
               receiverId={formData.receiverId}
               receiverEmail={formData.receiverEmail}
+              receiverDocumentTypeId={formData.receiverDocumentTypeId}
+              receiverDocumentNumber={formData.receiverDocumentNumber}
               userOptions={userOptions}
               onChange={handleChange}
               errors={errors}

@@ -11,7 +11,9 @@
     --semantic-brand: var(--color-primary-800);
     --semantic-brand-hover: var(--color-primary-950);
     --semantic-brand-soft: var(--color-primary-200);
-    --semantic-brand-soft-hover: var(--color-primary-350);
+    /* (p52) Apuntaba a --color-primary-350, que no existe en tokens.css (van de
+       300 a 400), asi que bg-brand-soft-hover se quedaba sin color. */
+    --semantic-brand-soft-hover: var(--color-primary-300);
 
     /* ========= BACKGROUND ========== */
     --semantic-background: var(--color-gray-900); /* Fondo de toda la aplicación */

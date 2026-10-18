@@ -32,6 +32,13 @@ import { Search, ChevronDown, Check } from "lucide-react";
  *   Va como hermano del botón de la fila y no dentro: un <button> dentro de otro
  *   es HTML inválido y el navegador lo reordena por su cuenta.
  *
+ * (p51) Una opción puede venir deshabilitada: `{ value, label, disabled: true,
+ * motivo: "..." }`. Se dibuja igual, sin poder marcarse ni desmarcarse, y el
+ * motivo sale al pasar el cursor. Va en el DATO de la opción y no en una prop
+ * del componente porque depende de cada fila, no del select entero. Quitarla de
+ * la lista haría creer que esa persona no existe; es el mismo criterio de
+ * `maxSelected`.
+ *
  * La API es la misma en todos los casos (name/value/onChange/options/error), así
  * que cambiar de variante es agregar una prop: no hay que tocar el formulario.
  * En `multiple`, `value` es un ARRAY y el onChange emite un array.
@@ -88,6 +95,16 @@ export default function Select({
     // con className (dos max-width con la misma especificidad se resuelven por
     // el orden del CSS generado, no por el del atributo)
     widthClass = "w-full md:max-w-[320px]",
+    // (p51) Controles propios del consumidor, dibujados DENTRO del desplegable,
+    // encima del buscador. Nacieron para elegir encargados de una tarea entre
+    // muchos usuarios: un desplegable de grupo y una casilla de vigencia. El
+    // consumidor filtra sus `options` y pasa aquí los controles con los que lo
+    // hace, para que vivan donde se usan y no encima del formulario.
+    filtros,
+    // (p51) Con `multiple`, ofrece marcar de una vez todo lo que quedó a la
+    // vista. Es lo que convierte asignar una tarea a una ficha entera en un
+    // clic en vez de en veinticinco.
+    permitirMarcarTodos = false,
 }){
     const isSearch = variant === "search";
     // El nativo solo sirve para selección simple: con casillas se usa siempre el
@@ -174,6 +191,10 @@ export default function Select({
     const toggleSeleccion = (val) => {
         const v = String(val);
         const yaEstaba = seleccionados.includes(v);
+        // (p51) Misma razón que el tope: la regla es de datos, no del atributo
+        // `disabled`. Y vale en las dos direcciones —si no puedo asignarle una
+        // tarea a alguien, tampoco puedo quitársela—.
+        if (options.find((o) => String(o.value ?? o.id) === v)?.disabled) return;
         // Se comprueba también aquí y no solo deshabilitando el botón: el tope es
         // una regla de datos, y dejarla únicamente en el atributo `disabled` la
         // volvería decorativa ante cualquier otra vía de entrada.
@@ -182,6 +203,24 @@ export default function Select({
             ? seleccionados.filter((x) => x !== v)
             : [...seleccionados, v];
         onChange?.({ target: { name, value: siguiente } });
+    };
+
+    // (p51) Sobre lo VISIBLE, que es la intersección de los filtros del
+    // consumidor y del texto escrito aquí: marcar "todos" tiene que significar
+    // los que se están viendo, no los del catálogo entero.
+    // Lo deshabilitado no entra: "marcar los que coinciden" no puede marcar lo
+    // que un clic directo no podría.
+    const visibles = matches.filter((o) => !o.disabled).map((o) => String(o.value ?? o.id));
+    const visiblesMarcados = visibles.filter((v) => seleccionados.includes(v));
+    const todosMarcados = visibles.length > 0 && visiblesMarcados.length === visibles.length;
+
+    const alternarVisibles = () => {
+        const siguiente = todosMarcados
+            ? seleccionados.filter((v) => !visibles.includes(v))
+            : [...new Set([...seleccionados, ...visibles])];
+        // El tope se respeta también aquí: marcar en bloque no puede saltárselo.
+        const recortada = maxSelected != null ? siguiente.slice(0, maxSelected) : siguiente;
+        onChange?.({ target: { name, value: recortada } });
     };
 
     const labelNode = label && (
@@ -316,6 +355,14 @@ export default function Select({
                 {open && (
                     // z-30: se superpone al contenido siguiente sin desplazarlo
                     <div className="absolute left-0 top-full z-30 mt-1 w-full rounded-md border border-border bg-white shadow-lg overflow-hidden">
+                        {/* (p51) Los filtros del consumidor van arriba del todo:
+                            primero se acota el conjunto, después se busca dentro. */}
+                        {filtros && (
+                            <div className="px-3 py-2 border-b border-border grid gap-2">
+                                {filtros}
+                            </div>
+                        )}
+
                         {/* Primera fila: buscador. Solo en la variante con búsqueda.
                             El textarea crece hacia abajo cuando el texto es largo
                             (no se corta la búsqueda) */}
@@ -334,6 +381,23 @@ export default function Select({
                                     placeholder="Escribe aquí para buscar"
                                     className="w-full resize-none outline-none font-secondary text-body bg-transparent overflow-hidden"
                                 />
+                            </div>
+                        )}
+
+                        {permitirMarcarTodos && multiple && visibles.length > 0 && (
+                            <div className="px-3 py-2 border-b border-border flex items-center justify-between gap-2">
+                                <span className="font-secondary text-caption text-text-muted">
+                                    {visiblesMarcados.length} de {visibles.length} marcados
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={alternarVisibles}
+                                    className="font-secondary text-caption underline cursor-pointer text-text-primary hover:opacity-70"
+                                >
+                                    {todosMarcados
+                                        ? `Quitar los ${visibles.length}`
+                                        : `Marcar los ${visibles.length} que coinciden`}
+                                </button>
                             </div>
                         )}
 
@@ -361,7 +425,7 @@ export default function Select({
                                 // deshabilita: sigue a la vista —para que se
                                 // entienda que existe— pero no se puede tomar sin
                                 // soltar otra antes.
-                                const bloqueada = topeAlcanzado && !marcado;
+                                const bloqueada = Boolean(opt.disabled) || (topeAlcanzado && !marcado);
                                 return (
                                     <li key={opt.value ?? opt.id} className="flex items-stretch">
                                         <button
@@ -369,7 +433,11 @@ export default function Select({
                                             role="option"
                                             aria-selected={marcado}
                                             disabled={bloqueada}
-                                            title={bloqueada ? `Ya tienes ${maxSelected} seleccionadas. Quita una para elegir otra.` : undefined}
+                                            title={
+                                                opt.disabled ? opt.motivo
+                                                : bloqueada ? `Ya tienes ${maxSelected} seleccionadas. Quita una para elegir otra.`
+                                                : undefined
+                                            }
                                             onClick={() => (multiple ? toggleSeleccion(opt.value) : emit(opt.value))}
                                             className={`
                                                 flex-1 min-w-0 px-3 py-2 text-left font-secondary

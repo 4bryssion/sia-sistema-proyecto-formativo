@@ -6,20 +6,18 @@ import {
   validarIngresoVsCompra,
 } from "@/shared/schemas/materialSchemaParts";
 
-// Lo propio del devolutivo sobre la tabla padre: categoría, modelo, serial y
-// dimensiones.
+// (p53) Lo único propio del devolutivo son las DIMENSIONES. La categoría, el
+// modelo y el serial se mudaron a la tabla padre —los pide también el material
+// de consumo— y por eso ahora viven en `camposMaterial*` de shared.
 //
-// (p48) modelo y serial pasaron a OPCIONALES. Las dimensiones ya lo eran y su
-// obligatoriedad no se puede expresar aquí: depende del NOMBRE de la categoría
-// elegida, así que la comprueba el formulario antes de enviar
-// (`requiresDimensions` en utils/categoryRules.js).
+// La obligatoriedad de las dimensiones no se puede expresar aquí: depende de si
+// el TIPO de material elegido la pide (`requiresDimensions`, una columna de la
+// fila), así que la comprueba el formulario antes de enviar
+// (`shared/utils/materialClassification.js`).
 
 export const returnableMaterialSchema = z
   .object({
     ...camposMaterialCrear,
-    categoryId: z.string().min(1, "Debe seleccionar una categoría"),
-    model:      z.string().max(100).optional().or(z.literal("")),
-    serial:     z.string().max(20).optional().or(z.literal("")),
     dimensions: z.string().max(100).optional().or(z.literal("")),
   })
   .superRefine((data, ctx) => {
@@ -30,9 +28,6 @@ export const returnableMaterialSchema = z
 export const returnableMaterialUpdateSchema = z
   .object({
     ...camposMaterialEditar,
-    categoryId: z.string().min(1, "Debe seleccionar una categoría").optional(),
-    model:      z.string().max(100).optional().or(z.literal("")),
-    serial:     z.string().max(20).optional().or(z.literal("")),
     dimensions: z.string().max(100).optional().or(z.literal("")),
   })
   .superRefine((data, ctx) => {

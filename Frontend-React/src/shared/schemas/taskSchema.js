@@ -20,9 +20,13 @@ export const taskSchema = z
       .string()
       .min(1, "La descripción es obligatoria")
       .max(255, "La descripción es demasiado larga"),
-    userId: z
-      .string()
-      .min(1, "Seleccione un usuario asignado"),
+    // (p51) Una lista de encargados, también cuando es uno solo: el backend
+    // recibe `userIds` siempre, así que no hay dos formas de crear una tarea.
+    // Desde el perfil de un usuario la lista trae exactamente un elemento, que
+    // es lo que mantiene la asignación individual sin un camino aparte.
+    userIds: z
+      .array(z.string().min(1))
+      .min(1, "Seleccione al menos un encargado"),
     endDate: z
       .string()
       .min(1, "La fecha de fin es obligatoria"),

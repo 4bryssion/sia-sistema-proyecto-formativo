@@ -1,13 +1,10 @@
 import { useState } from "react";
-import { DataTable, Button, IconButton, StatusFilterSelect } from "@/shared";
+import { DataTable, Button, StatusFilterSelect, PermissionGate, ListPageHeader } from "@/shared";
 import { groupColumns } from "../table/groupColumns";
 import { useGroups } from "../hooks/useGroups";
-import { useNavigate } from "react-router-dom";
-import { Undo2 } from "lucide-react";
 import CreateGroupModal from "@/shared/components/groups/CreateGroupModal";
 
 export default function ListGroupPage() {
-  const navigate = useNavigate();
   const [status, setStatus] = useState("active");
   const { groups, loading, error, refetch } = useGroups(status);
   // El grupo SuperAdmin ya viene excluido por el backend (systemIdentities.js)
@@ -17,22 +14,18 @@ export default function ListGroupPage() {
   return (
     <div className="p-6">
 
-      <div className="flex justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <IconButton ariaLabel="Devolverse" onClick={() => navigate(-1)}>
-            <Undo2 strokeWidth={2.8} />
-          </IconButton>
-          <h1 className="font-main font-semibold mb-0 text-h3 sm:text-h2">Grupos</h1>
-        </div>
+      <ListPageHeader title="Grupos">
+        <StatusFilterSelect value={status} onChange={setStatus} />
 
-        <div className="grid sm:flex gap-6 items-center">
-          <StatusFilterSelect value={status} onChange={setStatus} />
-
+        {/* (p51) El permiso se consulta ANTES, no después: sin el gate el
+            botón se veía igual para todos y el "no" llegaba del servidor
+            cuando el formulario ya estaba lleno. */}
+        <PermissionGate codename="create_group" accion="crear grupos">
           <Button variant="primary" onClick={() => setIsCreateOpen(true)}>
             Crear Grupo
           </Button>
-        </div>
-      </div>
+        </PermissionGate>
+      </ListPageHeader>
 
       {loading ? (
         <p className="text-gray-600">Cargando grupos...</p>

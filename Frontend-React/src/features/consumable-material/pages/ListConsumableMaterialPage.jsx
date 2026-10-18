@@ -1,5 +1,5 @@
 import { getStatusFilterLabel } from "@/shared/reports/statusLabel";
-import { Button, DataTable, FilterMenu, usePermissions , ListPageHeader, StatusFilterSelect } from "@/shared";
+import { Button, DataTable, FilterMenu, usePermissions, PermissionGate, ListPageHeader, StatusFilterSelect } from "@/shared";
 import { useState } from "react";
 import { useConsumableMaterials } from "../hooks/useConsumableMaterials";
 import { consumableMaterialColumns } from "../table/consumableMaterialColumns";
@@ -33,9 +33,14 @@ export default function ListConsumableMaterialPage() {
       <ListPageHeader title="Materiales Consumibles">
         <StatusFilterSelect value={status} onChange={setStatus} />
 
-        <Button variant="secondary" onClick={() => setIsReportModalOpen(true)}>
-          Generar Reporte
-        </Button>
+        {/* (p51) El boton no desaparece sin permiso: se ve en gris y al pulsarlo
+            dice por que no se puede. Antes no consultaba el permiso en
+            absoluto y el reporte se generaba igual. */}
+        <PermissionGate codename="report_consumable_materials" accion="generar el reporte de materiales de consumo">
+          <Button variant="secondary" onClick={() => setIsReportModalOpen(true)}>
+            Generar Reporte
+          </Button>
+        </PermissionGate>
         {/* (p49) Crear material dejó de ser una página: es un modal de 5 pasos.
             Al guardar refresca el listado sin navegar a ninguna parte. */}
         {can("create_consumable_material") && (
@@ -65,7 +70,7 @@ export default function ListConsumableMaterialPage() {
       )}
 
       <ReportConfigModal
-        isOpen={isReportModalOpen}
+        isOpen={isReportModalOpen && can("report_consumable_materials")}
         onClose={() => setIsReportModalOpen(false)}
         materials={visibleMaterials}
         statusLabel={getStatusFilterLabel(status)}

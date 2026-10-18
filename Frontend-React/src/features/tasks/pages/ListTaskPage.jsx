@@ -1,12 +1,13 @@
 import { useState } from "react";
 import {
   DataTable, Button, FilterMenu, ListPageHeader, StatusFilterSelect,
-  usePermissions, getCurrentUser,
+  usePermissions, PermissionGate, getCurrentUser,
 } from "@/shared";
 import CreateTaskModal from "@/shared/components/tasks/CreateTaskModal";
 import { TaskColumns } from "../table/TaskColumns.jsx";
 import { useTasks } from "../hooks/useTasks";
 import { TASK_STATUS_OPTIONS } from "../constants/taskStatus";
+import { estadoDeTarea } from "../utils/asignaciones";
 import ViewTaskModal from "../components/ViewTaskModal.jsx";
 import EditTaskModal from "../components/EditTaskModal.jsx";
 import ReportConfigModal from "../reports/components/ReportConfigModal.jsx";
@@ -39,16 +40,24 @@ export default function ListTaskPage() {
   const [viewTaskId, setViewTaskId] = useState(null);
   const [editTaskId, setEditTaskId] = useState(null);
 
-  const visibles = tasks.filter((t) => !taskStatus || t.status === taskStatus);
+  // (p51) `t.status` ya no existe: una tarea con varios encargados tiene varios
+  // estados, y el del conjunto lo deriva el backend en `resumen`. Comparar
+  // contra el campo viejo dejaba la tabla VACÍA al elegir cualquier estado.
+  const visibles = tasks.filter((t) => !taskStatus || estadoDeTarea(t) === taskStatus);
 
   return (
     <div className="p-6">
       <ListPageHeader title={verTodas ? "Tareas" : "Mis Tareas"}>
         {verTodas && <StatusFilterSelect value={status} onChange={setStatus} />}
 
-        <Button variant="secondary" onClick={() => setIsReportOpen(true)}>
-          Generar Reporte
-        </Button>
+        {/* (p51) El boton no desaparece sin permiso: se ve en gris y al pulsarlo
+            dice por que no se puede. Antes no consultaba el permiso en
+            absoluto y el reporte se generaba igual. */}
+        <PermissionGate codename="report_tasks" accion="generar el reporte de tareas">
+          <Button variant="secondary" onClick={() => setIsReportOpen(true)}>
+            Generar Reporte
+          </Button>
+        </PermissionGate>
 
         {can("create_task") && (
           <Button variant="primary" onClick={() => setIsCreateOpen(true)}>
@@ -83,7 +92,7 @@ export default function ListTaskPage() {
       />
 
       <ReportConfigModal
-        isOpen={isReportOpen}
+        isOpen={isReportOpen && can("report_tasks")}
         onClose={() => setIsReportOpen(false)}
         tasks={visibles}
       />
@@ -94,6 +103,7 @@ export default function ListTaskPage() {
         onClose={() => setViewTaskId(null)}
         // Editar desde el modal de consulta: se cierra uno y se abre el otro
         onEdit={(id) => { setViewTaskId(null); setEditTaskId(id); }}
+        onChanged={refetch}
       />
 
       <EditTaskModal

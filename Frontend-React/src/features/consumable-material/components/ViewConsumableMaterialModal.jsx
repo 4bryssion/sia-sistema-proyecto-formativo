@@ -6,10 +6,13 @@
 // bloqueado comunica "esto se podría editar pero no puedes", que no es el
 // mensaje de una pantalla de consulta. Sin logo del SENA.
 //
-// (p48) Quedó igual que el de devolutivo salvo por los campos que este tipo no
-// tiene (categoría, modelo, serial, dimensiones): la columna de identidad es el
-// mismo componente compartido, con galería de hasta 3 imágenes y las fichas
-// técnicas que antes solo existían en devolutivo.
+// (p48) Quedó igual que el de devolutivo: la columna de identidad es el mismo
+// componente compartido, con galería de hasta 3 imágenes y las fichas técnicas
+// que antes solo existían en devolutivo.
+//
+// (p53) Lo único que este tipo no tiene son las DIMENSIONES. La clasificación
+// (tipo de material y categoría), el modelo y el serial se mudaron a la tabla
+// padre y los piden los dos tipos de material.
 
 import { useEffect, useState } from "react";
 import { Modal, Button, usePermissions } from "@/shared";
@@ -90,7 +93,14 @@ export default function ViewConsumableMaterialModal({ isOpen, materialId, onClos
               <p className="sm:col-span-2 font-main text-body font-bold text-(--color-primary-950)">
                 Identificación
               </p>
+              {/* (p53) El material de consumo también se clasifica: el tipo es la
+                  clasificación gruesa del inventario y la categoría la propia
+                  del material. */}
+              <LabelValue label="Tipo de material" value={material.materialType?.categoryName} />
+              <LabelValue label="Categoría" value={material.category?.categoryName} />
               <LabelValue label="Marca" value={material.brand?.brandName} />
+              <LabelValue label="Modelo" value={material.model} />
+              <LabelValue label="Serial" value={material.serial} />
               <LabelValue label="Inventario" value={material.inventory?.inventoryName} />
               <LabelValue label="Placa SENA" value={material.senaPlate} />
               <LabelValue label="Ubicación" value={material.location} />

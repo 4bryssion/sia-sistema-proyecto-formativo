@@ -62,6 +62,30 @@ export const Alert = {
       reverseButtons: true,
     }),
 
+  // (p51) Aviso de "no tienes permiso". Es un método propio y no `error` porque
+  // son dos situaciones distintas: un error pide que el usuario lo lea y lo
+  // confirme, mientras que aquí el usuario ya sabe lo que pasó —acaba de pulsar
+  // algo que se veía bloqueado— y lo único que le falta es la razón. Por eso se
+  // cierra solo, como `success`: cobrarle un clic a cada tropiezo con un botón
+  // que de todas formas no va a poder usar sería castigarlo dos veces.
+  //
+  // `accion` se escribe como complemento de "el permiso para ___", en
+  // infinitivo: "generar el reporte de usuarios", "entrar al módulo de usuarios".
+  sinPermiso: (accion) =>
+    Swal.fire({
+      ...baseConfig,
+      icon: "warning",
+      iconColor: "var(--color-tertiary-950)",
+      title: "No tienes permiso",
+      text: accion
+        ? `Tu rol no incluye el permiso para ${accion}. Si lo necesitas, pídeselo a un administrador.`
+        : "Tu rol no incluye el permiso para esta acción. Si lo necesitas, pídeselo a un administrador.",
+      confirmButtonText: "Entendido",
+      reverseButtons: true,
+      timer: AUTO_CLOSE_MS,
+      timerProgressBar: true,
+    }),
+
   // Advertencia con decisión (ej. desactivar algo): triángulo amarillo con "!".
   // El usuario SÍ o SÍ confirma o cancela
   warning: async (title, text = "") => {

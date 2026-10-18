@@ -1,7 +1,12 @@
 import { Pencil } from "lucide-react";
-import { Checkbox, IconButton, Button } from "@/shared";
+import { Checkbox, IconButton, Button, PermissionGate } from "@/shared";
 
 export default function AccessRight({
+  // (p51) El permiso que gobierna la edición lo decide AccessPage, porque
+  // depende de si lo seleccionado es un usuario o un grupo: son dos permisos
+  // distintos y este componente sirve para los dos casos.
+  codenameEditar,
+  accionEditar,
   allPermissions,
   draftPermIds,
   inheritedPermIds,
@@ -32,9 +37,11 @@ export default function AccessRight({
         </h2>
 
         {hasSelection && !isEditing && (
-          <IconButton ariaLabel="Editar permisos" onClick={onEdit}>
-            <Pencil size={20} />
-          </IconButton>
+          <PermissionGate codename={codenameEditar} accion={accionEditar}>
+            <IconButton ariaLabel="Editar permisos" onClick={onEdit}>
+              <Pencil size={20} />
+            </IconButton>
+          </PermissionGate>
         )}
 
         {isEditing && (

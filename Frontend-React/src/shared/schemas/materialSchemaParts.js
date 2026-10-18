@@ -71,6 +71,15 @@ export const camposMaterialCrear = {
     .min(1, "Debe asignar al menos una cotización")
     .max(3, "Un material admite máximo 3 cotizaciones"),
   senaPlate:      z.string().max(20).optional().or(z.literal("")),
+  // (p53) Clasificación en dos niveles, obligatoria en los DOS materiales:
+  // `materialTypeId` es el tipo (Herramienta, Maquinaria y equipos, Muebles y
+  // enseres) y `categoryId` la categoría propia del material («Mesas»). Antes
+  // vivían solo en el devolutivo y en un único select que mezclaba las dos cosas.
+  categoryId:     z.string().min(1, "Debe seleccionar una categoría"),
+  materialTypeId: z.string().min(1, "Debe seleccionar un tipo de material"),
+  // (p53) Opcionales, y ahora en los dos materiales: estaban solo en el devolutivo.
+  model:          z.string().max(100).optional().or(z.literal("")),
+  serial:         z.string().max(20).optional().or(z.literal("")),
   location:       z.string().min(2, "Mínimo 2 caracteres").max(100),
   quantity:       z.string().regex(/^\d+$/, "Debe ser un número entero").optional().or(z.literal("")),
   status:         z.string().min(1, "Debe seleccionar un estado"),
@@ -95,6 +104,13 @@ export const camposMaterialEditar = {
     .max(3, "Un material admite máximo 3 cotizaciones")
     .optional(),
   senaPlate:      z.string().max(20).optional().or(z.literal("")),
+  // (p53) Al editar siguen siendo obligatorios cuando se mandan: `.optional()`
+  // solo cubre que el campo no viaje. Un material que se edita no puede quedarse
+  // sin clasificar.
+  categoryId:     z.string().min(1, "Debe seleccionar una categoría").optional(),
+  materialTypeId: z.string().min(1, "Debe seleccionar un tipo de material").optional(),
+  model:          z.string().max(100).optional().or(z.literal("")),
+  serial:         z.string().max(20).optional().or(z.literal("")),
   location:       z.string().min(2, "Mínimo 2 caracteres").max(100).optional(),
   quantity:       z.string().regex(/^\d+$/, "Debe ser un número entero").optional().or(z.literal("")),
   status:         z.string().min(1, "Debe seleccionar un estado").optional(),

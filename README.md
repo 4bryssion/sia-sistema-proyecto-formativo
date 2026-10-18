@@ -1,4 +1,4 @@
-# S.I.I — Software de Inventario de Infraestructura
+# S.I.A — Software de Inventario y Administración
 
 Sistema de gestión de inventario del SENA.
 
@@ -189,5 +189,5 @@ necesiten dos o más vive en `shared/`.
 
 ---
 
-Grupo 7 — Proyecto Formativo
+Grupo 5 — Proyecto Formativo
 Santiago Acevedo Medina · Sofía Cardona Ramírez · Maicol Esteban Franco Román

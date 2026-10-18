@@ -1,7 +1,7 @@
 // Campos disponibles en el reporte de tareas.
 // Misma forma que los demás módulos: { key, label, default, accessor? }.
 
-import { TASK_STATUS_LABELS } from "../../constants/taskStatus";
+import { textoBusquedaEncargados, etiquetaEstado, etiquetaAvance } from "../../utils/asignaciones";
 import { formatDate, formatDateOnly } from "@/shared/utils/formatDate";
 
 export const taskReportFields = [
@@ -9,16 +9,26 @@ export const taskReportFields = [
   { key: "description", label: "Descripción", default: true },
   {
     key: "encargado",
-    label: "Encargado",
+    label: "Encargados",
     default: true,
-    accessor: (t) =>
-      t.user ? `${t.user.userFirstName} ${t.user.userLastName}` : "—",
+    // (p51) Aquí sí van TODOS los nombres, no el recuento: en un reporte hay
+    // sitio, y "5 personas" en una celda de Excel no sirve para nada.
+    accessor: (t) => textoBusquedaEncargados(t),
   },
   {
     key: "estado",
     label: "Estado",
     default: true,
-    accessor: (t) => TASK_STATUS_LABELS[t.status] ?? t.status,
+    accessor: (t) => etiquetaEstado(t),
+  },
+  {
+    // (p51) Columna nueva: con varios encargados, el estado derivado no dice
+    // cuántos van. Por defecto no entra, para no cambiar el reporte de quien
+    // asigna tareas de una en una.
+    key: "avance",
+    label: "Avance",
+    default: false,
+    accessor: (t) => etiquetaAvance(t) ?? "—",
   },
   {
     // La fecha de inicio de una tarea es su fecha de creación (ver CLAUDE.md §7.2)

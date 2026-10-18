@@ -34,8 +34,10 @@ export const loanReportFields = [
     key: "receiverDocument",
     label: "Documento del receptor",
     default: true,
-    // Vacío cuando el receptor es externo: de él solo tenemos el correo, que ya
-    // aparece en la columna del solicitante
+    // (p51) Ya no queda vacío con un receptor externo: su documento se pide al
+    // crear el préstamo y `documentoDe` lo resuelve igual que el de un usuario
+    // registrado. Sigue vacío en los préstamos externos anteriores a la p51, que
+    // se guardaron sin este dato.
     getter: (l) => documentoDe(l, "Receptor") ?? "",
   },
   {

@@ -33,12 +33,34 @@ export const receptorEsExterno = (loan) => {
 
 /**
  * Documento de una parte, tal como se muestra bajo su nombre:
- * "Cédula de ciudadanía 1078546789". Null si es externa (no tenemos su
- * documento, solo el correo) o si el dato no vino.
+ * "Cédula de Ciudadanía 1078546789".
+ *
+ * (p51) Vale para los dos casos, y a propósito: si está registrada, el documento
+ * sale de su ficha de usuario; si es externa, de su propia firma, donde ahora se
+ * guarda. Las pantallas no distinguen —piden "el documento del receptor" y lo
+ * reciben—, que es justo lo que se pidió: que se refleje igual que el de un
+ * usuario registrado.
+ *
+ * Devuelve null cuando el dato no está, y hay un caso real en el que no está:
+ * los préstamos externos creados ANTES de la p51 se guardaron sin documento. En
+ * esos la pantalla sigue enseñando el correo, que es lo único que hay.
  */
 export const documentoDe = (loan, party) => {
-  const user = firmaDe(loan, party)?.user;
-  if (!user?.userDocumentNumber) return null;
-  const tipo = user.documentType?.documentName;
-  return tipo ? `${tipo} ${user.userDocumentNumber}` : String(user.userDocumentNumber);
+  const sig = firmaDe(loan, party);
+  if (!sig) return null;
+
+  const user = sig.user;
+  if (user?.userDocumentNumber) {
+    const tipo = user.documentType?.documentName;
+    return tipo ? `${tipo} ${user.userDocumentNumber}` : String(user.userDocumentNumber);
+  }
+
+  if (sig.externalDocumentNumber) {
+    const tipo = sig.externalDocumentType?.documentName;
+    return tipo
+      ? `${tipo} ${sig.externalDocumentNumber}`
+      : String(sig.externalDocumentNumber);
+  }
+
+  return null;
 };

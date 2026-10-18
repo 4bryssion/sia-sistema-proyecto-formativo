@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { FileText, Coins } from "lucide-react";
 import { IconButton } from "../IconButton";
 import ImageZoom from "../ImageZoom";
+import ZoomTrigger from "../ZoomTrigger.jsx";
 import { Dropdown, DropdownTrigger, DropdownContent, DropdownItem } from "../DropdownContext";
 import { getStatusLabel } from "@/shared/utils/materialStatusLabel";
 import { API_FILES, FILE_SLOTS } from "@/shared/utils/materialFiles";
@@ -62,12 +63,9 @@ export default function MaterialIdentityPanel({
             <div className="flex flex-col items-center gap-3 lg:border-r lg:border-border lg:pr-6">
                 {/* Mismo marcado que los demás modales de consulta del proyecto:
                     mismo tamaño, mismo borde y mismo object-contain */}
-                <button
-                    type="button"
-                    onClick={() => images.length && setZoom(true)}
-                    aria-label="Ampliar imagen"
+                <ZoomTrigger
+                    onZoom={() => setZoom(true)}
                     disabled={!images.length}
-                    className="rounded-xl overflow-hidden border border-border cursor-zoom-in hover:opacity-90 transition-opacity disabled:cursor-default"
                 >
                     {actual ? (
                         <img
@@ -80,7 +78,7 @@ export default function MaterialIdentityPanel({
                             <span className="font-secondary text-caption text-text-muted">Sin imagen</span>
                         </div>
                     )}
-                </button>
+                </ZoomTrigger>
 
                 {/* Tira de miniaturas: los huecos de las 3 quedan dibujados aunque
                     el material tenga menos, para que la columna no cambie de alto */}

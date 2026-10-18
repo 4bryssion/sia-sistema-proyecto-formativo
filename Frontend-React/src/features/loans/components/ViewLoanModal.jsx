@@ -6,7 +6,7 @@
 // inputs deshabilitados. Sin logo del SENA.
 
 import { useEffect, useState } from "react";
-import { Modal, Button, ImageZoom, usePermissions } from "@/shared";
+import { Modal, Button, ImageZoom, usePermissions, ZoomTrigger } from "@/shared";
 import { Pencil } from "lucide-react";
 import loanService from "@/shared/services/loanService";
 import { getLoanStatusLabel, getLoanTypeLabel } from "../utils/loanStatusLabel";
@@ -19,7 +19,10 @@ function Field({ label, value, className = "" }) {
   return (
     <div className={`min-w-0 ${className}`}>
       <p className="font-secondary text-small text-text-muted">{label}</p>
-      <p className="font-secondary text-body wrap-break-word">{value || "—"}</p>
+      {/* (p53) `wrap-anywhere`: varios de estos valores son correos (las firmas
+          de un receptor externo), y una palabra sin espacios no se parte con
+          `wrap-break-word` cuando la caja puede crecer. */}
+      <p className="font-secondary text-body wrap-anywhere">{value || "—"}</p>
     </div>
   );
 }
@@ -115,38 +118,52 @@ export default function ViewLoanModal({ isOpen, loanId, onClose, onEdit }) {
         ) : (
           <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
 
-            {/* Columna de identidad: el préstamo se reconoce por quién lo recibe */}
-            <div className="flex flex-col items-center gap-3 lg:border-r lg:border-border lg:pr-6">
-              <button
-                type="button"
-                onClick={() => receptor?.userPhoto && setZoom(true)}
-                aria-label="Ampliar foto"
+            {/* Columna de identidad: el préstamo se reconoce por quién lo recibe.
+                (p53) `min-w-0 w-full`: sin esto, un elemento de rejilla crece hasta
+                caber su contenido más ancho, y con un receptor externo el
+                encabezado es un CORREO —una palabra sin espacios— que ensanchaba
+                la columna y con ella el modal entero. El ancho de 220px no bastaba
+                para contenerlo: lo que hay que permitir es que la palabra se
+                parta, y para eso la caja tiene que poder ser más angosta que ella. */}
+            <div className="flex flex-col items-center gap-3 min-w-0 w-full lg:border-r lg:border-border lg:pr-6">
+              <ZoomTrigger
+                onZoom={() => setZoom(true)}
                 disabled={!receptor?.userPhoto}
-                className="rounded-xl overflow-hidden border border-border cursor-zoom-in hover:opacity-90 transition-opacity disabled:cursor-default"
+                ariaLabel="Ampliar foto"
               >
                 <UserPhoto
                   photo={receptor?.userPhoto}
                   alt={receptorLabel}
                   rounded=""
                 />
-              </button>
+              </ZoomTrigger>
 
-              <h3 className="font-main text-h3 font-bold text-center leading-tight wrap-break-word">
+              {/* (p53) `wrap-anywhere` y no `wrap-break-word`: el primero además
+                  reduce el ancho mínimo de la caja, que es lo que hace falta para
+                  que un correo largo se parta en vez de empujar el modal. */}
+              <h3 className="font-main text-h3 font-bold text-center leading-tight wrap-anywhere">
                 {receptorLabel}
               </h3>
 
-              {/* (p48) Bajo el nombre, cómo identificarlo: su documento si está
-                  registrado, su correo si viene de fuera. Es lo que hace falta
-                  para entregarle el material en mano. */}
-              {receptorDocumento ? (
+              {/* (p48) Bajo el nombre, cómo identificarlo: es lo que hace falta
+                  para entregarle el material en mano.
+                  (p51) El receptor externo ahora tiene documento, y se enseña en
+                  el mismo sitio y con el mismo formato que el del registrado: las
+                  dos fichas se leen igual. Debajo queda la marca de que viene de
+                  fuera, porque el encabezado es su correo y no un nombre, y sin
+                  la marca no se distingue de un usuario del sistema. En un
+                  préstamo externo anterior a la p51 no hay documento y solo
+                  queda la marca. */}
+              {receptorDocumento && (
                 <p className="font-secondary text-small text-text-muted text-center">
                   {receptorDocumento}
                 </p>
-              ) : receptorEmailExterno ? (
-                <p className="font-secondary text-small text-text-muted text-center wrap-break-word">
-                  Receptor externo · {receptorEmailExterno}
+              )}
+              {receptorEmailExterno && (
+                <p className="font-secondary text-caption text-text-muted text-center wrap-break-word">
+                  Receptor externo
                 </p>
-              ) : null}
+              )}
 
               <p className="font-secondary text-caption text-text-muted">Receptor del préstamo</p>
 

@@ -12,26 +12,41 @@ import { getCurrentUser, getCurrentUserName, setCurrentUserName, getToken } from
  * La UI solo oculta/deshabilita; la autorización real la impone el backend
  * (middleware `requirePermission`) — defensa en profundidad.
  */
-const PermissionsContext = createContext({ permissions: [], can: () => false, loading: true });
+const PermissionsContext = createContext({
+  permissions: [], can: () => false, loading: true,
+  isSuperUser: false, systemGroups: [],
+});
 
 export function PermissionsProvider({ children }) {
   const [permissions, setPermissions] = useState([]);
+  // (p51) Quién soy, más allá de lo que puedo: si soy superusuario y a qué
+  // grupos del sistema pertenezco. Lo pide la regla de encargados de tareas
+  // —solo un superadministrador, o alguien del mismo grupo, le asigna tareas a
+  // quien administra el sistema—, y sin esto la pantalla no podría anticiparla:
+  // habría que intentar guardar para enterarse.
+  const [actor, setActor] = useState({ isSuperUser: false, systemGroups: [] });
   const [loading, setLoading] = useState(true);
 
   const fetchPermissions = useCallback(async () => {
     // Sin token no hay nada que consultar (rutas públicas como la firma de préstamos)
     if (!getToken()) {
       setPermissions([]);
+      setActor({ isSuperUser: false, systemGroups: [] });
       setLoading(false);
       return;
     }
     try {
       const { data } = await api.get("/access/me/permissions");
       setPermissions(data.permissions ?? []);
+      setActor({
+        isSuperUser: Boolean(data.isSuperUser),
+        systemGroups: data.systemGroups ?? [],
+      });
     } catch {
       // Ante un fallo de red no se bloquea la UI a ciegas: el backend sigue
       // siendo quien autoriza cada petición
       setPermissions([]);
+      setActor({ isSuperUser: false, systemGroups: [] });
     } finally {
       setLoading(false);
     }
@@ -77,7 +92,11 @@ export function PermissionsProvider({ children }) {
   );
 
   return (
-    <PermissionsContext.Provider value={{ permissions, can, loading, refetch: fetchPermissions, reload }}>
+    <PermissionsContext.Provider value={{
+      permissions, can, loading, refetch: fetchPermissions, reload,
+      isSuperUser: actor.isSuperUser,
+      systemGroups: actor.systemGroups,
+    }}>
       {children}
     </PermissionsContext.Provider>
   );

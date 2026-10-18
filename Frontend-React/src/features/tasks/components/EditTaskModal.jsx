@@ -1,29 +1,37 @@
 import { useEffect, useState } from "react";
-import { Modal, Button, Input, TextArea, Select, Alert } from "@/shared";
+import { Modal, Button, Input, TextArea, Alert } from "@/shared";
 import taskService from "@/shared/services/taskService";
-import { TASK_STATUS_LABELS, TASK_STATUS_EDITABLES } from "../constants/taskStatus";
+import { etiquetaEstado, etiquetaAvance } from "../utils/asignaciones";
+import { todayLocalISO } from "@/shared/schemas/taskSchema";
+import { useUsers } from "@/shared/hooks/useUsers";
+import AssigneeSelect from "@/shared/components/tasks/AssigneeSelect";
 
 // (p50) Editar tarea deja de ser una página (/view/tasks/:id/edit) y pasa a ser
 // un modal SIMPLE, no por pasos: son cuatro campos editables.
 //
+// (p51) Los ENCARGADOS sí se editan aquí, con el mismo select y los mismos
+// filtros que al crear: si al asignar se te quedó alguien fuera o entró quien no
+// era, corregirlo tiene que ser tan fácil como haberlo hecho mal.
+//
+// Antes no se podía, y el motivo documentado era el «RFADMIN49», que NO EXISTE:
+// los requerimientos de ADMIN del documento llegan al 45 y no hay ninguno sobre
+// tareas. La restricción se la inventó alguien y el backend la hacía cumplir.
+//
 // Qué NO se puede cambiar aquí, y por qué:
-// - El encargado: RFADMIN49 prohíbe reasignar; el backend descarta `userId` en
-//   el PUT aunque se mande.
-// - El estado a "No completada": lo pone el vencimiento automático. Si la tarea
-//   ya venció, el select queda bloqueado y se explica en pantalla, igual que la
-//   casilla gris del listado.
+// - El estado: (p51) dejó de estar aquí. Una tarea puede tener varios
+//   encargados y cada uno lleva el suyo, así que un único select de estado ya
+//   no representa nada. Se cambia desde el modal de consulta, encargado por
+//   encargado, con la ruta que sabe de quién es el estado que se toca.
+//
+//   Y era un defecto, no solo un sobrante: este modal enviaba `status` en el
+//   PUT, el validador del backend ya no lo acepta y Joi rechaza las claves que
+//   no conoce. Guardar cualquier edición devolvía 400.
 
-// Las dos que una persona puede poner. Se arma desde las etiquetas para no
-// mantener una segunda lista.
-const OPCIONES_ESTADO = TASK_STATUS_EDITABLES.map((value) => ({
-  id: value,
-  value,
-  label: TASK_STATUS_LABELS[value],
-}));
 
-const VACIO = { taskName: "", description: "", endDate: "", status: "en_progreso" };
+const VACIO = { taskName: "", description: "", endDate: "", userIds: [] };
 
 export default function EditTaskModal({ isOpen, taskId, onClose, onSaved }) {
+  const { users } = useUsers("active", isOpen);
   const [task, setTask] = useState(null);
   const [form, setForm] = useState(VACIO);
   const [errors, setErrors] = useState({});
@@ -45,7 +53,7 @@ export default function EditTaskModal({ isOpen, taskId, onClose, onSaved }) {
           description: data.description ?? "",
           // endDate viene como fecha ISO; el input type="date" quiere YYYY-MM-DD
           endDate: data.endDate ? String(data.endDate).slice(0, 10) : "",
-          status: data.status ?? "en_progreso",
+          userIds: (data.assignments ?? []).map((x) => String(x.userId)),
         });
         setErrors({});
         setError(null);
@@ -58,19 +66,53 @@ export default function EditTaskModal({ isOpen, taskId, onClose, onSaved }) {
     return () => { vigente = false; };
   }, [isOpen, taskId]);
 
-  const vencida = task?.status === "no_completada";
 
   const cambiar = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Cuántos encargados cerraron por vencimiento. No se puede deducir de un
+  // único campo: el vencimiento se aplica asignación por asignación.
+  const vencidas = (task?.assignments ?? []).filter((x) => x.status === "no_completada").length;
+
+  // (p52) La fecha de fin que trae la tarea. Hace falta para distinguir «no la
+  // toco» de «la cambio»: una tarea vieja puede tener la fecha ya pasada, y
+  // rechazarla al editar el titulo dejaria la tarea imposible de corregir.
+  const fechaOriginal = task?.endDate ? String(task.endDate).slice(0, 10) : "";
+
   const guardar = async () => {
     const fallos = {};
     if (form.taskName.trim().length < 3) fallos.taskName = "El título debe tener al menos 3 caracteres";
     if (!form.description.trim()) fallos.description = "La descripción es obligatoria";
     if (!form.endDate) fallos.endDate = "La fecha de fin es obligatoria";
+    // (p52) Faltaba, y crear si lo tenia: se podia poner la fecha de ayer y
+    // guardar sin queja. La tarea nacia vencida —la rutina diaria marca las
+    // asignaciones como no completadas— y la casilla quedaba bloqueada para
+    // siempre, sin forma de deshacerlo desde la interfaz.
+    else if (form.endDate !== fechaOriginal && form.endDate < todayLocalISO()) {
+      fallos.endDate = "La fecha de fin no puede ser anterior a hoy";
+    }
+    if (form.userIds.length === 0) fallos.userIds = "La tarea necesita al menos un encargado";
     if (Object.keys(fallos).length) { setErrors(fallos); return; }
+
+    // (p51) Quitar a alguien borra su asignación, y con ella su estado. Si ya
+    // había terminado, eso es perder la constancia de un trabajo hecho: se
+    // pregunta antes, nombrando a quién. No se bloquea, porque el caso de haber
+    // asignado a la persona equivocada también es real.
+    const salen = (task.assignments ?? []).filter((a) => !form.userIds.includes(String(a.userId)));
+    const completados = salen.filter((a) => a.status === "completada");
+    if (completados.length) {
+      const nombres = completados
+        .map((a) => (a.user ? `${a.user.userFirstName} ${a.user.userLastName}` : "un encargado"))
+        .join(", ");
+      const r = await Alert.warning(
+        completados.length === 1 ? "Ya completó la tarea" : "Ya completaron la tarea",
+        `${nombres} ${completados.length === 1 ? "ya la había completado" : "ya la habían completado"}. `
+        + "Al quitarla de sus encargados se perderá ese registro.",
+      );
+      if (!r.isConfirmed) return;
+    }
 
     setGuardando(true);
     try {
@@ -78,9 +120,7 @@ export default function EditTaskModal({ isOpen, taskId, onClose, onSaved }) {
         taskName: form.taskName,
         description: form.description,
         endDate: form.endDate,
-        // Una tarea vencida conserva su estado: mandarlo sería pedirle al
-        // backend un cambio que va a rechazar.
-        ...(vencida ? {} : { status: form.status }),
+        userIds: form.userIds.map(Number),
       });
       setErrors({});
       Alert.success("Tarea actualizada");
@@ -96,9 +136,7 @@ export default function EditTaskModal({ isOpen, taskId, onClose, onSaved }) {
     }
   };
 
-  const encargado = task?.user
-    ? `${task.user.userFirstName} ${task.user.userLastName}`
-    : "—";
+
 
   return (
     <Modal
@@ -136,27 +174,36 @@ export default function EditTaskModal({ isOpen, taskId, onClose, onSaved }) {
             error={errors.taskName}
           />
 
-          {/* El encargado no se edita: RFADMIN49 prohíbe reasignar una tarea */}
-          <Input label="Encargado" value={encargado} disabled />
+          {/* El mismo control que al crear, con los mismos filtros: por grupo y
+              por vínculo vigente, y con «marcar los que coinciden». */}
+          <AssigneeSelect
+            label="Encargados"
+            required
+            users={users}
+            value={form.userIds}
+            onChange={cambiar}
+            error={errors.userIds}
+          />
 
           <Input
             label="Fecha de fin"
             name="endDate"
             type="date"
+            min={todayLocalISO()}
             required
             value={form.endDate}
             onChange={cambiar}
             error={errors.endDate}
           />
 
-          <Select
-            label="Estado"
-            name="status"
-            value={vencida ? "" : form.status}
-            onChange={cambiar}
-            options={OPCIONES_ESTADO}
-            disabled={vencida}
-            placeholder={vencida ? TASK_STATUS_LABELS.no_completada : undefined}
+          {/* Solo informativo: el estado se cambia por encargado, en el modal
+              de consulta. Un campo deshabilitado aquí comunica "esto se podría
+              editar y no puedes", y no es el caso: no se edita desde ningún
+              formulario, se cambia marcando la casilla de cada persona. */}
+          <Input
+            label="Estado de la tarea"
+            value={[etiquetaEstado(task), etiquetaAvance(task)].filter(Boolean).join(" · ")}
+            disabled
           />
 
           <div className="md:col-span-2">
@@ -171,12 +218,18 @@ export default function EditTaskModal({ isOpen, taskId, onClose, onSaved }) {
             />
           </div>
 
-          {vencida && (
-            <p className="md:col-span-2 font-secondary text-small text-text-muted">
-              La tarea venció sin completarse, así que su estado ya no puede cambiarse.
-              El resto de los campos sí se puede corregir.
-            </p>
-          )}
+          {/* (p51) Dónde se cambia el estado, porque ya no es aquí. Y si a
+              alguien se le pasó la fecha, se dice: ese estado lo puso el
+              vencimiento automático y no se revierte. */}
+          <p className="md:col-span-2 font-secondary text-small text-text-muted">
+            El estado es de cada encargado: se cambia desde la consulta de la tarea,
+            marcando la casilla de la persona.
+            {vencidas > 0 && (
+              vencidas === 1
+                ? " A un encargado se le pasó la fecha límite y su estado ya no puede cambiarse."
+                : ` A ${vencidas} encargados se les pasó la fecha límite y sus estados ya no pueden cambiarse.`
+            )}
+          </p>
         </div>
       )}
     </Modal>
