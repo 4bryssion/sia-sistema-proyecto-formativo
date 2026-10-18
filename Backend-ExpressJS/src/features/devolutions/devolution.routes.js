@@ -3,6 +3,7 @@ import { devolutionController } from './devolution.controller.js';
 import { validate, createDevolutionSchema, authorizeDevolutionSchema } from './devolution.validator.js';
 import { authenticateToken } from '../../middleware/auth.middleware.js';
 import { requirePermission } from '../../middleware/permission.middleware.js';
+import { errorDeNegocio } from '../../middleware/errorHandler.js';
 
 const router = Router();
 
@@ -15,11 +16,6 @@ router.post('/',               authenticateToken, requirePermission('create_loan
 router.patch('/:id/authorize', authenticateToken, requirePermission('authorize_devolution'), validate(authorizeDevolutionSchema), devolutionController.authorize);
 router.patch('/:id/toggle',    authenticateToken, requirePermission('create_loan_return'),  devolutionController.toggle);
 
-router.use((err, req, res, next) => {
-  if (err.message && !err.code) {
-    return res.status(400).json({ error: err.message });
-  }
-  next(err);
-});
+router.use(errorDeNegocio);
 
 export default router;

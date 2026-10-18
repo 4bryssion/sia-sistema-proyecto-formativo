@@ -27,7 +27,21 @@ export const authenticateToken = async (req, res, next) => {
         });
     }
 
-    const token = authHeader.split(" ")[1];
+    // (p52) El esquema se exige, no se adivina. `split(" ")[1]` aceptaba
+    // cualquier palabra —«Token <jwt>» entraba igual que «Bearer <jwt>»—, pero el
+    // contexto del actor (requestContext.js) SI exige "Bearer ", asi que con otro
+    // esquema la peticion se ejecutaba y la fila de `audit_log` se guardaba sin
+    // autor, sin error y sin que nadie se enterara. No era escalada de permisos
+    // (los guardias cierran con actor nulo), era borrar el rastro.
+    //
+    // Los cinco sitios del frontend que mandan la cabecera usan "Bearer".
+    const [esquema, token] = authHeader.split(" ");
+
+    if (esquema !== "Bearer") {
+        return res.status(401).json({
+            message: "Token inválido",
+        });
+    }
 
     if (!token) {
         return res.status(401).json({

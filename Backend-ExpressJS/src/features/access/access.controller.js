@@ -43,10 +43,12 @@ export const accessController = {
 
   // Usa req.user.id del token (no un userId de URL) — responde { permissionCode, granted }
   // Permisos efectivos del usuario autenticado (para el Permission Gate del frontend)
+  // (p51) Ademas de los permisos, devuelve si soy superusuario y a que grupos
+  // del sistema pertenezco. `permissions` sigue en el mismo sitio: los campos se
+  // agregan, no se mueven.
   async myPermissions(req, res, next) {
     try {
-      const permissions = await accessService.getEffectivePermissions(Number(req.user.id));
-      res.json({ permissions });
+      res.json(await accessService.getMyContext(Number(req.user.id)));
     } catch (err) { next(err); }
   },
 

@@ -53,7 +53,9 @@ const parseCampos = (body) => ({
   // ignora la columna y la marca vieja se quedaba pegada para siempre.
   brandId:      body.brandId === '' ? null : (body.brandId ? Number(body.brandId) : undefined),
   inventoryId:  body.inventoryId ? Number(body.inventoryId) : undefined,
-  categoryId:   body.categoryId  ? Number(body.categoryId)  : undefined,
+  // (p53) Los dos niveles de clasificación, ya en la tabla padre.
+  categoryId:     body.categoryId     ? Number(body.categoryId)     : undefined,
+  materialTypeId: body.materialTypeId ? Number(body.materialTypeId) : undefined,
   unitPrice:    body.unitPrice   ? Number(body.unitPrice)   : undefined,
   totalPrice:   body.totalPrice  ? Number(body.totalPrice)  : undefined,
   purchaseDate: body.purchaseDate ? new Date(body.purchaseDate).toISOString() : undefined,
@@ -81,7 +83,10 @@ const parseCampos = (body) => ({
 const separar = (data) => {
   // technicalSheets salió de aquí en p46 (dejaron de ser una columna) y en p48
   // pasaron a colgar del padre junto con las imágenes y los cuentadantes
-  const camposDevolutivo = ['categoryId', 'model', 'serial', 'dimensions'];
+  // (p53) Solo queda `dimensions`: la categoría, el modelo y el serial se
+  // mudaron a la tabla padre, así que viajan con el resto de los campos de
+  // consumo. El tipo de material nació ya en el padre.
+  const camposDevolutivo = ['dimensions'];
   const devolutivo = {};
   const consumo = {};
 

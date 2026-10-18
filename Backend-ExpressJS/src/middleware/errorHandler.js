@@ -1,5 +1,24 @@
 import multer from 'multer';
 
+// (p52) Los errores que NO son del dominio: estos no los lanza una regla de
+// negocio, los produce un defecto del codigo. Se distinguen por su clase y no
+// por su texto, porque el texto es justo lo que no hay que ensenarle a nadie.
+export const esFalloDeProgramacion = (err) =>
+  err instanceof TypeError
+  || err instanceof ReferenceError
+  || err instanceof RangeError
+  || err instanceof SyntaxError;
+
+// (p52) Este manejador estaba COPIADO, identico, en los 14 routers: cada uno
+// convertia en 400 cualquier error con mensaje. Vive aqui una sola vez para que
+// el arreglo de arriba valga para todos y no haya que acordarse de 14 sitios.
+export const errorDeNegocio = (err, req, res, next) => {
+  if (err.message && !err.code && !esFalloDeProgramacion(err)) {
+    return res.status(400).json({ error: err.message });
+  }
+  next(err);
+};
+
 const errorHandler = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     const messages = {
@@ -29,6 +48,18 @@ const errorHandler = (err, req, res, next) => {
   // Prisma: validación de tipos (no tiene code, pero sí nombre de clase)
   if (err.name === 'PrismaClientValidationError') {
     return res.status(400).json({ error: 'Error de validación en los datos.' });
+  }
+
+  // (p52) Un fallo de PROGRAMACION no es un mensaje para el usuario, y hasta
+  // ahora lo era: cualquier error con `.message` salia como 400 con el texto
+  // crudo de JavaScript —«Cannot read properties of undefined»— y el
+  // console.error de abajo no se alcanzaba nunca, asi que el servidor no dejaba
+  // ni una linea de rastro. Se separan los dos casos: el error de negocio sigue
+  // siendo un 400 con su mensaje en espanol; el fallo interno es un 500 generico
+  // y queda en el log, que es donde sirve.
+  if (esFalloDeProgramacion(err)) {
+    console.error('Fallo interno no controlado:', err);
+    return res.status(500).json({ error: 'Error interno del servidor.' });
   }
 
   if (err.message) {

@@ -1,24 +1,57 @@
 import { loanReturnRepository } from './loanReturn.repository.js';
 import prisma from '../../config/prisma.js';
+import { accessService } from '../access/access.service.js';
+import { clausulaParticipacion, participaEnPrestamo } from '../../shared/participacionEnPrestamo.js';
+
+// (p52) Quien ve los retornos de TODO el mundo. Es el mismo permiso y el mismo
+// criterio que en devoluciones (RFINV14); este modulo se habia quedado sin el,
+// asi que cualquiera con `list_loan_returns` —el Invitado incluido— veia los
+// retornos de los prestamos de los demas.
+const PERMISO_VER_TODOS = 'list_all_loan_returns';
+
+const recorteSegunActor = async (actor) => {
+  if (await accessService.hasPermission(actor.id, PERMISO_VER_TODOS)) return undefined;
+  return clausulaParticipacion(actor);
+};
 
 export const loanReturnService = {
-  async getAll() {
-    return loanReturnRepository.findAll();
+  async getAll(actor) {
+    return loanReturnRepository.findAll(await recorteSegunActor(actor));
   },
 
-  async getById(id) {
+  async getById(id, actor) {
     const loanReturn = await loanReturnRepository.findById(id);
     if (!loanReturn) throw new Error('Retorno no encontrado.');
-    return loanReturn;
+
+    // Mismo criterio que en prestamos y devoluciones: se responde como si no
+    // existiera, porque decir «ese no es tuyo» ya confirma que existe.
+    if (await accessService.hasPermission(actor.id, PERMISO_VER_TODOS)) return loanReturn;
+    if (participaEnPrestamo(loanReturn.loanMaterial?.loan, actor)) return loanReturn;
+    throw new Error('Retorno no encontrado.');
   },
 
-  async create(bodyData) {
+  async create(bodyData, actor) {
     const loanId = Number(bodyData.loanId);
     const materialId = Number(bodyData.materialId);
 
     // 1. Préstamo existe y activo
-    const loan = await prisma.loan.findUnique({ where: { id: loanId } });
+    const loan = await prisma.loan.findUnique({
+      where: { id: loanId },
+      // (p52) Las firmas, para saber de quien es el prestamo.
+      include: { signatures: { select: { userId: true, externalEmail: true } } },
+    });
     if (!loan || !loan.isActive) throw new Error('El préstamo especificado no existe.');
+
+    // (p52) Retornar lo de otro. No se comprobaba: con `create_loan_return` y un
+    // id cualquiera —y los ids son consecutivos— se registraba un retorno a
+    // nombre de un tercero, y cada retorno SUMA stock. Es la misma comprobacion
+    // que ya hacia devoluciones, con el mismo criterio: quien ve los prestamos
+    // de todos puede registrarlo por cuenta ajena, que es el trabajo de quien
+    // atiende el almacen; quien solo ve los suyos, solo los suyos.
+    const puedeVerTodos = await accessService.hasPermission(actor.id, 'list_all_loans');
+    if (!puedeVerTodos && !participaEnPrestamo(loan, actor)) {
+      throw new Error('El préstamo especificado no existe.');
+    }
 
     // 2. Guard de estado (mismo formato que el de editar)
     if (loan.status !== 'Activo') {
@@ -76,9 +109,13 @@ export const loanReturnService = {
     return created;
   },
 
-  async toggle(id) {
-    const record = await loanReturnService.getById(id);
-    const updated = await loanReturnRepository.toggle(id, !record.isActive);
-    return updated;
+  // (p52) Solo desactiva, y al desactivar deshace el reintegro de stock. El
+  // porque de que no se reactive esta en el repositorio.
+  async desactivar(id, actor) {
+    const record = await loanReturnService.getById(id, actor);
+    if (!record.isActive) {
+      throw new Error('El retorno ya esta desactivado: para rehacerlo, registrelo de nuevo.');
+    }
+    return loanReturnRepository.desactivar(id);
   },
 };

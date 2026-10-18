@@ -3,6 +3,7 @@ import { groupController } from './group.controller.js';
 import { validate, createGroupSchema, updateGroupSchema, assignPermissionSchema, updatePermissionsSchema } from './group.validator.js';
 import { authenticateToken } from '../../middleware/auth.middleware.js';
 import { requirePermission } from '../../middleware/permission.middleware.js';
+import { errorDeNegocio } from '../../middleware/errorHandler.js';
 
 const router = Router();
 
@@ -21,11 +22,6 @@ router.patch('/:id/toggle', authenticateToken, requirePermission('toggle_group')
 router.post('/:id/permissions', authenticateToken, requirePermission('assign_permission_to_group'),                 validate(assignPermissionSchema), groupController.assignPermission);
 router.delete('/:id/permissions/:permissionId', authenticateToken, requirePermission('remove_permission_from_group'), groupController.removePermission);
 
-router.use((err, req, res, next) => {
-  if (err.message && !err.code) {
-    return res.status(400).json({ error: err.message });
-  }
-  next(err);
-});
+router.use(errorDeNegocio);
 
 export default router;

@@ -29,12 +29,26 @@ export const createLoanSchema = Joi.object({
   // `optional()` sueltos se podrían mandar ambos o ninguno.
   receiverId: Joi.number().integer().positive().invalid(Joi.ref('lenderId')),
   receiverEmail: Joi.string().email({ tlds: { allow: false } }).max(150).lowercase(),
+  // (p51) Documento del receptor NO registrado. El correo sirve para mandarle el
+  // enlace de firma, pero no identifica a nadie: si el material no vuelve,
+  // «pedro@gmail.com» no dice a quién reclamar. Mismo límite de 20 caracteres que
+  // el documento de un usuario registrado, para que las dos vistas quepan igual.
+  receiverDocumentTypeId: Joi.number().integer().positive(),
+  receiverDocumentNumber: Joi.string().trim().max(20),
   materials: Joi.array().items(materialLine).min(1).required(),
 })
   .xor('receiverId', 'receiverEmail')
+  // (p51) Con receptor externo, su documento es obligatorio: `with` expresa
+  // "si viene el correo, tienen que venir estos dos". Y `without` lo prohíbe con
+  // un receptor registrado, cuyo documento ya está en su ficha: aceptarlo ahí
+  // permitiría guardar un documento distinto del suyo en la firma.
+  .with('receiverEmail', ['receiverDocumentTypeId', 'receiverDocumentNumber'])
+  .without('receiverId', ['receiverDocumentTypeId', 'receiverDocumentNumber'])
   .messages({
     'object.xor': 'Indique el receptor: un usuario registrado o un correo electrónico, no ambos.',
     'object.missing': 'Indique el receptor: un usuario registrado o un correo electrónico.',
+    'object.with': 'De un receptor no registrado hacen falta su tipo y su número de documento.',
+    'object.without': 'El receptor registrado ya tiene su documento en su ficha: no se envía aparte.',
   });
 
 export const updateLoanSchema = createLoanSchema.keys({

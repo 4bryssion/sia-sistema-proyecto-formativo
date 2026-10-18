@@ -1,6 +1,17 @@
 import prisma from '../../config/prisma.js';
 import { devolutionRepository } from './devolution.repository.js';
 import { notify } from '../notifications/notification.service.js';
+import { accessService } from '../access/access.service.js';
+import { clausulaParticipacion, participaEnPrestamo } from '../../shared/participacionEnPrestamo.js';
+
+// (p51) Quién ve las devoluciones de TODO el mundo. Sin este permiso solo se
+// ven las de los préstamos propios (RFINV14).
+const PERMISO_VER_TODAS = 'list_all_loan_returns';
+
+const recorteSegunActor = async (actor) => {
+  if (await accessService.hasPermission(actor.id, PERMISO_VER_TODAS)) return undefined;
+  return clausulaParticipacion(actor);
+};
 
 // La descripción de una notificación es VARCHAR(255): se recorta antes de
 // guardar para que un préstamo con muchos materiales no rompa el insert
@@ -26,14 +37,19 @@ const pendienteDe = (loanMaterial) =>
   loanMaterial.borrowedQuantity - loanMaterial.returnedQuantity;
 
 export const devolutionService = {
-  async getAll(status) {
-    return devolutionRepository.findAll(status);
+  async getAll(status, actor) {
+    return devolutionRepository.findAll(status, await recorteSegunActor(actor));
   },
 
-  async getById(id) {
+  async getById(id, actor) {
     const request = await devolutionRepository.findById(id);
     if (!request) throw new Error('Devolución no encontrada.');
-    return request;
+
+    // Mismo criterio que en préstamos: se responde como si no existiera, para
+    // no confirmar con el id en la mano lo que no se puede ver.
+    if (await accessService.hasPermission(actor.id, PERMISO_VER_TODAS)) return request;
+    if (participaEnPrestamo(request.loan, actor)) return request;
+    throw new Error('Devolución no encontrada.');
   },
 
   // Fase 1 — registrar la devolución. No mueve stock ni cambia el estado del
@@ -43,9 +59,23 @@ export const devolutionService = {
 
     const loan = await prisma.loan.findUnique({
       where: { id: loanId },
-      include: { materials: { include: { consumableMaterial: { include: { returnable: { select: { id: true } } } } } } },
+      include: {
+        materials: { include: { consumableMaterial: { include: { returnable: { select: { id: true } } } } } },
+        // (p51) Las firmas hacen falta para saber de quién es el préstamo.
+        signatures: true,
+      },
     });
     if (!loan || !loan.isActive) throw new Error('El préstamo especificado no existe.');
+
+    // (p51) Devolver lo de otro. No se comprobaba: con `create_loan_return` y un
+    // id de préstamo cualquiera —y los ids son consecutivos— se podía registrar
+    // una devolución a nombre de un tercero. Quien puede ver los préstamos de
+    // todos sigue pudiendo registrarla por cuenta ajena, que es el trabajo de
+    // quien atiende el almacén; quien solo ve los suyos, solo los suyos.
+    const puedeVerTodos = await accessService.hasPermission(actorId, 'list_all_loans');
+    if (!puedeVerTodos && !participaEnPrestamo(loan, { id: actorId })) {
+      throw new Error('El préstamo especificado no existe.');
+    }
     if (loan.status !== 'Activo') {
       throw new Error(`Solo los préstamos en estado Activo admiten devoluciones. Estado actual: ${loan.status}.`);
     }
@@ -177,36 +207,27 @@ export const devolutionService = {
       };
     });
 
-    const { request: autorizada, movimientos } = await devolutionRepository.authorize({
+    const { request: autorizada } = await devolutionRepository.authorize({
       requestId: request.id,
       loanId: request.loanId,
       authorizedById: actorId,
       plan,
     });
 
-    const detalle = autorizada.items
-      .map((i) => `${i.consumableMaterial.materialName} x${i.returnedQuantity} (${i.materialStatus})`)
-      .join(', ');
-
-    // Notificación aparte por cada material que devolvió cantidad al inventario:
-    // el movimiento de stock es el dato que más se audita
-    for (const m of movimientos) {
-      if (m.estado !== 'Disponible' || m.antes == null) continue;
-    }
-
-    // Los que no vuelven al stock también se registran, con su severidad.
-    // El texto distingue si el estado se pudo aplicar al material o solo quedó
-    // registrado en la devolución: en un material por cantidad la fila es el
-    // lote entero y marcarla ensuciaría las unidades sanas.
-    for (const m of movimientos) {
-      if (m.estado === 'Disponible') continue;
-    }
-
+    // (p52) Autorizar NO genera avisos, y aqui habia dos bucles vacios y un
+    // texto sin usar que decian lo contrario: el cuerpo se quedo sin escribir.
+    // Se van los tres, porque un comentario que promete un aviso que no existe
+    // es peor que no tener comentario. El criterio es el de p50: el unico aviso
+    // del prestamo es el de su creacion; lo que pasa despues queda en
+    // `audit_log`, que es donde se consulta un movimiento de stock.
     return autorizada;
   },
 
-  async toggle(id) {
-    const request = await devolutionService.getById(id);
+  // (p52) `actor` obligatorio, por lo mismo que en prestamos: `getById` recorta
+  // por participacion y sin el actor reventaba. Descartar una devolucion no
+  // funcionaba para ningun rol.
+  async toggle(id, actor) {
+    const request = await devolutionService.getById(id, actor);
     // Una devolución ya autorizada movió stock y liquidó parte del préstamo:
     // desactivarla no desharía nada de eso y dejaría el inventario mintiendo
     if (request.status === 'Autorizada') {

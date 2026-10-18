@@ -5,12 +5,12 @@ export const loanController = {
     try {
       const valid = ['active', 'inactive', 'all'];
       const status = valid.includes(req.query.status) ? req.query.status : 'active';
-      res.json(await loanService.getAll(status));
+      res.json(await loanService.getAll(status, req.user));
     } catch (err) { next(err); }
   },
 
   async getById(req, res, next) {
-    try { res.json(await loanService.getById(Number(req.params.id))); }
+    try { res.json(await loanService.getById(Number(req.params.id), req.user)); }
     catch (err) { next(err); }
   },
 
@@ -23,7 +23,7 @@ export const loanController = {
 
   async toggle(req, res, next) {
     try {
-      const data = await loanService.toggle(Number(req.params.id));
+      const data = await loanService.toggle(Number(req.params.id), req.user);
       const mensaje = data.isActive ? 'Préstamo activado.' : 'Préstamo desactivado.';
       res.json({ mensaje, data });
     } catch (err) { next(err); }
@@ -50,7 +50,7 @@ export const loanController = {
 
   async resendSignatures(req, res, next) {
     try {
-      await loanService.resendSignatures(Number(req.params.id));
+      await loanService.resendSignatures(Number(req.params.id), req.user);
       res.json({ mensaje: 'Correos de firma reenviados.' });
     } catch (err) { next(err); }
   },

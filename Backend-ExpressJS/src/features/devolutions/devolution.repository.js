@@ -27,11 +27,18 @@ const devolutionInclude = {
 };
 
 export const devolutionRepository = {
-  async findAll(status = 'active') {
-    const where =
-      status === 'all'      ? {} :
-      status === 'inactive' ? { isActive: false } :
-                              { isActive: true };
+  // (p51) `participacion` recorta a las devoluciones de préstamos en los que el
+  // actor es parte. Se aplica EN LA CONSULTA, no después de leer: filtrar en
+  // memoria deja los datos ajenos ya fuera de la base, y basta llamar al API a
+  // mano para verlos. La devolución no tiene firmas propias — cuelga de su
+  // préstamo, que es quien dice de quién es.
+  async findAll(status = 'active', participacion = undefined) {
+    const where = {
+      ...(status === 'all'      ? {} :
+          status === 'inactive' ? { isActive: false } :
+                                  { isActive: true }),
+      ...(participacion ? { loan: { signatures: participacion } } : {}),
+    };
     return prisma.devolutionRequest.findMany({
       where,
       orderBy: { requestedAt: 'desc' },

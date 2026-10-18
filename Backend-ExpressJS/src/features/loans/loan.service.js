@@ -1,5 +1,20 @@
 import jwt from 'jsonwebtoken';
 import { loanRepository } from './loan.repository.js';
+import { accessService } from '../access/access.service.js';
+import { clausulaParticipacion, participaEnPrestamo } from '../../shared/participacionEnPrestamo.js';
+
+// (p51) Quién ve los préstamos de TODO el mundo. Sin este permiso solo se ven
+// los propios, y la decisión se toma AQUÍ y no en el frontend: cuando dependía
+// de la pantalla, el invitado veía los de cualquiera con solo llamar al API —y
+// de hecho los veía también en la pantalla, porque tiene `list_loans` y el
+// filtro del cliente solo se aplicaba a quien NO lo tuviera. Es el RFINV11.
+const PERMISO_VER_TODOS = 'list_all_loans';
+
+/** La cláusula de recorte, o undefined si el actor puede verlo todo. */
+const recorteSegunActor = async (actor) => {
+  if (await accessService.hasPermission(actor.id, PERMISO_VER_TODOS)) return undefined;
+  return clausulaParticipacion(actor);
+};
 import prisma from '../../config/prisma.js';
 import { checkAvailability } from './loan.stock.js';
 import { sendLoanSignatureRequest } from '../../config/mailer.js';
@@ -29,7 +44,7 @@ const assertUniqueMaterials = (materials) => {
 export const normalizarCorreo = (correo) =>
   typeof correo === 'string' ? correo.trim().toLowerCase() : correo;
 
-const assertReceptorValido = async ({ receiverEmail, lenderId }) => {
+const assertReceptorValido = async ({ receiverEmail, lenderId, receiverDocumentTypeId, receiverDocumentNumber }) => {
   if (!receiverEmail) return;
 
   const registrado = await prisma.user.findUnique({
@@ -50,6 +65,35 @@ const assertReceptorValido = async ({ receiverEmail, lenderId }) => {
   const correo = normalizarCorreo(receiverEmail);
   if (prestador && (correo === normalizarCorreo(prestador.userEmail) || correo === normalizarCorreo(prestador.userEmailInstitutional))) {
     throw new Error('El receptor debe ser distinto del prestador.');
+  }
+
+  // (p51) El tipo de documento tiene que existir y estar habilitado. Un id
+  // inventado pasaría la validación de forma (es un entero positivo) y la
+  // llave foránea lo rechazaría con un error de base de datos, que no dice nada
+  // a quien está llenando el formulario.
+  const tipo = await prisma.documentType.findUnique({
+    where: { id: Number(receiverDocumentTypeId) },
+    select: { id: true, isActive: true, documentName: true },
+  });
+  if (!tipo) throw new Error('El tipo de documento indicado no existe.');
+  if (!tipo.isActive) {
+    throw new Error(`El tipo de documento «${tipo.documentName}» está deshabilitado: elige otro.`);
+  }
+
+  // Y el número no puede ser el de alguien que SÍ está registrado. Es la misma
+  // comprobación que ya se hace con el correo, por el mismo motivo: si la
+  // persona tiene cuenta, hay que seleccionarla de la lista, no registrarla a
+  // mano como si fuera de fuera —quedarían dos identidades para una persona.
+  const documento = String(receiverDocumentNumber).trim();
+  const conEseDocumento = await prisma.user.findUnique({
+    where: { userDocumentNumber: documento },
+    select: { userFirstName: true, userLastName: true },
+  });
+  if (conEseDocumento) {
+    throw new Error(
+      `Ese documento pertenece a ${conEseDocumento.userFirstName} ${conEseDocumento.userLastName}, `
+      + 'que sí está registrado: selecciónalo en la lista de usuarios.',
+    );
   }
 };
 
@@ -108,14 +152,20 @@ const sendSignatureEmails = (loan, signatures = loan.signatures) => {
 };
 
 export const loanService = {
-  async getAll(status) {
-    return loanRepository.findAll(status);
+  async getAll(status, actor) {
+    return loanRepository.findAll(status, await recorteSegunActor(actor));
   },
 
-  async getById(id) {
+  async getById(id, actor) {
     const loan = await loanRepository.findById(id);
     if (!loan) throw new Error('Préstamo no encontrado.');
-    return loan;
+
+    // El listado recortado no basta: con el id en la mano se podía pedir
+    // cualquier préstamo por su cuenta. Se responde lo mismo que si no
+    // existiera, a propósito: decir "ese no es tuyo" confirma que existe.
+    if (await accessService.hasPermission(actor.id, PERMISO_VER_TODOS)) return loan;
+    if (participaEnPrestamo(loan, actor)) return loan;
+    throw new Error('Préstamo no encontrado.');
   },
 
   async create(data) {
@@ -144,6 +194,8 @@ export const loanService = {
         lenderId: data.lenderId,
         receiverId: data.receiverId,
         receiverEmail: data.receiverEmail,
+        receiverDocumentTypeId: data.receiverDocumentTypeId,
+        receiverDocumentNumber: data.receiverDocumentNumber,
       },
     });
     sendSignatureEmails(loan); // fire-and-forget: no bloquea la respuesta de creación
@@ -162,8 +214,12 @@ export const loanService = {
     return loan;
   },
 
-  async toggle(id) {
-    const loan = await loanService.getById(id);
+  // (p52) `actor` NO es opcional: `getById` lo necesita para el recorte por
+  // participacion (RFINV11) y sin el fallaba con un TypeError que el manejador
+  // de errores disfrazaba de 400. El interruptor «Activo» del listado de
+  // prestamos no funcionaba para NADIE, superadministrador incluido.
+  async toggle(id, actor) {
+    const loan = await loanService.getById(id, actor);
     // Con retornos ya reintegrados, restaurar/reaplicar stock a ciegas duplicaría el stock.
     const hasReturns = await prisma.loanReturn.findFirst({ where: { loanId: id, isActive: true } });
     if (hasReturns) throw new Error('No se puede desactivar/reactivar un préstamo con devoluciones registradas.');
@@ -226,6 +282,8 @@ export const loanService = {
         lenderId: data.lenderId,
         receiverId: data.receiverId,
         receiverEmail: data.receiverEmail,
+        receiverDocumentTypeId: data.receiverDocumentTypeId,
+        receiverDocumentNumber: data.receiverDocumentNumber,
       },
     });
 
@@ -240,10 +298,9 @@ export const loanService = {
       );
     }
 
-    // (P43) Log: modificación del préstamo (incluye materiales/cantidades nuevas)
-    const detalle = data.materials
-      .map((m) => `material #${m.materialId} x${m.borrowedQuantity}`)
-      .join(', ');
+    // (p52) Aqui habia un `detalle` que se calculaba y no se usaba: el log que
+    // anunciaba el comentario (P43) nunca se escribio, y la edicion del prestamo
+    // ya queda en `audit_log` por la extension de Prisma.
     return updated;
   },
 
@@ -281,8 +338,9 @@ export const loanService = {
     return loanRepository.sign(loan.id, payload.party); // marca firma y activa si ambas
   },
 
-  async resendSignatures(id) {
-    const loan = await loanService.getById(id);
+  // (p52) Mismo arreglo que en `toggle`: el actor viaja hasta `getById`.
+  async resendSignatures(id, actor) {
+    const loan = await loanService.getById(id, actor);
     if (loan.status !== 'Pendiente_confirmacion') {
       throw new Error('Solo se pueden reenviar correos de préstamos pendientes de firma.');
     }

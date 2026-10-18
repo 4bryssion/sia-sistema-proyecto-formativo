@@ -12,6 +12,11 @@ const relacionesDelPadre = {
   },
   brand: { select: { id: true, brandName: true } },
   inventory: { select: { id: true, inventoryName: true } },
+  // (p53) Los dos niveles de clasificacion. Las dos salen de `categories`: el
+  // tipo es una de las 3 marcadas `isMaterialType` y la categoria una de las que
+  // crea el usuario. Cuelgan del PADRE, asi que sirven a los dos materiales.
+  category:     { select: { id: true, categoryName: true, requiresDimensions: true, isMaterialType: true } },
+  materialType: { select: { id: true, categoryName: true, requiresDimensions: true, isMaterialType: true } },
   // Orden explícito por sortOrder: el id refleja el orden de SUBIDA, no el que
   // el usuario dejó al arrastrar las previsualizaciones
   images: { orderBy: { sortOrder: 'asc' } },
@@ -24,16 +29,19 @@ const relacionesDelPadre = {
   },
 };
 
+// (p53) `category` ya no se pide aquí: se fue a la tabla padre junto con el
+// tipo de material, el modelo y el serial, así que llega dentro de
+// `consumableMaterial`. Lo único que queda en la hija es `dimensions`.
 const includeComplete = {
   consumableMaterial: { include: relacionesDelPadre },
-  category: { select: { id: true, categoryName: true } },
 };
 
 // El create/update entran por consumableMaterial (tabla padre), así que la
 // relación se anida al revés que en includeComplete
 const includeDesdePadre = {
   ...relacionesDelPadre,
-  returnable: { include: { category: true } },
+  // (p53) La hija solo tiene `dimensions`; ya no hay nada que incluir dentro.
+  returnable: true,
 };
 
 export const returnableMaterialRepository = {

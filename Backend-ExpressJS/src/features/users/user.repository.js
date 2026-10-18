@@ -30,6 +30,9 @@ const selectPublic = {
         select: {
           id: true,
           groupName: true,
+          // (p51) Grupo del sistema. El frontend lo necesita para saber a quien
+          // puede asignarle una tarea sin comparar nombres a mano.
+          isSystem: true,
           _count: { select: { permissions: true } },
         },
       },

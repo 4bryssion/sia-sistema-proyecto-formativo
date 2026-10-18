@@ -58,7 +58,7 @@ export const sendPasswordResetCode = async (to, code) => {
     title: 'Recuperación de contraseña',
     preview: `Tu código de recuperación es ${code}. Vence en 15 minutos.`,
     body: [
-      p('Recibimos una solicitud para restablecer la contraseña de tu cuenta en el S.I.I. Usa este código para continuar:'),
+      p('Recibimos una solicitud para restablecer la contraseña de tu cuenta en el S.I.A. Usa este código para continuar:'),
       codeBox(code),
       notice('El código vence en <strong>15 minutos</strong> y solo puede usarse una vez.'),
       small('Si no solicitaste este cambio, ignora este correo: tu contraseña actual sigue siendo válida.'),
@@ -67,7 +67,7 @@ export const sendPasswordResetCode = async (to, code) => {
 
   await send({
     to,
-    subject: 'Código de recuperación de contraseña — S.I.I',
+    subject: 'Código de recuperación de contraseña — S.I.A',
     text: `Tu código de recuperación es: ${code}. Vence en 15 minutos. Si no lo solicitaste, ignora este correo.`,
     html,
   });
@@ -86,7 +86,7 @@ const fechaLarga = (fecha) =>
 // porque lo usan dos correos (credenciales y reactivación) y describe una pantalla
 // concreta del sistema, no la maquetación.
 const PASOS_CAMBIO_CLAVE = [
-  'Ingresa al S.I.I con la contraseña temporal de este correo.',
+  'Ingresa al S.I.A con la contraseña temporal de este correo.',
   'Abre el menú de tu usuario, arriba a la derecha, y entra a <strong>Mi perfil</strong>.',
   'Pulsa <strong>Cambiar contraseña</strong>.',
   'Escribe tu contraseña actual (la temporal) y luego la nueva, dos veces.',
@@ -117,12 +117,12 @@ export const sendUserCredentials = async (to, { name, email, password, startDate
     : notice('Tu acceso ya está habilitado: puedes ingresar desde ahora.');
 
   const html = layout({
-    title: `Bienvenido al S.I.I, ${name}`,
+    title: `Bienvenido al S.I.A, ${name}`,
     preview: empiezaDespues
       ? `Tu cuenta fue creada. Podrás ingresar a partir del ${fechaLarga(startDate)}.`
       : 'Tu cuenta fue creada. Estas son tus credenciales de acceso.',
     body: [
-      p('Tu cuenta en el <strong>Software de Inventario de Infraestructura</strong> ya fue creada. Estas son tus credenciales:'),
+      p('Tu cuenta en el <strong>Software de Inventario y Administración</strong> ya fue creada. Estas son tus credenciales:'),
       dataBox([
         { label: 'Correo de acceso', value: email },
         { label: 'Contraseña temporal', value: password },
@@ -136,17 +136,17 @@ export const sendUserCredentials = async (to, { name, email, password, startDate
       ),
       subtitle('Cómo cambiar tu contraseña'),
       steps(PASOS_CAMBIO_CLAVE),
-      button(loginUrl, 'Ingresar al S.I.I'),
+      button(loginUrl, 'Ingresar al S.I.A'),
       small('Si no reconoces esta cuenta, comunícate con el administrador del sistema.'),
     ].join(''),
   });
 
   await send({
     to,
-    subject: 'Tus credenciales de acceso — S.I.I',
+    subject: 'Tus credenciales de acceso — S.I.A',
     text: `Hola ${name},
 
-Tu cuenta en el S.I.I fue creada. Estas son tus credenciales de inicio de sesión:
+Tu cuenta en el S.I.A fue creada. Estas son tus credenciales de inicio de sesión:
 
 Correo: ${email}
 Contraseña temporal: ${password}
@@ -178,9 +178,9 @@ export const sendUserReactivated = async (to, { name, startDate, endDate }) => {
 
   const html = layout({
     title: `Tu cuenta fue reactivada, ${name}`,
-    preview: 'Tu cuenta en el S.I.I volvió a estar activa.',
+    preview: 'Tu cuenta en el S.I.A volvió a estar activa.',
     body: [
-      p('Tu cuenta en el <strong>Software de Inventario de Infraestructura</strong> fue reactivada con una nueva vigencia:'),
+      p('Tu cuenta en el <strong>Software de Inventario y Administración</strong> fue reactivada con una nueva vigencia:'),
       dataBox([
         { label: 'Acceso habilitado desde', value: fechaLarga(startDate) },
         { label: 'Acceso habilitado hasta', value: fechaLarga(endDate) },
@@ -189,16 +189,16 @@ export const sendUserReactivated = async (to, { name, startDate, endDate }) => {
         ? notice(`Podrás iniciar sesión a partir del <strong>${fechaLarga(startDate)}</strong>.`)
         : notice('Ya puedes iniciar sesión con tu contraseña de siempre.'),
       small('Si no esperabas esta reactivación, comunícate con el administrador del sistema.'),
-      button(loginUrl, 'Ingresar al S.I.I'),
+      button(loginUrl, 'Ingresar al S.I.A'),
     ].join(''),
   });
 
   await send({
     to,
-    subject: 'Tu cuenta fue reactivada — S.I.I',
+    subject: 'Tu cuenta fue reactivada — S.I.A',
     text: `Hola ${name},
 
-Tu cuenta en el S.I.I fue reactivada con una nueva vigencia:
+Tu cuenta en el S.I.A fue reactivada con una nueva vigencia:
 
 Acceso habilitado desde: ${fechaLarga(startDate)}
 Acceso habilitado hasta: ${fechaLarga(endDate)}
@@ -219,9 +219,9 @@ export const sendPasswordChanged = async (to, { name }) => {
 
   const html = layout({
     title: 'Tu contraseña fue cambiada',
-    preview: 'La contraseña de tu cuenta en el S.I.I se actualizó correctamente.',
+    preview: 'La contraseña de tu cuenta en el S.I.A se actualizó correctamente.',
     body: [
-      p(`Hola ${name}, la contraseña de tu cuenta en el S.I.I se cambió correctamente.`),
+      p(`Hola ${name}, la contraseña de tu cuenta en el S.I.A se cambió correctamente.`),
       dataBox([{ label: 'Fecha del cambio', value: cuando }]),
       notice(
         'Si <strong>no fuiste tú</strong> quien hizo este cambio, comunícate de inmediato con el ' +
@@ -233,10 +233,10 @@ export const sendPasswordChanged = async (to, { name }) => {
 
   await send({
     to,
-    subject: 'Tu contraseña fue cambiada — S.I.I',
+    subject: 'Tu contraseña fue cambiada — S.I.A',
     text: `Hola ${name},
 
-La contraseña de tu cuenta en el S.I.I se cambió correctamente el ${cuando}.
+La contraseña de tu cuenta en el S.I.A se cambió correctamente el ${cuando}.
 
 Si NO fuiste tú quien hizo este cambio, comunícate de inmediato con el administrador
 del sistema: tu cuenta puede estar comprometida.`,
@@ -305,7 +305,7 @@ export const sendLoanSignatureRequest = async (
 
   await send({
     to,
-    subject: `Firma requerida — Préstamo #${loan.id} — S.I.I`,
+    subject: `Firma requerida — Préstamo #${loan.id} — S.I.A`,
     text: `${signerName ? `Hola ${signerName}.\n\n` : ''}Tienes un préstamo pendiente de firma como ${rol}. El préstamo solo queda activo cuando ambas partes lo firman.
 
 Materiales:

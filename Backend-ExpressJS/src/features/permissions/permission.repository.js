@@ -10,6 +10,7 @@ export const permissionRepository = {
         p.permission_name      AS "permissionName",
         p.permission_codename  AS "permissionCodename",
         p.is_active            AS "isActive",
+        p.is_restricted        AS "isRestricted",
         ct.content_type_id     AS "contentTypeId",
         ct.app_label           AS "appLabel",
         ct.model               AS "model",
@@ -26,62 +27,43 @@ export const permissionRepository = {
         permission_name     AS "permissionName",
         permission_codename AS "permissionCodename",
         is_active           AS "isActive",
+        is_restricted       AS "isRestricted",
         content_type_id     AS "contentTypeId"
       FROM permissions
       WHERE id = ${id};`;
     return rows[0] ?? null;
   },
 
-  async create(data) {
-    const rows = await prisma.$queryRaw`
-      INSERT INTO permissions (permission_name, permission_codename, content_type_id, is_active, created_at, updated_at)
-      VALUES (${data.permissionName}, ${data.permissionCodename}, ${data.contentTypeId ?? null}, TRUE, NOW(), NOW())
-      RETURNING
-        id                  AS "id",
-        permission_name     AS "permissionName",
-        permission_codename AS "permissionCodename",
-        is_active           AS "isActive",
-        content_type_id     AS "contentTypeId",
-        created_at,
-        updated_at;`;
-    return rows[0];
+  // (p51) De SQL crudo a llamadas de modelo, por el mismo motivo que en grupos:
+  // la auditoría no ve un `$queryRaw` con INSERT o UPDATE, y la lista de
+  // columnas escrita a mano se queda corta en cuanto el esquema crece.
+  /**
+   * (p51) Cuáles de estos ids son permisos de administración y seguridad.
+   *
+   * Devuelve las filas y no un booleano porque el mensaje de error tiene que
+   * nombrarlos: "no puedes" sin decir qué no se puede obliga a adivinar.
+   */
+  async findRestricted(ids = []) {
+    const limpios = ids.map(Number).filter(Number.isInteger);
+    if (!limpios.length) return [];
+    return prisma.permission.findMany({
+      where: { id: { in: limpios }, isRestricted: true },
+      select: { id: true, permissionName: true, permissionCodename: true },
+    });
   },
 
+  async create(data) {
+    return prisma.permission.create({ data });
+  },
+
+  // Un campo ausente llega como undefined y Prisma lo deja como está: mismo
+  // efecto que el COALESCE anterior. De paso desaparece su limitación — ahora
+  // `contentTypeId: null` sí puede dejarlo vacío a propósito.
   async update(id, data) {
-    // COALESCE mantiene el valor actual si el campo llega undefined → null;
-    // limitación conocida: no puede poner contentTypeId en null explícitamente (caso no requerido).
-    const rows = await prisma.$queryRaw`
-      UPDATE permissions
-      SET
-        permission_name     = COALESCE(${data.permissionName ?? null}::varchar(150), permission_name),
-        permission_codename = COALESCE(${data.permissionCodename ?? null}::varchar(100), permission_codename),
-        content_type_id     = COALESCE(${data.contentTypeId ?? null}::integer, content_type_id),
-        updated_at          = NOW()
-      WHERE id = ${id}
-      RETURNING
-        id                  AS "id",
-        permission_name     AS "permissionName",
-        permission_codename AS "permissionCodename",
-        is_active           AS "isActive",
-        content_type_id     AS "contentTypeId",
-        created_at,
-        updated_at;`;
-    return rows[0] ?? null;
+    return prisma.permission.update({ where: { id }, data });
   },
 
   async toggle(id, isActive) {
-    const rows = await prisma.$queryRaw`
-      UPDATE permissions
-      SET is_active = ${isActive}, updated_at = NOW()
-      WHERE id = ${id}
-      RETURNING
-        id                  AS "id",
-        permission_name     AS "permissionName",
-        permission_codename AS "permissionCodename",
-        is_active           AS "isActive",
-        content_type_id     AS "contentTypeId",
-        created_at,
-        updated_at;`;
-    return rows[0] ?? null;
+    return prisma.permission.update({ where: { id }, data: { isActive } });
   },
 };

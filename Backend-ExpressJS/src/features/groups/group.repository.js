@@ -15,6 +15,7 @@ export const groupRepository = {
         g.id          AS "id",
         g.group_name  AS "groupName",
         g.is_active   AS "isActive",
+        g.is_system   AS "isSystem",
         g.created_at  AS "created_at",
         g.updated_at  AS "updated_at",
         COALESCE(
@@ -38,7 +39,7 @@ export const groupRepository = {
       WHERE (${isActiveFilter ?? null}::boolean IS NULL
              OR g.is_active = ${isActiveFilter ?? null}::boolean)
         AND g.group_name <> ${SUPERADMIN_GROUP}
-      GROUP BY g.id, g.group_name, g.is_active, g.created_at, g.updated_at
+      GROUP BY g.id, g.group_name, g.is_active, g.is_system, g.created_at, g.updated_at
       ORDER BY g.group_name;`;
     // Mapear columnas planas de conteo al objeto _count que espera el frontend
     return rows.map(({ countUsers, countPermissions, ...group }) => ({
@@ -53,6 +54,7 @@ export const groupRepository = {
         g.id          AS "id",
         g.group_name  AS "groupName",
         g.is_active   AS "isActive",
+        g.is_system   AS "isSystem",
         g.created_at  AS "created_at",
         g.updated_at  AS "updated_at",
         COALESCE(
@@ -69,7 +71,7 @@ export const groupRepository = {
       LEFT JOIN group_permissions gp ON gp.group_id = g.id
       LEFT JOIN permissions p        ON p.id = gp.permission_id
       WHERE g.id = ${id}
-      GROUP BY g.id, g.group_name, g.is_active, g.created_at, g.updated_at;`;
+      GROUP BY g.id, g.group_name, g.is_active, g.is_system, g.created_at, g.updated_at;`;
     return rows[0] ?? null;
   },
 
@@ -79,47 +81,33 @@ export const groupRepository = {
     return prisma.group.findUnique({ where: { groupNameNormalized: normalizado } });
   },
 
+  // (p51) De SQL crudo a llamadas de modelo. Dos motivos, y el segundo rompió
+  // el sistema:
+  //
+  // 1. La extensión de auditoría NO ve el SQL crudo —ni `$executeRaw` ni un
+  //    `$queryRaw` con INSERT/UPDATE y RETURNING, que es lo que había aquí—, así
+  //    que crear, renombrar o desactivar quedaba sin registrar.
+  //
+  // 2. El INSERT enumeraba las columnas a mano, y en la p50 apareció una nueva
+  //    obligatoria: `group_name_normalized`. El service la calculaba y la
+  //    mandaba, pero el SQL la ignoraba en silencio, así que la base rechazaba
+  //    el alta entera (23502, "null value in column"). En el UPDATE era peor que
+  //    un error: pasaba, y dejaba el nombre normalizado con el valor viejo.
+  //
+  // Con llamadas de modelo no hay lista de columnas que mantener: lo que el
+  // service mande, se guarda.
   async create(data) {
-    const rows = await prisma.$queryRaw`
-      INSERT INTO groups (group_name, is_active, created_at, updated_at)
-      VALUES (${data.groupName}, TRUE, NOW(), NOW())
-      RETURNING
-        id         AS "id",
-        group_name AS "groupName",
-        is_active  AS "isActive",
-        created_at AS "created_at",
-        updated_at AS "updated_at";`;
-    return rows[0];
+    return prisma.group.create({ data });
   },
 
+  // Un campo ausente en `data` llega como undefined, y Prisma lo deja como
+  // está: el mismo efecto que tenía el COALESCE de antes, sin escribirlo.
   async update(id, data) {
-    const rows = await prisma.$queryRaw`
-      UPDATE groups
-      SET
-        group_name = COALESCE(${data.groupName ?? null}::varchar(100), group_name),
-        updated_at = NOW()
-      WHERE id = ${id}
-      RETURNING
-        id         AS "id",
-        group_name AS "groupName",
-        is_active  AS "isActive",
-        created_at AS "created_at",
-        updated_at AS "updated_at";`;
-    return rows[0] ?? null;
+    return prisma.group.update({ where: { id }, data });
   },
 
   async toggle(id, isActive) {
-    const rows = await prisma.$queryRaw`
-      UPDATE groups
-      SET is_active = ${isActive}, updated_at = NOW()
-      WHERE id = ${id}
-      RETURNING
-        id         AS "id",
-        group_name AS "groupName",
-        is_active  AS "isActive",
-        created_at AS "created_at",
-        updated_at AS "updated_at";`;
-    return rows[0] ?? null;
+    return prisma.group.update({ where: { id }, data: { isActive } });
   },
 
   // (p50) De SQL crudo a llamadas de modelo, por el mismo motivo que
@@ -143,6 +131,19 @@ export const groupRepository = {
   },
 
   // Estilo edward: lista los permisos del grupo incluyendo codename
+  // (p51) Usuarios ACTIVOS del grupo. Lo pide el RFADMIN44.2: un rol con gente
+  // dentro no se deshabilita, porque esa gente perdería sus permisos de golpe
+  // y sin aviso. Se cuentan solo los activos: un usuario deshabilitado ya no
+  // trabaja con el sistema y no debe bloquear la gestión del rol.
+  async countActiveUsers(groupId) {
+    const rows = await prisma.$queryRaw`
+      SELECT COUNT(*)::int AS "total"
+      FROM user_groups ug
+      INNER JOIN users u ON u.id = ug.user_id
+      WHERE ug.group_id = ${groupId} AND u.is_active = TRUE;`;
+    return rows[0]?.total ?? 0;
+  },
+
   async getPermissionsByGroupId(groupId) {
     return prisma.$queryRaw`
       SELECT

@@ -14,6 +14,11 @@ const includeRelations = {
   },
   brand: { select: { id: true, brandName: true } },
   inventory: { select: { id: true, inventoryName: true } },
+  // (p53) Los dos niveles de clasificacion. Las dos salen de `categories`: el
+  // tipo es una de las 3 marcadas `isMaterialType` y la categoria una de las que
+  // crea el usuario. Cuelgan del PADRE, asi que sirven a los dos materiales.
+  category:     { select: { id: true, categoryName: true, requiresDimensions: true, isMaterialType: true } },
+  materialType: { select: { id: true, categoryName: true, requiresDimensions: true, isMaterialType: true } },
   images: { orderBy: { sortOrder: 'asc' } },
   technicalSheets: { orderBy: { sortOrder: 'asc' } },
   // (p50) Cotizaciones que respaldan el precio. Se ordenan por fecha de

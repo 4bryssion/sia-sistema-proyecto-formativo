@@ -51,7 +51,10 @@ export const createReturnableMaterialSchema = Joi.object({
   // (p48) Fecha de ingreso al almacén, obligatoria
   entryDate:    Joi.date().iso().required(),
   location:     Joi.string().max(100).required(),
-  categoryId:   Joi.number().integer().positive().required(),
+  // (p53) Los dos son obligatorios al crear, por decisión de Santiago: el tipo
+  // de material (una de las 3 filas marcadas) y la categoría propia del material.
+  categoryId:     Joi.number().integer().positive().required(),
+  materialTypeId: Joi.number().integer().positive().required(),
   // (p48) modelo y serial pasaron a opcionales
   model:        Joi.string().max(100).optional().allow('', null),
   serial:       Joi.string().max(20).optional().allow('', null),
@@ -83,6 +86,7 @@ export const updateReturnableMaterialSchema = Joi.object({
   entryDate:      Joi.date().iso(),
   location:       Joi.string().max(100),
   categoryId:     Joi.number().integer().positive(),
+  materialTypeId: Joi.number().integer().positive(),
   model:          Joi.string().max(100).allow('', null),
   serial:         Joi.string().max(20).allow('', null),
   dimensions:     Joi.string().max(100).allow('', null),
